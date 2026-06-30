@@ -109,7 +109,7 @@ export const INITIAL_ASSETS: Asset[] = [
     startingPrice: 280000000,
     highestBid: 280000000,
     status: 'Open',
-    imageUrl: 'https://images.unsplash.com/photo-1501526029524-a8ea952b15be?auto=format&fit=crop&w=800&q=80',
+    imageUrl: 'https://images.unsplash.com/photo-1578328819058-b69f3a3b0f6b?auto=format&fit=crop&w=800&q=80',
     bids: []
   },
   {
@@ -185,7 +185,7 @@ export const INITIAL_ASSETS: Asset[] = [
     startingPrice: 120000000,
     highestBid: 125000000,
     status: 'Sold',
-    imageUrl: 'https://images.unsplash.com/photo-1605787020600-b9ebd5df1d07?auto=format&fit=crop&w=800&q=80',
+    imageUrl: 'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=800&q=80',
     bids: [
       {
         id: 'B-601',

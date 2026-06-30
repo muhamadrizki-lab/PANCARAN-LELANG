@@ -24,6 +24,15 @@ export default function AdminUsers({
   onDeleteAdmin,
   currentAdminEmail 
 }: AdminUsersProps) {
+  const maskEmail = (email: string) => {
+    if (!email || !email.includes('@')) return email;
+    const [local, domain] = email.split('@');
+    if (local.length <= 3) {
+      return `${local.charAt(0)}••@${domain}`;
+    }
+    return `${local.substring(0, 3)}••••••••@${domain}`;
+  };
+
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -206,7 +215,7 @@ export default function AdminUsers({
                           </div>
                         </div>
                       </td>
-                      <td className="py-4 px-4 font-mono text-slate-600 text-xs">{admin.email}</td>
+                      <td className="py-4 px-4 font-mono text-slate-600 text-xs">{maskEmail(admin.email)}</td>
                       <td className="py-4 px-4">
                         <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-blue-50 text-blue-700">
                           <Shield className="w-3.5 h-3.5" />

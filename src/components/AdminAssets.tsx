@@ -84,10 +84,20 @@ const compressImage = (file: File, maxWidth: number = 800, maxHeight: number = 6
 const VEHICLE_TEMPLATES = [
   { name: 'Hino Wingbox Heavy-Duty', brand: 'Hino', category: 'Wingbox', url: 'https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?auto=format&fit=crop&w=800&q=80' },
   { name: 'Isuzu Giga Box Besi', brand: 'Isuzu', category: 'Box Truck', url: 'https://images.unsplash.com/photo-1516576885502-d5334430e52b?auto=format&fit=crop&w=800&q=80' },
-  { name: 'Fuso Colt Dump Truck', brand: 'Fuso', category: 'Dump Truck', url: 'https://images.unsplash.com/photo-1501526029524-a8ea952b15be?auto=format&fit=crop&w=800&q=80' },
+  { name: 'Fuso Colt Dump Truck', brand: 'Fuso', category: 'Dump Truck', url: 'https://images.unsplash.com/photo-1578328819058-b69f3a3b0f6b?auto=format&fit=crop&w=800&q=80' },
   { name: 'Scania Premium Head Container', brand: 'Scania', category: 'Trailer Head', url: 'https://images.unsplash.com/photo-1592838064575-70ed626d3a44?auto=format&fit=crop&w=800&q=80' },
   { name: 'Toyota Hilux Single Cabin', brand: 'Toyota', category: 'Pickup', url: 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&w=800&q=80' },
+  { name: 'Caterpillar Forklift Diesel', brand: 'Caterpillar', category: 'Forklift', url: 'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=800&q=80' },
 ];
+
+const maskEmail = (email: string) => {
+  if (!email || !email.includes('@')) return email;
+  const [local, domain] = email.split('@');
+  if (local.length <= 3) {
+    return `${local.charAt(0)}••@${domain}`;
+  }
+  return `${local.substring(0, 3)}••••••••@${domain}`;
+};
 
 export default function AdminAssets({
   assets,
@@ -666,7 +676,7 @@ export default function AdminAssets({
                       </div>
                       <div className="text-slate-500 flex flex-col gap-0.5">
                         <span>Kontak: {bid.contact}</span>
-                        <span>Email: {bid.email}</span>
+                        <span>Email: {maskEmail(bid.email)}</span>
                       </div>
                       
                       {/* Survey date if requested */}
