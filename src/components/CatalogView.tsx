@@ -8,6 +8,7 @@ import {
   Calendar, 
   Clock, 
   ChevronRight, 
+  ChevronLeft,
   TrendingUp, 
   AlertCircle, 
   CheckCircle,
@@ -26,6 +27,151 @@ import {
 interface CatalogViewProps {
   assets: Asset[];
   onPlaceBid: (assetId: string, bidData: Omit<Bid, 'id' | 'timestamp'>) => void;
+}
+
+interface CatalogCardProps {
+  key?: string | number;
+  asset: Asset;
+  onSelectAsset: (assetId: string) => void;
+  formatIDR: (value: number) => string;
+}
+
+function CatalogCard({ asset, onSelectAsset, formatIDR }: CatalogCardProps) {
+  const [activeImgIdx, setActiveImgIdx] = useState(0);
+  const images = asset.imageUrls && asset.imageUrls.length > 0
+    ? asset.imageUrls
+    : (asset.imageUrl ? [asset.imageUrl] : []);
+
+  const handlePrev = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setActiveImgIdx(prev => (prev === 0 ? images.length - 1 : prev - 1));
+  };
+
+  const handleNext = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setActiveImgIdx(prev => (prev === images.length - 1 ? 0 : prev + 1));
+  };
+
+  const hasBids = asset.bids.length > 0;
+  const highestOffer = hasBids ? Math.max(...asset.bids.map(b => b.price)) : asset.startingPrice;
+
+  return (
+    <div className="bg-white rounded-3xl overflow-hidden border border-slate-200 hover:border-blue-200 hover:shadow-xl transition-all duration-300 flex flex-col justify-between group">
+      <div className="relative h-48 bg-slate-50 overflow-hidden group/img-container">
+        <img 
+          src={images[activeImgIdx]} 
+          alt={`${asset.name} - ${activeImgIdx + 1}`} 
+          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
+          referrerPolicy="no-referrer"
+          onError={(e) => {
+            e.currentTarget.src = "https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?auto=format&fit=crop&w=800&q=80";
+          }}
+        />
+
+        {/* Navigation arrows overlay */}
+        {images.length > 1 && (
+          <>
+            <button
+              onClick={handlePrev}
+              className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white w-7 h-7 rounded-full flex items-center justify-center transition-all opacity-0 group-hover/img-container:opacity-100 z-10 text-xs font-bold"
+              title="Gambar Sebelumnya"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            <button
+              onClick={handleNext}
+              className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white w-7 h-7 rounded-full flex items-center justify-center transition-all opacity-0 group-hover/img-container:opacity-100 z-10 text-xs font-bold"
+              title="Gambar Berikutnya"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+
+            {/* Dotted indicators */}
+            <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1 z-10 bg-black/40 backdrop-blur-xs px-2 py-1 rounded-full">
+              {images.map((_, idx) => (
+                <button
+                  key={idx}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setActiveImgIdx(idx);
+                  }}
+                  className={`w-1.5 h-1.5 rounded-full transition-all ${idx === activeImgIdx ? 'bg-white scale-125' : 'bg-white/40'}`}
+                />
+              ))}
+            </div>
+          </>
+        )}
+        
+        {/* Floating Info */}
+        <div className="absolute top-3 left-3 z-10">
+          <span className="text-[9px] font-mono font-bold bg-white/95 backdrop-blur-sm text-slate-800 px-2 py-1 rounded-md shadow-sm border border-slate-200">
+            {asset.id}
+          </span>
+        </div>
+
+        <div className="absolute top-3 right-3 z-10">
+          <span className="text-[9px] font-bold uppercase tracking-wider bg-blue-600 text-white px-2.5 py-1 rounded-full shadow-sm flex items-center gap-1">
+            <span className="w-1.5 h-1.5 bg-green-400 rounded-full animate-ping"></span>
+            Terbuka
+          </span>
+        </div>
+
+        <div className="absolute bottom-3 left-3 bg-black/60 backdrop-blur-sm text-white text-[10px] font-semibold px-2.5 py-1 rounded-lg z-10">
+          {asset.brand} • {asset.category}
+        </div>
+      </div>
+
+      {/* Info Body */}
+      <div className="p-6 flex-1 flex flex-col justify-between space-y-4">
+        <div className="space-y-1.5">
+          <h3 className="font-bold text-slate-800 text-base leading-snug group-hover:text-blue-700 transition-colors">
+            {asset.name}
+          </h3>
+          
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500 font-medium">
+            <span className="flex items-center gap-1">
+              <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0" /> {asset.location.split(',')[1] || asset.location}
+            </span>
+            <span>•</span>
+            <span>Kondisi: <strong>{asset.condition}</strong></span>
+            <span>•</span>
+            <span>Th: <strong>{asset.modelYear}</strong></span>
+          </div>
+
+          <p className="text-xs text-slate-500 line-clamp-2 mt-2 leading-relaxed">
+            {asset.description}
+          </p>
+        </div>
+
+        {/* Price Status */}
+        <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 flex items-center justify-between">
+          <div>
+            <span className="text-[10px] text-slate-400 font-bold uppercase">Harga Pembuka</span>
+            <p className="text-xs font-semibold text-slate-500">{formatIDR(asset.startingPrice)}</p>
+          </div>
+          <div className="text-right">
+            <span className="text-[10px] text-blue-600 font-bold uppercase flex items-center justify-end gap-1">
+              <TrendingUp className="w-3.5 h-3.5" /> Penawaran Tertinggi
+            </span>
+            <p className="text-base font-bold text-slate-900">{formatIDR(highestOffer)}</p>
+          </div>
+        </div>
+
+        {/* CTA Actions */}
+        <div className="flex items-center justify-between text-xs font-semibold pt-1">
+          <span className="text-slate-500 font-medium">
+            {asset.bids.length} Penawaran Masuk
+          </span>
+          <button
+            onClick={() => onSelectAsset(asset.id)}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1 group-hover:shadow-md shadow-blue-500/10"
+          >
+            Tawar Aset <ArrowUpRight className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 export default function CatalogView({ assets, onPlaceBid }: CatalogViewProps) {
@@ -249,98 +395,14 @@ export default function CatalogView({ assets, onPlaceBid }: CatalogViewProps) {
 
           {/* Catalog Cards Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {filteredAssets.map((asset) => {
-              const hasBids = asset.bids.length > 0;
-              const highestOffer = hasBids ? Math.max(...asset.bids.map(b => b.price)) : asset.startingPrice;
-              
-              return (
-                <div 
-                  key={asset.id}
-                  className="bg-white rounded-3xl overflow-hidden border border-slate-200 hover:border-blue-200 hover:shadow-xl transition-all duration-300 flex flex-col justify-between group"
-                >
-                  <div className="relative h-48 bg-slate-50 overflow-hidden">
-                    <img 
-                      src={asset.imageUrl} 
-                      alt={asset.name} 
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
-                      referrerPolicy="no-referrer"
-                      onError={(e) => {
-                        e.currentTarget.src = "https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?auto=format&fit=crop&w=800&q=80";
-                      }}
-                    />
-                    
-                    {/* Floating Info */}
-                    <div className="absolute top-3 left-3">
-                      <span className="text-[9px] font-mono font-bold bg-white/95 backdrop-blur-sm text-slate-800 px-2 py-1 rounded-md shadow-sm border border-slate-200">
-                        {asset.id}
-                      </span>
-                    </div>
-
-                    <div className="absolute top-3 right-3">
-                      <span className="text-[9px] font-bold uppercase tracking-wider bg-blue-600 text-white px-2.5 py-1 rounded-full shadow-sm flex items-center gap-1">
-                        <span className="w-1.5 h-1.5 bg-green-400 rounded-full animate-ping"></span>
-                        Terbuka
-                      </span>
-                    </div>
-
-                    <div className="absolute bottom-3 left-3 bg-black/60 backdrop-blur-sm text-white text-[10px] font-semibold px-2.5 py-1 rounded-lg">
-                      {asset.brand} • {asset.category}
-                    </div>
-                  </div>
-
-                  {/* Info Body */}
-                  <div className="p-6 flex-1 flex flex-col justify-between space-y-4">
-                    <div className="space-y-1.5">
-                      <h3 className="font-bold text-slate-800 text-base leading-snug group-hover:text-blue-700 transition-colors">
-                        {asset.name}
-                      </h3>
-                      
-                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500 font-medium">
-                        <span className="flex items-center gap-1">
-                          <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0" /> {asset.location.split(',')[1] || asset.location}
-                        </span>
-                        <span>•</span>
-                        <span>Kondisi: <strong>{asset.condition}</strong></span>
-                        <span>•</span>
-                        <span>Th: <strong>{asset.modelYear}</strong></span>
-                      </div>
-
-                      <p className="text-xs text-slate-500 line-clamp-2 mt-2 leading-relaxed">
-                        {asset.description}
-                      </p>
-                    </div>
-
-                    {/* Price Status */}
-                    <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 flex items-center justify-between">
-                      <div>
-                        <span className="text-[10px] text-slate-400 font-bold uppercase">Harga Pembuka</span>
-                        <p className="text-xs font-semibold text-slate-500">{formatIDR(asset.startingPrice)}</p>
-                      </div>
-                      <div className="text-right">
-                        <span className="text-[10px] text-blue-600 font-bold uppercase flex items-center justify-end gap-1">
-                          <TrendingUp className="w-3 h-3" /> Penawaran Tertinggi
-                        </span>
-                        <p className="text-base font-bold text-slate-900">{formatIDR(highestOffer)}</p>
-                      </div>
-                    </div>
-
-                    {/* CTA Actions */}
-                    <div className="flex items-center justify-between text-xs font-semibold pt-1">
-                      <span className="text-slate-500 font-medium">
-                        {asset.bids.length} Penawaran Masuk
-                      </span>
-                      <button
-                        onClick={() => handleSelectAsset(asset.id)}
-                        className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1 group-hover:shadow-md shadow-blue-500/10"
-                      >
-                        Tawar Aset <ArrowUpRight className="w-4 h-4" />
-                      </button>
-                    </div>
-
-                  </div>
-                </div>
-              );
-            })}
+            {filteredAssets.map((asset) => (
+              <CatalogCard
+                key={asset.id}
+                asset={asset}
+                onSelectAsset={handleSelectAsset}
+                formatIDR={formatIDR}
+              />
+            ))}
 
             {filteredAssets.length === 0 && (
               <div className="col-span-full text-center py-20 bg-white border border-dashed border-slate-200 rounded-3xl space-y-3">

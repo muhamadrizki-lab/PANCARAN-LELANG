@@ -25,6 +25,7 @@ export interface Asset {
   highestBid: number;
   status: AssetStatus;
   imageUrl: string;
+  imageUrls?: string[];
   bids: Bid[];
 }
 
