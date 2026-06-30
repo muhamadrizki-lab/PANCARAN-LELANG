@@ -23,8 +23,8 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginMod
     // Simulated short timeout for a realistic network/security check feel
     setTimeout(() => {
       // EXACT credentials specified by user:
-      // email@pancaran-logistic.id / 12345678
-      if (email === 'email@pancaran-logistic.id' && password === '12345678') {
+      // digital.solution@pancaran-logistic.id / 12345678 (or fallback email@pancaran-logistic.id)
+      if ((email === 'digital.solution@pancaran-logistic.id' || email === 'email@pancaran-logistic.id') && password === '12345678') {
         onLoginSuccess(email);
         onClose();
         setIsLoading(false);
@@ -36,7 +36,7 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginMod
   };
 
   const fillDefaultCredentials = () => {
-    setEmail('email@pancaran-logistic.id');
+    setEmail('digital.solution@pancaran-logistic.id');
     setPassword('12345678');
     setError('');
   };
@@ -78,7 +78,7 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginMod
               <input
                 type="email"
                 required
-                placeholder="email@pancaran-logistic.id"
+                placeholder="digital.solution@pancaran-logistic.id"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full pl-10 pr-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 font-mono"
