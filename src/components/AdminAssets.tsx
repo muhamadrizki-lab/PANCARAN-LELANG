@@ -296,6 +296,12 @@ export default function AdminAssets({
     }).format(value);
   };
 
+  const formatNumberWithDots = (numStr: string) => {
+    const clean = numStr.replace(/\D/g, '');
+    if (!clean) return '';
+    return new Intl.NumberFormat('id-ID').format(Number(clean));
+  };
+
   return (
     <div className="space-y-8 animate-fade-in" id="admin-assets-view">
       
@@ -877,11 +883,15 @@ export default function AdminAssets({
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-slate-600 uppercase">Harga Awal Lelang (IDR) *</label>
                   <input
-                    type="number"
+                    type="text"
+                    inputMode="numeric"
                     required
-                    placeholder="Contoh: 150000000"
-                    value={formData.startingPrice}
-                    onChange={(e) => setFormData(prev => ({ ...prev, startingPrice: e.target.value }))}
+                    placeholder="Contoh: 150.000.000"
+                    value={formatNumberWithDots(formData.startingPrice)}
+                    onChange={(e) => {
+                      const raw = e.target.value.replace(/\D/g, '');
+                      setFormData(prev => ({ ...prev, startingPrice: raw }));
+                    }}
                     className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
                   />
                 </div>

@@ -227,6 +227,12 @@ export default function CatalogView({ assets, onPlaceBid }: CatalogViewProps) {
     }).format(value);
   };
 
+  const formatNumberWithDots = (numStr: string) => {
+    const clean = numStr.replace(/\D/g, '');
+    if (!clean) return '';
+    return new Intl.NumberFormat('id-ID').format(Number(clean));
+  };
+
   const handleSelectAsset = (assetId: string) => {
     setSelectedAssetId(assetId);
     setFormError('');
@@ -240,7 +246,7 @@ export default function CatalogView({ assets, onPlaceBid }: CatalogViewProps) {
         name: '',
         email: '',
         contact: '',
-        price: String(highest + 5000000),
+        price: '0',
         requestSurvey: false,
         surveyDate: '',
         surveyTime: '10:00'
@@ -537,11 +543,18 @@ export default function CatalogView({ assets, onPlaceBid }: CatalogViewProps) {
                   <div className="relative">
                     <span className="absolute left-3 top-2.5 font-bold text-xs text-slate-400">Rp</span>
                     <input
-                      type="number"
+                      type="text"
+                      inputMode="numeric"
                       required
-                      placeholder={String(currentHighestBid + 5000000)}
-                      value={bidForm.price}
-                      onChange={(e) => setBidForm(prev => ({ ...prev, price: e.target.value }))}
+                      placeholder={formatNumberWithDots(String(currentHighestBid + 5000000))}
+                      value={formatNumberWithDots(bidForm.price)}
+                      onChange={(e) => {
+                        let raw = e.target.value.replace(/\D/g, '');
+                        if (raw.length > 1 && raw.startsWith('0')) {
+                          raw = raw.replace(/^0+/, '');
+                        }
+                        setBidForm(prev => ({ ...prev, price: raw }));
+                      }}
                       className="w-full pl-8 pr-4 py-2.5 border border-slate-200 rounded-xl text-sm font-bold text-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
                     />
                   </div>
