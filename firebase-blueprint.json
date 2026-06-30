@@ -1,0 +1,48 @@
+{
+  "entities": {
+    "Asset": {
+      "title": "Asset",
+      "description": "Represents an industrial vehicle/logistics asset up for auction.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "brand": { "type": "string" },
+        "category": { "type": "string" },
+        "modelYear": { "type": "integer" },
+        "plateNumber": { "type": "string" },
+        "condition": { "type": "string", "enum": ["Sangat Baik", "Baik", "Cukup", "Butuh Perbaikan"] },
+        "location": { "type": "string" },
+        "description": { "type": "string" },
+        "startingPrice": { "type": "number" },
+        "highestBid": { "type": "number" },
+        "status": { "type": "string", "enum": ["Open", "Sold"] },
+        "imageUrl": { "type": "string" },
+        "bids": { "type": "array" }
+      },
+      "required": ["id", "name", "brand", "category", "modelYear", "plateNumber", "condition", "location", "description", "startingPrice", "highestBid", "status", "imageUrl", "bids"]
+    },
+    "AdminUser": {
+      "title": "AdminUser",
+      "description": "Represents an administrative user who can manage assets and users.",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string" },
+        "name": { "type": "string" },
+        "role": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["email", "name", "role", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/assets/{assetId}": {
+      "schema": "Asset",
+      "description": "Collection of logistics assets open for public catalog viewing and bidding."
+    },
+    "/admins/{adminEmail}": {
+      "schema": "AdminUser",
+      "description": "Collection of authorized administrator user details."
+    }
+  }
+}

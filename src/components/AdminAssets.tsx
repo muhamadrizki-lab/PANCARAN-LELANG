@@ -1,0 +1,968 @@
+import React, { useState } from 'react';
+import { Asset, AssetStatus, Bid } from '../types';
+import { 
+  Plus, 
+  Search, 
+  Filter, 
+  Trash2, 
+  Eye, 
+  Check, 
+  X, 
+  ExternalLink,
+  Calendar,
+  DollarSign,
+  Tag,
+  AlertTriangle,
+  FileText,
+  MapPin,
+  Clock,
+  Sparkles,
+  Upload
+} from 'lucide-react';
+
+interface AdminAssetsProps {
+  assets: Asset[];
+  selectedAssetId: string | null;
+  onSelectAsset: (assetId: string | null) => void;
+  onAddAsset: (newAsset: Omit<Asset, 'id' | 'bids' | 'highestBid'>) => void;
+  onUpdateAsset: (assetId: string, updatedAsset: Partial<Asset>) => void;
+  onUpdateAssetStatus: (assetId: string, status: AssetStatus) => void;
+  onDeleteAsset: (assetId: string) => void;
+}
+
+const compressImage = (file: File, maxWidth: number = 800, maxHeight: number = 600, quality: number = 0.75): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let width = img.width;
+        let height = img.height;
+
+        // Calculate new dimensions keeping aspect ratio
+        if (width > height) {
+          if (width > maxWidth) {
+            height = Math.round((height * maxWidth) / width);
+            width = maxWidth;
+          }
+        } else {
+          if (height > maxHeight) {
+            width = Math.round((width * maxHeight) / height);
+            height = maxHeight;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          resolve(event.target?.result as string); // Fallback to original base64 if context is not available
+          return;
+        }
+
+        // Draw image on canvas
+        ctx.drawImage(img, 0, 0, width, height);
+        
+        // Get compressed base64 string
+        const dataUrl = canvas.toDataURL('image/jpeg', quality);
+        resolve(dataUrl);
+      };
+      img.onerror = () => {
+        reject(new Error('Gagal memuat gambar untuk kompresi.'));
+      };
+      img.src = event.target?.result as string;
+    };
+    reader.onerror = () => {
+      reject(new Error('Gagal membaca file gambar.'));
+    };
+    reader.readAsDataURL(file);
+  });
+};
+
+const VEHICLE_TEMPLATES = [
+  { name: 'Hino Wingbox Heavy-Duty', brand: 'Hino', category: 'Wingbox', url: 'https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?auto=format&fit=crop&w=800&q=80' },
+  { name: 'Isuzu Giga Box Besi', brand: 'Isuzu', category: 'Box Truck', url: 'https://images.unsplash.com/photo-1516576885502-d5334430e52b?auto=format&fit=crop&w=800&q=80' },
+  { name: 'Fuso Colt Dump Truck', brand: 'Fuso', category: 'Dump Truck', url: 'https://images.unsplash.com/photo-1501526029524-a8ea952b15be?auto=format&fit=crop&w=800&q=80' },
+  { name: 'Scania Premium Head Container', brand: 'Scania', category: 'Trailer Head', url: 'https://images.unsplash.com/photo-1592838064575-70ed626d3a44?auto=format&fit=crop&w=800&q=80' },
+  { name: 'Toyota Hilux Single Cabin', brand: 'Toyota', category: 'Pickup', url: 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&w=800&q=80' },
+];
+
+export default function AdminAssets({
+  assets,
+  selectedAssetId,
+  onSelectAsset,
+  onAddAsset,
+  onUpdateAsset,
+  onUpdateAssetStatus,
+  onDeleteAsset
+}: AdminAssetsProps) {
+  const [activeTab, setActiveTab] = useState<'all' | 'Open' | 'Sold'>('all');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [brandFilter, setBrandFilter] = useState<string>('all');
+  
+  // Form State
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  const [editAssetId, setEditAssetId] = useState<string | null>(null);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  
+  const [formData, setFormData] = useState({
+    name: '',
+    brand: 'Hino',
+    category: 'Wingbox',
+    modelYear: 2022,
+    plateNumber: '',
+    condition: 'Baik' as Asset['condition'],
+    location: '',
+    description: '',
+    startingPrice: '',
+    imageUrl: VEHICLE_TEMPLATES[0].url
+  });
+
+  const openNewAssetForm = () => {
+    setEditAssetId(null);
+    setFormData({
+      name: '',
+      brand: 'Hino',
+      category: 'Wingbox',
+      modelYear: 2022,
+      plateNumber: '',
+      condition: 'Baik',
+      location: '',
+      description: '',
+      startingPrice: '',
+      imageUrl: VEHICLE_TEMPLATES[0].url
+    });
+    setIsFormOpen(true);
+  };
+
+  const handleEditClick = (asset: Asset) => {
+    setEditAssetId(asset.id);
+    setFormData({
+      name: asset.name,
+      brand: asset.brand,
+      category: asset.category,
+      modelYear: asset.modelYear,
+      plateNumber: asset.plateNumber === 'N/A' ? '' : asset.plateNumber,
+      condition: asset.condition,
+      location: asset.location,
+      description: asset.description,
+      startingPrice: String(asset.startingPrice),
+      imageUrl: asset.imageUrl
+    });
+    setIsFormOpen(true);
+  };
+
+  const handleFileChange = async (file: File) => {
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      alert('Hanya file gambar yang diperbolehkan.');
+      return;
+    }
+    
+    try {
+      const compressedBase64 = await compressImage(file, 800, 600, 0.75);
+      setFormData(prev => ({
+        ...prev,
+        imageUrl: compressedBase64
+      }));
+    } catch (err) {
+      console.error('Gagal mengompresi gambar:', err);
+      // Fallback
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        if (e.target?.result) {
+          setFormData(prev => ({
+            ...prev,
+            imageUrl: e.target.result as string
+          }));
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const selectedAsset = assets.find(a => a.id === selectedAssetId);
+
+  // Filter logic
+  const filteredAssets = assets.filter(asset => {
+    const matchesTab = activeTab === 'all' || asset.status === activeTab;
+    const matchesBrand = brandFilter === 'all' || asset.brand === brandFilter;
+    const matchesSearch = 
+      asset.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      asset.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      asset.plateNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      asset.category.toLowerCase().includes(searchQuery.toLowerCase());
+
+    return matchesTab && matchesBrand && matchesSearch;
+  });
+
+  // Unique brands for filter
+  const uniqueBrands = Array.from(new Set(assets.map(a => a.brand)));
+
+  const handleTemplateClick = (template: typeof VEHICLE_TEMPLATES[0]) => {
+    setFormData(prev => ({
+      ...prev,
+      name: `${template.name} - New`,
+      brand: template.brand,
+      category: template.category,
+      imageUrl: template.url
+    }));
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData.name || !formData.startingPrice || !formData.location) {
+      alert('Mohon lengkapi data nama, harga awal, dan lokasi.');
+      return;
+    }
+
+    const assetData = {
+      name: formData.name,
+      brand: formData.brand,
+      category: formData.category,
+      modelYear: Number(formData.modelYear),
+      plateNumber: formData.plateNumber || 'N/A',
+      condition: formData.condition,
+      location: formData.location,
+      description: formData.description || 'Tidak ada deskripsi tambahan.',
+      startingPrice: Number(formData.startingPrice),
+      imageUrl: formData.imageUrl
+    };
+
+    if (editAssetId) {
+      onUpdateAsset(editAssetId, assetData);
+      setEditAssetId(null);
+    } else {
+      onAddAsset({
+        ...assetData,
+        status: 'Open'
+      });
+    }
+
+    // Reset Form
+    setFormData({
+      name: '',
+      brand: 'Hino',
+      category: 'Wingbox',
+      modelYear: 2022,
+      plateNumber: '',
+      condition: 'Baik',
+      location: '',
+      description: '',
+      startingPrice: '',
+      imageUrl: VEHICLE_TEMPLATES[0].url
+    });
+    setIsFormOpen(false);
+  };
+
+  const formatIDR = (value: number) => {
+    return new Intl.NumberFormat('id-ID', {
+      style: 'currency',
+      currency: 'IDR',
+      maximumFractionDigits: 0
+    }).format(value);
+  };
+
+  return (
+    <div className="space-y-8 animate-fade-in" id="admin-assets-view">
+      
+      {/* Top action header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-800 tracking-tight">Kelola Aset Lelang</h1>
+          <p className="text-sm text-slate-500 mt-1">Daftarkan armada logistik baru, pantau status lelang, dan verifikasi riwayat penawaran.</p>
+        </div>
+        <button
+          onClick={openNewAssetForm}
+          className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 shadow-sm shadow-blue-600/10 hover:shadow-blue-600/20 active:scale-95 transition-all self-stretch sm:self-auto"
+          id="btn-add-new-asset"
+        >
+          <Plus className="w-5 h-5" />
+          <span>Tambah Aset Baru</span>
+        </button>
+      </div>
+
+      {/* Main Assets Grid & Detail Drawer */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+        
+        {/* Left Side: Table & Filters (2-cols on desktop if details open, otherwise full width?) 
+            Actually, let's keep it beautifully split or dynamic! If an asset is selected, let's show list on 2 columns and details on 1 column. If nothing selected, show list on 3 columns.
+        */}
+        <div className={`space-y-6 transition-all duration-300 ${selectedAssetId ? 'lg:col-span-2' : 'lg:col-span-3'}`} id="assets-list-container">
+          
+          {/* Filters & Search Row */}
+          <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+            
+            {/* Search and Brand Filter */}
+            <div className="flex flex-col md:flex-row gap-3">
+              <div className="relative flex-1">
+                <Search className="w-4 h-4 absolute left-3.5 top-3.5 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="Cari berdasarkan nama aset, plat, kategori..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-sm"
+                />
+              </div>
+
+              <div className="flex gap-3">
+                <div className="relative flex-shrink-0 min-w-[130px]">
+                  <select
+                    value={brandFilter}
+                    onChange={(e) => setBrandFilter(e.target.value)}
+                    className="w-full pl-3 pr-8 py-2.5 bg-white border border-slate-200 rounded-xl appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-sm font-medium text-slate-700"
+                  >
+                    <option value="all">Semua Brand</option>
+                    {uniqueBrands.map(b => (
+                      <option key={b} value={b}>{b}</option>
+                    ))}
+                  </select>
+                  <Filter className="w-4 h-4 absolute right-3.5 top-3.5 text-slate-400 pointer-events-none" />
+                </div>
+              </div>
+            </div>
+
+            {/* Status Tabs */}
+            <div className="flex border-b border-slate-100 pt-1">
+              <button
+                onClick={() => setActiveTab('all')}
+                className={`pb-3 px-4 text-sm font-semibold border-b-2 transition-all ${
+                  activeTab === 'all'
+                    ? 'border-blue-600 text-blue-600 font-bold'
+                    : 'border-transparent text-slate-500 hover:text-slate-800'
+                }`}
+              >
+                Semua Aset ({assets.length})
+              </button>
+              <button
+                onClick={() => setActiveTab('Open')}
+                className={`pb-3 px-4 text-sm font-semibold border-b-2 transition-all ${
+                  activeTab === 'Open'
+                    ? 'border-blue-600 text-blue-600 font-bold'
+                    : 'border-transparent text-slate-500 hover:text-slate-800'
+                }`}
+              >
+                Aktif / Open ({assets.filter(a => a.status === 'Open').length})
+              </button>
+              <button
+                onClick={() => setActiveTab('Sold')}
+                className={`pb-3 px-4 text-sm font-semibold border-b-2 transition-all ${
+                  activeTab === 'Sold'
+                    ? 'border-blue-600 text-blue-600 font-bold'
+                    : 'border-transparent text-slate-500 hover:text-slate-800'
+                }`}
+              >
+                Terjual / Sold ({assets.filter(a => a.status === 'Sold').length})
+              </button>
+            </div>
+
+          </div>
+
+          {/* Cards List Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {filteredAssets.map((asset) => {
+              const isSelected = asset.id === selectedAssetId;
+              const highestOffer = asset.bids.length > 0 ? Math.max(...asset.bids.map(b => b.price)) : asset.startingPrice;
+              
+              return (
+                <div
+                  key={asset.id}
+                  onClick={() => onSelectAsset(isSelected ? null : asset.id)}
+                  className={`cursor-pointer group relative bg-white rounded-2xl overflow-hidden border transition-all duration-300 flex flex-col justify-between ${
+                    isSelected 
+                      ? 'border-blue-500 ring-2 ring-blue-500/10 shadow-lg' 
+                      : 'border-slate-200 hover:border-blue-200 hover:shadow-md'
+                  }`}
+                >
+                  {/* Visual Status Tag on Image */}
+                  <div className="relative h-44 bg-slate-100 overflow-hidden">
+                    <img 
+                      src={asset.imageUrl} 
+                      alt={asset.name} 
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      referrerPolicy="no-referrer"
+                      onError={(e) => {
+                        e.currentTarget.src = "https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?auto=format&fit=crop&w=800&q=80";
+                      }}
+                    />
+                    <div className="absolute top-3 left-3 flex flex-col gap-1.5">
+                      <span className="text-[10px] font-mono font-bold bg-white/90 backdrop-blur text-slate-800 px-2.5 py-1 rounded-lg shadow-sm border border-slate-200">
+                        {asset.id}
+                      </span>
+                    </div>
+
+                    <div className="absolute top-3 right-3">
+                      <span className={`text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full shadow-sm ${
+                        asset.status === 'Open' 
+                          ? 'bg-blue-600 text-white' 
+                          : 'bg-emerald-600 text-white'
+                      }`}>
+                        {asset.status === 'Open' ? 'Menerima Bid' : 'Terjual'}
+                      </span>
+                    </div>
+
+                    <div className="absolute bottom-3 left-3 bg-black/50 backdrop-blur-sm px-2.5 py-1 rounded-lg text-[10px] text-white font-semibold flex items-center gap-1">
+                      <Tag className="w-3.5 h-3.5" />
+                      {asset.brand} • {asset.category}
+                    </div>
+                  </div>
+
+                  {/* Body Info */}
+                  <div className="p-5 flex-1 flex flex-col justify-between space-y-4">
+                    <div className="space-y-1">
+                      <h3 className="font-bold text-slate-800 text-base leading-snug line-clamp-2">
+                        {asset.name}
+                      </h3>
+                      <div className="flex items-center gap-2 text-xs text-slate-400 font-medium">
+                        <span>Tahun {asset.modelYear}</span>
+                        <span>•</span>
+                        <span>Plat: {asset.plateNumber}</span>
+                      </div>
+                    </div>
+
+                    <div className="pt-3 border-t border-slate-50 flex items-center justify-between">
+                      <div>
+                        <p className="text-[10px] text-slate-400 font-bold uppercase">Harga Awal</p>
+                        <p className="text-sm font-semibold text-slate-500">{formatIDR(asset.startingPrice)}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-[10px] text-blue-500 font-bold uppercase">Penawaran Tertinggi</p>
+                        <p className="text-base font-bold text-blue-700">{formatIDR(highestOffer)}</p>
+                      </div>
+                    </div>
+
+                    <div className="pt-2 flex items-center justify-between text-xs text-slate-500 font-medium bg-slate-50 -mx-5 -mb-5 px-5 py-3 border-t border-slate-100">
+                      <span className="flex items-center gap-1">
+                        <DollarSign className="w-4 h-4 text-slate-400" />
+                        {asset.bids.length} Penawaran
+                      </span>
+                      <span className="text-blue-600 font-bold group-hover:underline flex items-center gap-0.5">
+                        Lihat Detail <Eye className="w-3.5 h-3.5" />
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+
+            {filteredAssets.length === 0 && (
+              <div className="col-span-full py-16 bg-white border border-dashed border-slate-200 rounded-3xl text-center space-y-3">
+                <p className="text-slate-400 font-medium">Tidak ada aset lelang yang cocok dengan kriteria pencarian.</p>
+                <button 
+                  onClick={() => { setSearchQuery(''); setBrandFilter('all'); setActiveTab('all'); }} 
+                  className="text-xs text-blue-600 hover:underline font-semibold"
+                >
+                  Reset Semua Filter
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Right Side: Detail Drawer / Panel (Shown if an asset is selected) */}
+        {selectedAsset && (
+          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-lg space-y-6 lg:col-span-1 sticky top-6 animate-slide-in" id="asset-detail-drawer">
+            <div className="flex justify-between items-start border-b border-slate-100 pb-4">
+              <div>
+                <span className="text-[10px] font-mono font-bold bg-slate-100 text-slate-700 px-2 py-0.5 rounded">
+                  {selectedAsset.id}
+                </span>
+                <h2 className="text-lg font-bold text-slate-800 mt-1">Detail Spesifikasi</h2>
+              </div>
+              <button
+                onClick={() => onSelectAsset(null)}
+                className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-400 hover:text-slate-700 transition-colors"
+                title="Tutup Detail"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Asset quick status switcher */}
+            <div className="bg-slate-50 p-4 rounded-xl space-y-3 border border-slate-200">
+              <div className="flex justify-between items-center text-xs">
+                <span className="text-slate-500 font-medium">Status Lelang Saat Ini:</span>
+                <span className={`px-2 py-0.5 rounded-full font-bold uppercase text-[10px] ${
+                  selectedAsset.status === 'Open' ? 'bg-blue-100 text-blue-700' : 'bg-emerald-100 text-emerald-700'
+                }`}>
+                  {selectedAsset.status === 'Open' ? 'Menerima Bid' : 'Terjual'}
+                </span>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => onUpdateAssetStatus(selectedAsset.id, 'Open')}
+                  disabled={selectedAsset.status === 'Open'}
+                  className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-1 transition-all ${
+                    selectedAsset.status === 'Open' 
+                      ? 'bg-blue-600 text-white cursor-not-allowed' 
+                      : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-100'
+                  }`}
+                >
+                  <Clock className="w-3.5 h-3.5" /> Buka Bid
+                </button>
+                <button
+                  onClick={() => onUpdateAssetStatus(selectedAsset.id, 'Sold')}
+                  disabled={selectedAsset.status === 'Sold'}
+                  className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-1 transition-all ${
+                    selectedAsset.status === 'Sold' 
+                      ? 'bg-emerald-600 text-white cursor-not-allowed' 
+                      : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-100'
+                  }`}
+                >
+                  <Check className="w-3.5 h-3.5" /> Set Terjual
+                </button>
+              </div>
+            </div>
+
+            {/* Spec Details */}
+            <div className="space-y-4 text-sm">
+              <div className="aspect-video w-full rounded-xl overflow-hidden bg-slate-100">
+                <img 
+                  src={selectedAsset.imageUrl} 
+                  alt={selectedAsset.name} 
+                  className="w-full h-full object-cover" 
+                  referrerPolicy="no-referrer"
+                  onError={(e) => {
+                    e.currentTarget.src = "https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?auto=format&fit=crop&w=800&q=80";
+                  }}
+                />
+              </div>
+
+              <div>
+                <h3 className="font-bold text-slate-800 text-base">{selectedAsset.name}</h3>
+                <p className="text-xs text-blue-600 font-medium mt-0.5">{selectedAsset.brand} • {selectedAsset.category}</p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-y-3 gap-x-4 pt-2 border-t border-slate-50">
+                <div>
+                  <span className="text-[11px] text-slate-400 font-bold block">PLAT NOMOR</span>
+                  <span className="font-mono font-semibold text-slate-800">{selectedAsset.plateNumber}</span>
+                </div>
+                <div>
+                  <span className="text-[11px] text-slate-400 font-bold block">TAHUN PRODUKSI</span>
+                  <span className="font-semibold text-slate-800">{selectedAsset.modelYear}</span>
+                </div>
+                <div>
+                  <span className="text-[11px] text-slate-400 font-bold block">KONDISI FISIK</span>
+                  <span className="font-semibold text-slate-800">{selectedAsset.condition}</span>
+                </div>
+                <div>
+                  <span className="text-[11px] text-slate-400 font-bold block">LOKASI SEEDING</span>
+                  <span className="font-semibold text-slate-800 flex items-center gap-0.5 text-xs">
+                    <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                    <span className="truncate" title={selectedAsset.location}>{selectedAsset.location}</span>
+                  </span>
+                </div>
+              </div>
+
+              <div className="pt-2 border-t border-slate-50">
+                <span className="text-[11px] text-slate-400 font-bold block">DESKRIPSI INTERNAL</span>
+                <p className="text-xs text-slate-600 mt-1 leading-relaxed bg-slate-50 p-2.5 rounded-lg border border-slate-100 max-h-24 overflow-y-auto">
+                  {selectedAsset.description}
+                </p>
+              </div>
+            </div>
+
+            {/* Bids List ("list bid price" from flowchart) */}
+            <div className="space-y-3 pt-2 border-t border-slate-100">
+              <div className="flex justify-between items-center">
+                <h3 className="font-bold text-slate-800 text-sm flex items-center gap-1">
+                  <FileText className="w-4 h-4 text-blue-600" /> Histori Penawaran ({selectedAsset.bids.length})
+                </h3>
+                <span className="text-[10px] text-slate-400 font-medium">Bids Tertinggi Pertama</span>
+              </div>
+
+              <div className="space-y-2 max-h-52 overflow-y-auto pr-1">
+                {selectedAsset.bids
+                  .sort((a, b) => b.price - a.price)
+                  .map((bid, i) => (
+                    <div key={bid.id} className="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-1.5 text-xs">
+                      <div className="flex justify-between items-center">
+                        <span className="font-bold text-slate-700">{bid.name}</span>
+                        <span className="font-mono font-bold text-blue-600">{formatIDR(bid.price)}</span>
+                      </div>
+                      <div className="text-slate-500 flex flex-col gap-0.5">
+                        <span>Kontak: {bid.contact}</span>
+                        <span>Email: {bid.email}</span>
+                      </div>
+                      
+                      {/* Survey date if requested */}
+                      {bid.scheduleSurveyDate && (
+                        <div className="mt-1.5 pt-1.5 border-t border-dashed border-slate-200 flex items-center justify-between text-[10px] font-semibold text-blue-600 bg-blue-50/50 px-2 py-1 rounded">
+                          <span className="flex items-center gap-1">
+                            <Calendar className="w-3 h-3" /> Jadwal Survei:
+                          </span>
+                          <span>{bid.scheduleSurveyDate} @ {bid.scheduleSurveyTime || 'N/A'} WIB</span>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+
+                {selectedAsset.bids.length === 0 && (
+                  <div className="text-center py-6 text-slate-400 text-xs">
+                    Belum ada penawaran harga masuk untuk aset ini.
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Actions: Edit & Delete */}
+            {deleteConfirmId === selectedAsset.id ? (
+              <div className="pt-4 border-t border-rose-100 bg-rose-50/70 p-4 rounded-xl space-y-3 animate-fade-in">
+                <div className="flex gap-2 text-rose-800 text-xs font-semibold items-start">
+                  <AlertTriangle className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-bold text-rose-900">Konfirmasi Hapus Unit</p>
+                    <p className="text-rose-700 font-normal mt-1 leading-relaxed">
+                      Apakah Anda yakin ingin menghapus <strong>{selectedAsset.name}</strong> secara permanen? Data historis penawaran juga akan ikut terhapus.
+                    </p>
+                  </div>
+                </div>
+                <div className="flex gap-2 pt-1">
+                  <button
+                    onClick={() => setDeleteConfirmId(null)}
+                    className="flex-1 bg-white hover:bg-slate-100 text-slate-700 py-1.5 rounded-lg text-[11px] font-bold border border-slate-200 transition-colors"
+                  >
+                    Batal
+                  </button>
+                  <button
+                    onClick={() => {
+                      onDeleteAsset(selectedAsset.id);
+                      setDeleteConfirmId(null);
+                    }}
+                    className="flex-1 bg-rose-600 hover:bg-rose-700 text-white py-1.5 rounded-lg text-[11px] font-bold shadow-sm transition-colors flex items-center justify-center gap-1"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" /> Ya, Hapus
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="pt-4 border-t border-slate-100 flex gap-3">
+                <button
+                  onClick={() => handleEditClick(selectedAsset)}
+                  className="w-full bg-blue-50 hover:bg-blue-100 text-blue-600 py-2.5 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 border border-blue-200 transition-colors"
+                >
+                  <FileText className="w-4 h-4" /> Edit Unit Aset
+                </button>
+                <button
+                  onClick={() => setDeleteConfirmId(selectedAsset.id)}
+                  className="w-full bg-rose-50 hover:bg-rose-100 text-rose-600 py-2.5 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 border border-rose-200 transition-colors"
+                >
+                  <Trash2 className="w-4 h-4" /> Hapus Unit Aset
+                </button>
+              </div>
+            )}
+
+          </div>
+        )}
+
+      </div>
+
+      {/* Input Asset Modal/Dialog Form */}
+      {isFormOpen && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl shadow-xl w-full max-w-2xl overflow-hidden animate-zoom-in max-h-[90vh] flex flex-col">
+            
+            {/* Modal Header */}
+            <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+              <div>
+                <h2 className="text-lg font-bold text-slate-800">
+                  {editAssetId ? `Ubah Detail Unit: ${editAssetId}` : 'Daftarkan Aset Lelang Baru'}
+                </h2>
+                <p className="text-xs text-slate-500 mt-1">
+                  {editAssetId ? 'Perbarui spesifikasi teknis dan kelengkapan dokumen kendaraan lelang.' : 'Lengkapi spesifikasi teknis dan detail dokumen kendaraan di bawah.'}
+                </p>
+              </div>
+              <button 
+                onClick={() => setIsFormOpen(false)}
+                className="p-1.5 hover:bg-slate-200 rounded-xl text-slate-400 hover:text-slate-700 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Modal Body / Scrollable Form */}
+            <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-6">
+              
+              {/* Quick Preset Templates */}
+              <div>
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-2">Preset Template Armada</label>
+                <div className="flex flex-wrap gap-2">
+                  {VEHICLE_TEMPLATES.map(t => (
+                    <button
+                      type="button"
+                      key={t.name}
+                      onClick={() => handleTemplateClick(t)}
+                      className="px-3 py-1.5 text-xs border border-slate-200 hover:border-blue-400 rounded-lg text-slate-600 hover:text-blue-600 hover:bg-blue-50/20 font-medium flex items-center gap-1 transition-all"
+                    >
+                      <Sparkles className="w-3 h-3 text-blue-500" />
+                      {t.brand} {t.category}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                
+                {/* Name */}
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-600 uppercase">Nama Armada/Unit *</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Contoh: Fuso Ranger FL Wingbox 2022"
+                    value={formData.name}
+                    onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                    className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                  />
+                </div>
+
+                {/* Brand */}
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-600 uppercase">Merek (Brand) *</label>
+                  <select
+                    value={formData.brand}
+                    onChange={(e) => setFormData(prev => ({ ...prev, brand: e.target.value }))}
+                    className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                  >
+                    <option value="Hino">Hino</option>
+                    <option value="Isuzu">Isuzu</option>
+                    <option value="Fuso">Fuso</option>
+                    <option value="Scania">Scania</option>
+                    <option value="Toyota">Toyota</option>
+                    <option value="Caterpillar">Caterpillar</option>
+                    <option value="Komatsu">Komatsu</option>
+                    <option value="Lainnya">Lainnya</option>
+                  </select>
+                </div>
+
+                {/* Category */}
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-600 uppercase">Kategori Unit *</label>
+                  <select
+                    value={formData.category}
+                    onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
+                    className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                  >
+                    <option value="Wingbox">Wingbox Truck</option>
+                    <option value="Box Truck">Box Truck</option>
+                    <option value="Dump Truck">Dump Truck</option>
+                    <option value="Trailer Head">Trailer Head</option>
+                    <option value="Pickup">Pickup Operational</option>
+                    <option value="Forklift">Forklift / Warehouse</option>
+                    <option value="Container">Container Body</option>
+                    <option value="Lainnya">Lainnya</option>
+                  </select>
+                </div>
+
+                {/* Model Year */}
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-600 uppercase">Tahun Produksi *</label>
+                  <input
+                    type="number"
+                    min="1990"
+                    max="2027"
+                    required
+                    value={formData.modelYear}
+                    onChange={(e) => setFormData(prev => ({ ...prev, modelYear: Number(e.target.value) }))}
+                    className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                  />
+                </div>
+
+                {/* Plate Number */}
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-600 uppercase">No. Registrasi / Plat Nomor</label>
+                  <input
+                    type="text"
+                    placeholder="Contoh: B 9912 PXT (kosongkan jika alat berat)"
+                    value={formData.plateNumber}
+                    onChange={(e) => setFormData(prev => ({ ...prev, plateNumber: e.target.value }))}
+                    className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-sm font-mono"
+                  />
+                </div>
+
+                {/* Condition */}
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-600 uppercase">Kondisi Fisik Unit *</label>
+                  <select
+                    value={formData.condition}
+                    onChange={(e) => setFormData(prev => ({ ...prev, condition: e.target.value as Asset['condition'] }))}
+                    className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                  >
+                    <option value="Sangat Baik">Sangat Baik (Siap Jalan & Bebas Masalah)</option>
+                    <option value="Baik">Baik (Mesin Bagus, Lecet Halus)</option>
+                    <option value="Cukup">Cukup (Butuh Perawatan Ringan)</option>
+                    <option value="Butuh Perbaikan">Butuh Perbaikan (Overhaul/Sasis/Body)</option>
+                  </select>
+                </div>
+
+                {/* Starting Price */}
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-600 uppercase">Harga Awal Lelang (IDR) *</label>
+                  <input
+                    type="number"
+                    required
+                    placeholder="Contoh: 150000000"
+                    value={formData.startingPrice}
+                    onChange={(e) => setFormData(prev => ({ ...prev, startingPrice: e.target.value }))}
+                    className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                  />
+                </div>
+
+                {/* Location */}
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-600 uppercase">Lokasi Pool / Depo Unit *</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Contoh: Pool Marunda Blok C, Jakut"
+                    value={formData.location}
+                    onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
+                    className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                  />
+                </div>
+              </div>
+
+              {/* Image Upload Component */}
+              <div className="space-y-3">
+                <label className="text-xs font-bold text-slate-600 uppercase tracking-wider block">Foto / Gambar Unit *</label>
+                
+                {/* Drag and Drop Zone */}
+                <div
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    setIsDragging(true);
+                  }}
+                  onDragLeave={() => setIsDragging(false)}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    setIsDragging(false);
+                    const file = e.dataTransfer.files?.[0];
+                    if (file) handleFileChange(file);
+                  }}
+                  className={`border-2 border-dashed rounded-2xl p-6 text-center transition-all cursor-pointer relative ${
+                    isDragging 
+                      ? 'border-blue-500 bg-blue-50/50 animate-pulse' 
+                      : formData.imageUrl 
+                        ? 'border-slate-200 bg-slate-50/50 hover:bg-slate-50' 
+                        : 'border-slate-300 bg-white hover:border-blue-400 hover:bg-slate-50/50'
+                  }`}
+                  onClick={() => document.getElementById('file-upload-input')?.click()}
+                >
+                  <input
+                    id="file-upload-input"
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) handleFileChange(file);
+                    }}
+                  />
+                  
+                  {formData.imageUrl ? (
+                    <div className="space-y-3">
+                      <div className="relative mx-auto w-max rounded-xl overflow-hidden border border-slate-200 max-h-40 shadow-sm">
+                        <img 
+                          src={formData.imageUrl} 
+                          alt="Preview armada" 
+                          className="object-cover max-h-36 max-w-full rounded-xl"
+                          referrerPolicy="no-referrer"
+                          onError={(e) => {
+                            e.currentTarget.src = "https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?auto=format&fit=crop&w=800&q=80";
+                          }}
+                        />
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setFormData(prev => ({ ...prev, imageUrl: '' }));
+                          }}
+                          className="absolute top-2 right-2 bg-rose-500 hover:bg-rose-600 text-white p-1.5 rounded-full shadow-md transition-all active:scale-90 flex items-center justify-center"
+                          title="Hapus gambar"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                      <div className="text-xs text-slate-500">
+                        <span className="font-semibold text-blue-600 hover:underline">Klik atau seret file</span> untuk mengganti gambar
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="py-4 space-y-2">
+                      <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mx-auto shadow-sm">
+                        <Upload className="w-6 h-6" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold text-slate-700">Pilih atau Seret Foto Armada</p>
+                        <p className="text-[11px] text-slate-400 mt-0.5">Mendukung format PNG, JPG, JPEG (Max 5MB)</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Fallback URL Option */}
+                <div className="pt-1">
+                  <details className="group">
+                    <summary className="text-[11px] font-semibold text-slate-500 hover:text-slate-800 cursor-pointer select-none flex items-center gap-1">
+                      <span className="transition-transform group-open:rotate-90">▶</span>
+                      Atau gunakan Tautan Gambar (URL)
+                    </summary>
+                    <div className="mt-2 space-y-1.5 animate-slide-in">
+                      <input
+                        type="url"
+                        placeholder="Masukkan link gambar (https://...)"
+                        value={formData.imageUrl}
+                        onChange={(e) => setFormData(prev => ({ ...prev, imageUrl: e.target.value }))}
+                        className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                      />
+                      <p className="text-[10px] text-slate-400">
+                        Anda dapat menempelkan URL gambar langsung jika tidak mengunggah file.
+                      </p>
+                    </div>
+                  </details>
+                </div>
+              </div>
+
+              {/* Description */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-600 uppercase">Deskripsi & Spesifikasi Tambahan</label>
+                <textarea
+                  rows={3}
+                  placeholder="Jelaskan kondisi mesin, transmisi, kelengkapan surat KIR/STNK, riwayat perawatan, dsb."
+                  value={formData.description}
+                  onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                  className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                />
+              </div>
+
+              {/* Modal Footer actions */}
+              <div className="border-t border-slate-100 pt-5 flex gap-3 justify-end">
+                <button
+                  type="button"
+                  onClick={() => setIsFormOpen(false)}
+                  className="px-4 py-2 border border-slate-200 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-50 transition-colors"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-semibold shadow-md shadow-blue-600/10 hover:shadow-blue-600/20 transition-all flex items-center gap-1"
+                >
+                  <Check className="w-4 h-4" /> {editAssetId ? 'Simpan Perubahan' : 'Simpan Unit Baru'}
+                </button>
+              </div>
+
+            </form>
+
+          </div>
+        </div>
+      )}
+
+    </div>
+  );
+}
