@@ -366,8 +366,8 @@ export default function CatalogView({ assets, onPlaceBid }: CatalogViewProps) {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
         
-        {/* Left Side: Public Catalog Grid (2-cols) or Full width if detail closed */}
-        <div className={`space-y-6 ${selectedAssetId ? 'lg:col-span-2' : 'lg:col-span-3'}`} id="public-catalog-catalog-col">
+        {/* Left Side: Public Catalog Grid */}
+        <div className="space-y-6 lg:col-span-3" id="public-catalog-catalog-col">
           
           {/* Public Filters Header */}
           <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
@@ -417,7 +417,7 @@ export default function CatalogView({ assets, onPlaceBid }: CatalogViewProps) {
           </div>
 
           {/* Catalog Cards Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredAssets.map((asset) => (
               <CatalogCard
                 key={asset.id}
@@ -442,12 +442,21 @@ export default function CatalogView({ assets, onPlaceBid }: CatalogViewProps) {
           </div>
         </div>
 
-        {/* Right Side: Bid Input and Survey Scheduler ("input bid price" and "input time survey") */}
-        {selectedAsset && (
-          <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-xl space-y-6 lg:col-span-1 sticky top-6 animate-slide-in" id="bidding-survey-panel">
+      {/* Right Side Overlay: Bid Input and Survey Scheduler ("input bid price" and "input time survey") */}
+      {selectedAsset && (
+        <div 
+          className="fixed inset-0 bg-slate-950/70 backdrop-blur-xs z-50 flex items-center justify-center p-4 md:p-6 overflow-y-auto animate-fade-in"
+          id="bidding-modal-overlay"
+          onClick={() => setSelectedAssetId(null)}
+        >
+          <div 
+            className="bg-white rounded-3xl border border-slate-200 shadow-2xl space-y-6 w-full max-w-xl overflow-y-auto relative animate-zoom-in my-auto max-h-[95vh] focus:outline-none" 
+            id="bidding-survey-panel"
+            onClick={(e) => e.stopPropagation()}
+          >
             
             {/* Panel Header */}
-            <div className="flex justify-between items-start border-b border-slate-100 pb-4">
+            <div className="flex justify-between items-start border-b border-slate-100 p-6 pb-4 sticky top-0 bg-white z-20">
               <div>
                 <span className="text-[9px] font-mono font-bold bg-blue-50 text-blue-700 px-2.5 py-1 rounded-md border border-blue-100 uppercase">
                   AJUKAN TAWAran
@@ -456,237 +465,241 @@ export default function CatalogView({ assets, onPlaceBid }: CatalogViewProps) {
               </div>
               <button 
                 onClick={() => setSelectedAssetId(null)}
-                className="p-1 hover:bg-slate-100 rounded-lg text-slate-400 hover:text-slate-700 transition-colors"
+                className="p-1.5 hover:bg-slate-100 rounded-xl text-slate-400 hover:text-slate-700 transition-colors"
                 title="Tutup Panel"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            {/* Price Alert Rules */}
-            <div className="bg-blue-50/50 p-4 rounded-2xl border border-blue-100/50 space-y-2 text-xs">
-              <div className="flex justify-between items-center">
-                <span className="text-slate-500">Harga Awal:</span>
-                <span className="font-semibold text-slate-700">{formatIDR(selectedAsset.startingPrice)}</span>
+            <div className="px-6 pb-6 space-y-6">
+              
+              {/* Price Alert Rules */}
+              <div className="bg-blue-50/50 p-4 rounded-2xl border border-blue-100/50 space-y-2 text-xs">
+                <div className="flex justify-between items-center">
+                  <span className="text-slate-500">Harga Awal:</span>
+                  <span className="font-semibold text-slate-700">{formatIDR(selectedAsset.startingPrice)}</span>
+                </div>
+                <div className="flex justify-between items-center text-blue-900 bg-blue-100/40 p-2 rounded-xl border border-blue-100 font-bold">
+                  <span className="flex items-center gap-1">
+                    <TrendingUp className="w-3.5 h-3.5 text-blue-600" /> Bid Tertinggi:
+                  </span>
+                  <span>{formatIDR(currentHighestBid)}</span>
+                </div>
               </div>
-              <div className="flex justify-between items-center text-blue-900 bg-blue-100/40 p-2 rounded-xl border border-blue-100 font-bold">
-                <span className="flex items-center gap-1">
-                  <TrendingUp className="w-3.5 h-3.5 text-blue-600" /> Bid Tertinggi:
-                </span>
-                <span>{formatIDR(currentHighestBid)}</span>
+
+              {/* Detail & Spesifikasi Aset */}
+              <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 text-xs space-y-3">
+                <h3 className="font-bold text-slate-700 flex items-center gap-1.5 border-b border-slate-200/60 pb-2">
+                  <Info className="w-4 h-4 text-blue-600" /> Spesifikasi & Deskripsi Aset
+                </h3>
+                <p className="text-slate-600 leading-relaxed italic bg-white p-2.5 rounded-xl border border-slate-100">
+                  "{selectedAsset.description}"
+                </p>
+                <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-slate-600 pt-1">
+                  <div><span className="text-slate-400">Brand:</span> <strong className="text-slate-700">{selectedAsset.brand}</strong></div>
+                  <div><span className="text-slate-400">Kategori:</span> <strong className="text-slate-700">{selectedAsset.category}</strong></div>
+                  <div><span className="text-slate-400">Tahun:</span> <strong className="text-slate-700">{selectedAsset.modelYear}</strong></div>
+                  <div><span className="text-slate-400">No. Polisi:</span> <strong className="text-slate-700 font-mono">{selectedAsset.plateNumber}</strong></div>
+                  <div><span className="text-slate-400">Kondisi:</span> <span className="px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 font-bold text-[10px]">{selectedAsset.condition}</span></div>
+                  <div><span className="text-slate-400">Lokasi:</span> <strong className="text-slate-700">{selectedAsset.location.split(',')[0]}</strong></div>
+                </div>
               </div>
-            </div>
 
-            {/* Detail & Spesifikasi Aset */}
-            <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 text-xs space-y-3">
-              <h3 className="font-bold text-slate-700 flex items-center gap-1.5 border-b border-slate-200/60 pb-2">
-                <Info className="w-4 h-4 text-blue-600" /> Spesifikasi & Deskripsi Aset
-              </h3>
-              <p className="text-slate-600 leading-relaxed italic bg-white p-2.5 rounded-xl border border-slate-100">
-                "{selectedAsset.description}"
-              </p>
-              <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-slate-600 pt-1">
-                <div><span className="text-slate-400">Brand:</span> <strong className="text-slate-700">{selectedAsset.brand}</strong></div>
-                <div><span className="text-slate-400">Kategori:</span> <strong className="text-slate-700">{selectedAsset.category}</strong></div>
-                <div><span className="text-slate-400">Tahun:</span> <strong className="text-slate-700">{selectedAsset.modelYear}</strong></div>
-                <div><span className="text-slate-400">No. Polisi:</span> <strong className="text-slate-700 font-mono">{selectedAsset.plateNumber}</strong></div>
-                <div><span className="text-slate-400">Kondisi:</span> <span className="px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 font-bold text-[10px]">{selectedAsset.condition}</span></div>
-                <div><span className="text-slate-400">Lokasi:</span> <strong className="text-slate-700">{selectedAsset.location.split(',')[0]}</strong></div>
-              </div>
-            </div>
-
-            {/* Bidding & Survey Form */}
-            {!formSuccess ? (
-              <form onSubmit={handleBidSubmit} className="space-y-4">
-                
-                {formError && (
-                  <div className="p-3.5 bg-rose-50 border border-rose-100 text-rose-600 rounded-2xl text-xs font-semibold flex items-start gap-2 animate-shake">
-                    <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-                    <span>{formError}</span>
-                  </div>
-                )}
-
-                {/* Name */}
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-600 uppercase">Nama Lengkap Anda *</label>
-                  <div className="relative">
-                    <User className="w-4 h-4 text-slate-400 absolute left-3 top-3.5" />
-                    <input
-                      type="text"
-                      ref={nameInputRef}
-                      required
-                      placeholder="Contoh: PT Samudera Transport"
-                      value={bidForm.name}
-                      onChange={(e) => setBidForm(prev => ({ ...prev, name: e.target.value }))}
-                      className="w-full pl-9 pr-4 py-2.5 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-                    />
-                  </div>
-                </div>
-
-                {/* Email */}
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-600 uppercase">Alamat Email Kontak *</label>
-                  <div className="relative">
-                    <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-3.5" />
-                    <input
-                      type="email"
-                      required
-                      placeholder="name@company.co.id"
-                      value={bidForm.email}
-                      onChange={(e) => setBidForm(prev => ({ ...prev, email: e.target.value }))}
-                      className="w-full pl-9 pr-4 py-2.5 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 font-mono"
-                    />
-                  </div>
-                </div>
-
-                {/* Contact (Phone) */}
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-600 uppercase">No. Handphone / WhatsApp *</label>
-                  <div className="relative">
-                    <Phone className="w-4 h-4 text-slate-400 absolute left-3 top-3.5" />
-                    <input
-                      type="tel"
-                      required
-                      placeholder="Contoh: 0812XXXXXXXX"
-                      value={bidForm.contact}
-                      onChange={(e) => setBidForm(prev => ({ ...prev, contact: e.target.value }))}
-                      className="w-full pl-9 pr-4 py-2.5 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-                    />
-                  </div>
-                </div>
-
-                {/* Bid Price ("input bid price" from flowchart) */}
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-600 uppercase">Harga Bid Anda (IDR) *</label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-2.5 font-bold text-xs text-slate-400">Rp</span>
-                    <input
-                      type="text"
-                      inputMode="numeric"
-                      required
-                      placeholder={formatNumberWithDots(String(currentHighestBid + 5000000))}
-                      value={formatNumberWithDots(bidForm.price)}
-                      onChange={(e) => {
-                        let raw = e.target.value.replace(/\D/g, '');
-                        if (raw.length > 1 && raw.startsWith('0')) {
-                          raw = raw.replace(/^0+/, '');
-                        }
-                        setBidForm(prev => ({ ...prev, price: raw }));
-                      }}
-                      className="w-full pl-8 pr-4 py-2.5 border border-slate-200 rounded-xl text-sm font-bold text-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-                    />
-                  </div>
-                  <p className="text-[10px] text-slate-400">Minimal harga bid: <strong className="text-slate-600">{formatIDR(currentHighestBid + 1000000)}</strong></p>
-                </div>
-
-                {/* Request Survey Toggle ("input time survey" from flowchart) */}
-                <div className="pt-2 border-t border-slate-200">
-                  <label className="flex items-center gap-2.5 cursor-pointer select-none">
-                    <input
-                      type="checkbox"
-                      checked={bidForm.requestSurvey}
-                      onChange={(e) => setBidForm(prev => ({ ...prev, requestSurvey: e.target.checked }))}
-                      className="w-4.5 h-4.5 text-blue-600 border-slate-300 rounded focus:ring-blue-500"
-                    />
-                    <div className="text-xs">
-                      <p className="font-bold text-slate-800">Booking Jadwal Survei Fisik</p>
-                      <p className="text-slate-400 text-[10px]">Ingin cek kondisi mesin langsung di Pool?</p>
-                    </div>
-                  </label>
-                </div>
-
-                {/* Survey Scheduler Details (Visible ONLY if requestSurvey is checked) */}
-                {bidForm.requestSurvey && (
-                  <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-3.5 animate-slide-in">
-                    <p className="text-[11px] font-bold text-slate-600 flex items-center gap-1.5">
-                      <CalendarCheck className="w-4 h-4 text-blue-600" /> Tentukan Waktu Kunjungan Pool
-                    </p>
-                    
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="space-y-1">
-                        <label className="text-[10px] font-bold text-slate-400 uppercase">Pilih Tanggal</label>
-                        <input
-                          type="date"
-                          min={new Date().toISOString().split('T')[0]}
-                          value={bidForm.surveyDate}
-                          onChange={(e) => setBidForm(prev => ({ ...prev, surveyDate: e.target.value }))}
-                          className="w-full p-2 border border-slate-200 rounded-lg text-xs bg-white focus:outline-none"
-                          required={bidForm.requestSurvey}
-                        />
-                      </div>
-
-                      <div className="space-y-1">
-                        <label className="text-[10px] font-bold text-slate-400 uppercase">Pilih Sesi Jam</label>
-                        <select
-                          value={bidForm.surveyTime}
-                          onChange={(e) => setBidForm(prev => ({ ...prev, surveyTime: e.target.value }))}
-                          className="w-full p-2 border border-slate-200 rounded-lg text-xs bg-white focus:outline-none font-medium"
-                        >
-                          <option value="09:00">Pagi Sesi 1 (09:00 WIB)</option>
-                          <option value="11:00">Pagi Sesi 2 (11:00 WIB)</option>
-                          <option value="13:30">Siang Sesi 1 (13:30 WIB)</option>
-                          <option value="15:30">Sore Sesi 2 (15:30 WIB)</option>
-                        </select>
-                      </div>
-                    </div>
-                    <p className="text-[9px] text-slate-400 leading-normal">
-                      Lokasi inspeksi: <strong className="text-slate-600">{selectedAsset.location}</strong>. Tim teknis Pancaran Group akan mendampingi Anda di lokasi.
-                    </p>
-                  </div>
-                )}
-
-                {/* Submit Bid Button */}
-                <button
-                  type="submit"
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-2xl text-xs font-bold shadow-md shadow-blue-500/15 hover:shadow-blue-500/30 transition-all flex items-center justify-center gap-1.5"
-                >
-                  <ArrowUpRight className="w-4 h-4" />
-                  <span>Kirim Penawaran & Booking</span>
-                </button>
-
-              </form>
-            ) : (
-              // Success feedback panel
-              <div className="py-8 text-center space-y-4 animate-fade-in" id="bid-success-panel">
-                <div className="w-16 h-16 bg-emerald-50 text-emerald-500 rounded-full flex items-center justify-center mx-auto border border-emerald-100 shadow-sm">
-                  <CheckCircle className="w-10 h-10" />
-                </div>
-                <div className="space-y-1">
-                  <h3 className="font-bold text-slate-800 text-base">Penawaran Berhasil Dikirim!</h3>
-                  <p className="text-xs text-slate-500">Harga penawaran Anda telah dicatat ke dalam sistem Pancaran.</p>
-                </div>
-                <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 text-xs text-left space-y-1.5 font-medium">
-                  <div className="flex justify-between">
-                    <span className="text-slate-400">Armada:</span>
-                    <span className="text-slate-800 font-bold">{selectedAsset.name}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-400">Harga Bid Anda:</span>
-                    <span className="text-blue-700 font-bold">{formatIDR(Number(bidForm.price))}</span>
-                  </div>
-                  {bidForm.requestSurvey && (
-                    <div className="flex justify-between border-t border-dashed border-slate-200 pt-1.5 mt-1.5 text-blue-700">
-                      <span className="flex items-center gap-1 font-bold">
-                        <Calendar className="w-3.5 h-3.5" /> Jadwal Survei Fisik:
-                      </span>
-                      <span className="font-bold">{bidForm.surveyDate} @ {bidForm.surveyTime} WIB</span>
+              {/* Bidding & Survey Form */}
+              {!formSuccess ? (
+                <form onSubmit={handleBidSubmit} className="space-y-4">
+                  
+                  {formError && (
+                    <div className="p-3.5 bg-rose-50 border border-rose-100 text-rose-600 rounded-2xl text-xs font-semibold flex items-start gap-2 animate-shake">
+                      <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                      <span>{formError}</span>
                     </div>
                   )}
+
+                  {/* Name */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-600 uppercase">Nama Lengkap Anda *</label>
+                    <div className="relative">
+                      <User className="w-4 h-4 text-slate-400 absolute left-3 top-3.5" />
+                      <input
+                        type="text"
+                        ref={nameInputRef}
+                        required
+                        placeholder="Contoh: PT Samudera Transport"
+                        value={bidForm.name}
+                        onChange={(e) => setBidForm(prev => ({ ...prev, name: e.target.value }))}
+                        className="w-full pl-9 pr-4 py-2.5 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Email */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-600 uppercase">Alamat Email Kontak *</label>
+                    <div className="relative">
+                      <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-3.5" />
+                      <input
+                        type="email"
+                        required
+                        placeholder="name@company.co.id"
+                        value={bidForm.email}
+                        onChange={(e) => setBidForm(prev => ({ ...prev, email: e.target.value }))}
+                        className="w-full pl-9 pr-4 py-2.5 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 font-mono"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Contact (Phone) */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-600 uppercase">No. Handphone / WhatsApp *</label>
+                    <div className="relative">
+                      <Phone className="w-4 h-4 text-slate-400 absolute left-3 top-3.5" />
+                      <input
+                        type="tel"
+                        required
+                        placeholder="Contoh: 0812XXXXXXXX"
+                        value={bidForm.contact}
+                        onChange={(e) => setBidForm(prev => ({ ...prev, contact: e.target.value }))}
+                        className="w-full pl-9 pr-4 py-2.5 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Bid Price ("input bid price" from flowchart) */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-600 uppercase">Harga Bid Anda (IDR) *</label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-2.5 font-bold text-xs text-slate-400">Rp</span>
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        required
+                        placeholder={formatNumberWithDots(String(currentHighestBid + 5000000))}
+                        value={formatNumberWithDots(bidForm.price)}
+                        onChange={(e) => {
+                          let raw = e.target.value.replace(/\D/g, '');
+                          if (raw.length > 1 && raw.startsWith('0')) {
+                            raw = raw.replace(/^0+/, '');
+                          }
+                          setBidForm(prev => ({ ...prev, price: raw }));
+                        }}
+                        className="w-full pl-8 pr-4 py-2.5 border border-slate-200 rounded-xl text-sm font-bold text-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                      />
+                    </div>
+                    <p className="text-[10px] text-slate-400">Minimal harga bid: <strong className="text-slate-600">{formatIDR(currentHighestBid + 1000000)}</strong></p>
+                  </div>
+
+                  {/* Request Survey Toggle ("input time survey" from flowchart) */}
+                  <div className="pt-2 border-t border-slate-200">
+                    <label className="flex items-center gap-2.5 cursor-pointer select-none">
+                      <input
+                        type="checkbox"
+                        checked={bidForm.requestSurvey}
+                        onChange={(e) => setBidForm(prev => ({ ...prev, requestSurvey: e.target.checked }))}
+                        className="w-4.5 h-4.5 text-blue-600 border-slate-300 rounded focus:ring-blue-500"
+                      />
+                      <div className="text-xs">
+                        <p className="font-bold text-slate-800">Booking Jadwal Survei Fisik</p>
+                        <p className="text-slate-400 text-[10px]">Ingin cek kondisi mesin langsung di Pool?</p>
+                      </div>
+                    </label>
+                  </div>
+
+                  {/* Survey Scheduler Details (Visible ONLY if requestSurvey is checked) */}
+                  {bidForm.requestSurvey && (
+                    <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-3.5 animate-slide-in">
+                      <p className="text-[11px] font-bold text-slate-600 flex items-center gap-1.5">
+                        <CalendarCheck className="w-4 h-4 text-blue-600" /> Tentukan Waktu Kunjungan Pool
+                      </p>
+                      
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-bold text-slate-400 uppercase">Pilih Tanggal</label>
+                          <input
+                            type="date"
+                            min={new Date().toISOString().split('T')[0]}
+                            value={bidForm.surveyDate}
+                            onChange={(e) => setBidForm(prev => ({ ...prev, surveyDate: e.target.value }))}
+                            className="w-full p-2 border border-slate-200 rounded-lg text-xs bg-white focus:outline-none"
+                            required={bidForm.requestSurvey}
+                          />
+                        </div>
+
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-bold text-slate-400 uppercase">Pilih Sesi Jam</label>
+                          <select
+                            value={bidForm.surveyTime}
+                            onChange={(e) => setBidForm(prev => ({ ...prev, surveyTime: e.target.value }))}
+                            className="w-full p-2 border border-slate-200 rounded-lg text-xs bg-white focus:outline-none font-medium"
+                          >
+                            <option value="09:00">Pagi Sesi 1 (09:00 WIB)</option>
+                            <option value="11:00">Pagi Sesi 2 (11:00 WIB)</option>
+                            <option value="13:30">Siang Sesi 1 (13:30 WIB)</option>
+                            <option value="15:30">Sore Sesi 2 (15:30 WIB)</option>
+                          </select>
+                        </div>
+                      </div>
+                      <p className="text-[9px] text-slate-400 leading-normal">
+                        Lokasi inspeksi: <strong className="text-slate-600">{selectedAsset.location}</strong>. Tim teknis Pancaran Group akan mendampingi Anda di lokasi.
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Submit Bid Button */}
+                  <button
+                    type="submit"
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-2xl text-xs font-bold shadow-md shadow-blue-500/15 hover:shadow-blue-500/30 transition-all flex items-center justify-center gap-1.5"
+                  >
+                    <ArrowUpRight className="w-4 h-4" />
+                    <span>Kirim Penawaran & Booking</span>
+                  </button>
+
+                </form>
+              ) : (
+                // Success feedback panel
+                <div className="py-8 text-center space-y-4 animate-fade-in" id="bid-success-panel">
+                  <div className="w-16 h-16 bg-emerald-50 text-emerald-500 rounded-full flex items-center justify-center mx-auto border border-emerald-100 shadow-sm">
+                    <CheckCircle className="w-10 h-10" />
+                  </div>
+                  <div className="space-y-1">
+                    <h3 className="font-bold text-slate-800 text-base">Penawaran Berhasil Dikirim!</h3>
+                    <p className="text-xs text-slate-500">Harga penawaran Anda telah dicatat ke dalam sistem Pancaran.</p>
+                  </div>
+                  <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 text-xs text-left space-y-1.5 font-medium">
+                    <div className="flex justify-between">
+                      <span className="text-slate-400">Armada:</span>
+                      <span className="text-slate-800 font-bold">{selectedAsset.name}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-400">Harga Bid Anda:</span>
+                      <span className="text-blue-700 font-bold">{formatIDR(Number(bidForm.price))}</span>
+                    </div>
+                    {bidForm.requestSurvey && (
+                      <div className="flex justify-between border-t border-dashed border-slate-200 pt-1.5 mt-1.5 text-blue-700">
+                        <span className="flex items-center gap-1 font-bold">
+                          <Calendar className="w-3.5 h-3.5" /> Jadwal Survei Fisik:
+                        </span>
+                        <span className="font-bold">{bidForm.surveyDate} @ {bidForm.surveyTime} WIB</span>
+                      </div>
+                    )}
+                  </div>
+                  <p className="text-[10px] text-slate-400">Halaman ini akan kembali ke katalog dalam beberapa detik...</p>
                 </div>
-                <p className="text-[10px] text-slate-400">Halaman ini akan kembali ke katalog dalam beberapa detik...</p>
+              )}
+
+              {/* General T&C notice */}
+              <div className="pt-4 border-t border-slate-100 flex items-start gap-2 text-[10px] text-slate-400 leading-normal">
+                <ShieldAlert className="w-4 h-4 text-slate-400 shrink-0" />
+                <span>
+                  Dengan mengirimkan penawaran, Anda menyatakan tunduk pada Syarat & Ketentuan Umum Lelang Pancaran Logistics. Penawaran bersifat mengikat.
+                </span>
               </div>
-            )}
 
-            {/* General T&C notice */}
-            <div className="pt-4 border-t border-slate-100 flex items-start gap-2 text-[10px] text-slate-400 leading-normal">
-              <ShieldAlert className="w-4 h-4 text-slate-400 shrink-0" />
-              <span>
-                Dengan mengirimkan penawaran, Anda menyatakan tunduk pada Syarat & Ketentuan Umum Lelang Pancaran Logistics. Penawaran bersifat mengikat.
-              </span>
             </div>
-
           </div>
-        )}
+        </div>
+      )}
 
       </div>
 
