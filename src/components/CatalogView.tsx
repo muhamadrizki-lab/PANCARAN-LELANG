@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Asset, Bid } from '../types';
 import { 
   Search, 
@@ -180,6 +180,23 @@ export default function CatalogView({ assets, onPlaceBid }: CatalogViewProps) {
   const [selectedBrand, setSelectedBrand] = useState('all');
   const [selectedCategory, setSelectedCategory] = useState('all');
   
+  const nameInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (selectedAssetId) {
+      setTimeout(() => {
+        const element = document.getElementById('bidding-survey-panel');
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+        // Focus the input field
+        if (nameInputRef.current) {
+          nameInputRef.current.focus();
+        }
+      }, 150);
+    }
+  }, [selectedAssetId]);
+
   // Bid form state
   const [bidForm, setBidForm] = useState({
     name: '',
@@ -496,6 +513,7 @@ export default function CatalogView({ assets, onPlaceBid }: CatalogViewProps) {
                     <User className="w-4 h-4 text-slate-400 absolute left-3 top-3.5" />
                     <input
                       type="text"
+                      ref={nameInputRef}
                       required
                       placeholder="Contoh: PT Samudera Transport"
                       value={bidForm.name}
