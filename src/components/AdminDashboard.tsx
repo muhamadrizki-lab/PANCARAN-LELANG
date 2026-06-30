@@ -148,7 +148,7 @@ export default function AdminDashboard({ assets, onSelectAsset }: AdminDashboard
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4" id="stats-metric-grid">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4" id="stats-metric-grid">
         {/* Total Asset */}
         <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex items-center justify-between hover:shadow-md transition-all duration-300">
           <div className="space-y-1">
@@ -184,22 +184,6 @@ export default function AdminDashboard({ assets, onSelectAsset }: AdminDashboard
           </div>
           <div className="p-3 bg-blue-50 text-blue-600 rounded-xl">
             <Clock className="w-6 h-6" />
-          </div>
-        </div>
-
-        {/* Highest Price */}
-        <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex items-center justify-between hover:shadow-md transition-all duration-300 sm:col-span-2 lg:col-span-1">
-          <div className="space-y-1 w-full">
-            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Nilai Tertinggi</span>
-            <p className="text-lg font-bold text-slate-800 truncate" title={formatIDR(maxPrice)}>
-              {formatIDR(maxPrice)}
-            </p>
-            <span className="text-xs text-amber-600 font-medium flex items-center gap-1">
-              <TrendingUp className="w-3.5 h-3.5" /> Harga Rekor Aset
-            </span>
-          </div>
-          <div className="p-3 bg-amber-50 text-amber-600 rounded-xl flex-shrink-0">
-            <DollarSign className="w-6 h-6" />
           </div>
         </div>
 

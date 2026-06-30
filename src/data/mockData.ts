@@ -2,7 +2,7 @@ import { Asset, AdminUser } from '../types';
 
 export const INITIAL_ADMINS: AdminUser[] = [
   {
-    email: 'digital.solution@pancaran-logistic.id',
+    email: 'email@pancaran-logistic.id',
     name: 'Digital Solution Admin',
     role: 'Super Admin',
     createdAt: '2026-01-15'
