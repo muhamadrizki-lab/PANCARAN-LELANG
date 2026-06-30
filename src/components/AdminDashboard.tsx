@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Asset, Bid } from '../types';
 import { 
   Truck, 
@@ -21,6 +21,14 @@ interface AdminDashboardProps {
 export default function AdminDashboard({ assets, onSelectAsset }: AdminDashboardProps) {
   const [surveyFilter, setSurveyFilter] = useState<'all' | 'upcoming' | 'past'>('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [currentTime, setCurrentTime] = useState(new Date());
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   // 1. Metric calculations
   const totalAssets = assets.length;
@@ -128,10 +136,13 @@ export default function AdminDashboard({ assets, onSelectAsset }: AdminDashboard
             Halo Admin, kelola aset lelang komersial, pantau penawaran harga, dan atur survei fisik dalam satu portal terpadu.
           </p>
         </div>
-        <div className="bg-slate-800/80 px-4 py-3 rounded-xl border border-slate-700 text-xs md:text-sm font-mono self-stretch md:self-auto text-center md:text-left">
+        <div className="bg-slate-800/80 px-4 py-3 rounded-xl border border-slate-700 text-xs md:text-sm font-mono self-stretch md:self-auto text-center md:text-left flex flex-col justify-center">
           <p className="text-slate-400">Waktu Sistem (WIB)</p>
           <p className="font-semibold text-white mt-1">
-            {new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+            {currentTime.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+          </p>
+          <p className="text-blue-400 font-bold mt-1 text-base md:text-lg tracking-wider">
+            {currentTime.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' })} WIB
           </p>
         </div>
       </div>
