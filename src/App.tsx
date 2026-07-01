@@ -6,6 +6,7 @@ import AdminAssets from './components/AdminAssets';
 import AdminUsers from './components/AdminUsers';
 import CatalogView from './components/CatalogView';
 import LoginModal from './components/LoginModal';
+import { useLanguage } from './components/LanguageContext';
 import { 
   seedDatabaseIfEmpty, 
   subscribeToAssets, 
@@ -34,6 +35,7 @@ import {
 } from 'lucide-react';
 
 export default function App() {
+  const { language, setLanguage, t } = useLanguage();
   // 1. Core States
   const [role, setRole] = useState<'external' | 'internal'>('external');
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
@@ -221,7 +223,7 @@ export default function App() {
                     }`}
                     id="tab-external-catalog"
                   >
-                    Katalog Eksternal
+                    {t('Katalog Eksternal')}
                   </button>
                   <button
                     onClick={() => {
@@ -239,17 +241,41 @@ export default function App() {
                     id="tab-internal-admin"
                   >
                     <Shield className="w-3.5 h-3.5" />
-                    Area Admin Internal
+                    {t('Area Admin Internal')}
                   </button>
                 </div>
               )}
+
+              {/* Desktop Language Selector */}
+              <div className="flex bg-slate-800 p-0.5 rounded-lg border border-slate-700">
+                <button
+                  onClick={() => setLanguage('id')}
+                  className={`px-2.5 py-1 text-[10px] font-bold rounded-md transition-all ${
+                    language === 'id' 
+                      ? 'bg-blue-600 text-white shadow' 
+                      : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  ID
+                </button>
+                <button
+                  onClick={() => setLanguage('en')}
+                  className={`px-2.5 py-1 text-[10px] font-bold rounded-md transition-all ${
+                    language === 'en' 
+                      ? 'bg-blue-600 text-white shadow' 
+                      : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  EN
+                </button>
+              </div>
 
               {/* Logged In Info */}
               <div className="flex items-center gap-4">
                 {isAdminLoggedIn ? (
                   <div className="flex items-center gap-3">
                     <div className="text-right">
-                      <p className="text-white text-xs font-semibold">Admin Digital Solution</p>
+                      <p className="text-white text-xs font-semibold">{t('Admin Digital Solution')}</p>
                       <p className="text-slate-400 text-[10px] truncate max-w-[150px] font-mono">{loggedInAdminEmail}</p>
                     </div>
                     <div className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center text-slate-300 border border-slate-700 font-bold uppercase text-xs">
@@ -258,7 +284,7 @@ export default function App() {
                     <button
                       onClick={handleLogout}
                       className="p-1.5 hover:bg-slate-800 text-slate-400 hover:text-rose-400 rounded-lg transition-colors"
-                      title="Keluar"
+                      title={t('Keluar')}
                     >
                       <LogOut className="w-4 h-4" />
                     </button>
@@ -268,7 +294,7 @@ export default function App() {
                     onClick={() => setIsLoginModalOpen(true)}
                     className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-xs font-semibold shadow-sm transition-all flex items-center gap-1.5"
                   >
-                    <LogIn className="w-4 h-4" /> Login Admin
+                    <LogIn className="w-4 h-4" /> {t('Login Admin')}
                   </button>
                 )}
               </div>
@@ -279,7 +305,7 @@ export default function App() {
             <div className="flex md:hidden items-center gap-3">
               {isAdminLoggedIn && (
                 <span className="text-[10px] font-mono font-bold bg-blue-500 text-white px-2 py-1 rounded">
-                  Admin Active
+                  {t('Admin Active')}
                 </span>
               )}
               <button
@@ -296,16 +322,43 @@ export default function App() {
         {/* Mobile Navigation Panel */}
         {isMobileMenuOpen && (
           <div className="md:hidden border-t border-slate-100 bg-white px-4 py-4 space-y-4 shadow-lg animate-slide-in">
+            {/* Language Selection in Mobile */}
+            <div className="flex items-center justify-between px-2 pb-2 border-b border-slate-100">
+              <span className="text-xs font-bold text-slate-500">Language / Bahasa</span>
+              <div className="flex bg-slate-100 p-0.5 rounded-lg border border-slate-200">
+                <button
+                  onClick={() => setLanguage('id')}
+                  className={`px-3 py-1 text-xs font-bold rounded-md transition-all ${
+                    language === 'id' 
+                      ? 'bg-blue-600 text-white shadow' 
+                      : 'text-slate-500 hover:text-slate-800'
+                  }`}
+                >
+                  Indonesian
+                </button>
+                <button
+                  onClick={() => setLanguage('en')}
+                  className={`px-3 py-1 text-xs font-bold rounded-md transition-all ${
+                    language === 'en' 
+                      ? 'bg-blue-600 text-white shadow' 
+                      : 'text-slate-500 hover:text-slate-800'
+                  }`}
+                >
+                  English
+                </button>
+              </div>
+            </div>
+
             {isAdminLoggedIn && (
               <div className="flex flex-col gap-2">
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-2">Pilih Tampilan</p>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-2">{t('Pilih Tampilan')}</p>
                 <button
                   onClick={() => { setRole('external'); setIsMobileMenuOpen(false); }}
                   className={`w-full text-left px-3 py-2 rounded-xl text-sm font-semibold ${
                     role === 'external' ? 'bg-blue-50 text-blue-700 font-bold' : 'text-slate-600 hover:bg-slate-50'
                   }`}
                 >
-                  Katalog Eksternal (Public)
+                  {t('Katalog Eksternal (Public)')}
                 </button>
                 <button
                   onClick={() => {
@@ -320,21 +373,21 @@ export default function App() {
                     role === 'internal' ? 'bg-blue-50 text-blue-700 font-bold' : 'text-slate-600 hover:bg-slate-50'
                   }`}
                 >
-                  <Shield className="w-4 h-4" /> Area Admin Internal
+                  <Shield className="w-4 h-4" /> {t('Area Admin Internal')}
                 </button>
               </div>
             )}
 
             {role === 'internal' && isAdminLoggedIn && (
               <div className="flex flex-col gap-2 border-t border-slate-100 pt-3">
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-2">Menu Admin</p>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-2">{t('Menu Admin')}</p>
                 <button
                   onClick={() => { setAdminTab('dashboard'); setIsMobileMenuOpen(false); }}
                   className={`w-full text-left px-3 py-2 rounded-xl text-sm font-semibold ${
                     adminTab === 'dashboard' ? 'bg-blue-50 text-blue-700 font-bold' : 'text-slate-600'
                   }`}
                 >
-                  Dashboard Ringkasan
+                  {t('Dashboard Ringkasan')}
                 </button>
                 <button
                   onClick={() => { setAdminTab('assets'); setIsMobileMenuOpen(false); }}
@@ -342,7 +395,7 @@ export default function App() {
                     adminTab === 'assets' ? 'bg-blue-50 text-blue-700 font-bold' : 'text-slate-600'
                   }`}
                 >
-                  Kelola Aset (Tambah & Bids)
+                  {t('Kelola Aset (Tambah & Bids)')}
                 </button>
                 <button
                   onClick={() => { setAdminTab('users'); setIsMobileMenuOpen(false); }}
@@ -350,7 +403,7 @@ export default function App() {
                     adminTab === 'users' ? 'bg-blue-50 text-blue-700 font-bold' : 'text-slate-600'
                   }`}
                 >
-                  Manajemen Akses
+                  {t('Manajemen Akses')}
                 </button>
               </div>
             )}
@@ -359,14 +412,14 @@ export default function App() {
               {isAdminLoggedIn ? (
                 <div className="p-3 bg-slate-50 rounded-xl space-y-2">
                   <div className="text-xs">
-                    <p className="text-[9px] text-slate-400 font-bold">AKUN MASUK:</p>
+                    <p className="text-[9px] text-slate-400 font-bold">{t('AKUN MASUK:')}</p>
                     <p className="font-mono font-bold text-slate-700 truncate">{loggedInAdminEmail}</p>
                   </div>
                   <button
                     onClick={() => { handleLogout(); setIsMobileMenuOpen(false); }}
                     className="w-full py-2 bg-rose-50 text-rose-600 hover:bg-rose-100 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-colors"
                   >
-                    <LogOut className="w-4 h-4" /> Logout Admin
+                    <LogOut className="w-4 h-4" /> {t('Logout Admin')}
                   </button>
                 </div>
               ) : (
@@ -374,7 +427,7 @@ export default function App() {
                   onClick={() => { setIsLoginModalOpen(true); setIsMobileMenuOpen(false); }}
                   className="w-full py-2.5 bg-blue-600 text-white rounded-xl text-xs font-bold text-center flex items-center justify-center gap-1.5"
                 >
-                  <LogIn className="w-4 h-4" /> Login Admin
+                  <LogIn className="w-4 h-4" /> {t('Login Admin')}
                 </button>
               )}
             </div>
@@ -387,65 +440,65 @@ export default function App() {
         <div className="flex-1 flex flex-col md:flex-row min-h-0">
           
           {/* Left Sidebar */}
-          <aside className="hidden md:flex w-64 bg-white border-r border-slate-200 p-6 flex-col justify-between shrink-0" id="admin-left-sidebar">
+          <aside className="hidden md:flex w-72 bg-white border-r border-slate-200 p-5 flex-col justify-between shrink-0" id="admin-left-sidebar">
             <div className="space-y-6">
               <div>
                 <h3 className="text-[10px] uppercase tracking-widest text-slate-400 font-bold mb-3">
-                  Menu Utama Admin
+                  {t('Menu Admin')}
                 </h3>
                 
                 <nav className="flex flex-col gap-1.5">
                   <button
                     onClick={() => setAdminTab('dashboard')}
-                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-bold transition-all ${
+                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-bold text-left transition-all ${
                       adminTab === 'dashboard'
                         ? 'bg-blue-50 text-blue-600 font-bold shadow-sm'
                         : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
                     }`}
                   >
-                    <LayoutDashboard className="w-4 h-4" />
-                    <span>Dashboard</span>
+                    <LayoutDashboard className="w-4 h-4 shrink-0" />
+                    <span>{t('Dashboard Ringkasan')}</span>
                   </button>
 
                   <button
                     onClick={() => setAdminTab('assets')}
-                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-bold transition-all ${
+                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-bold text-left transition-all ${
                       adminTab === 'assets'
                         ? 'bg-blue-50 text-blue-600 font-bold shadow-sm'
                         : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
                     }`}
                   >
-                    <Truck className="w-4 h-4" />
-                    <span>Kelola Aset</span>
+                    <Truck className="w-4 h-4 shrink-0" />
+                    <span>{t('Kelola Aset (Tambah & Bids)')}</span>
                   </button>
 
                   <button
                     onClick={() => setAdminTab('users')}
-                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-bold transition-all ${
+                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-bold text-left transition-all ${
                       adminTab === 'users'
                         ? 'bg-blue-50 text-blue-600 font-bold shadow-sm'
                         : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
                     }`}
                   >
-                    <Users className="w-4 h-4" />
-                    <span>Manajemen Akses</span>
+                    <Users className="w-4 h-4 shrink-0" />
+                    <span>{t('Manajemen Akses')}</span>
                   </button>
                 </nav>
               </div>
 
               <div className="pt-4 border-t border-slate-100">
                 <h3 className="text-[10px] uppercase tracking-widest text-slate-400 font-bold mb-3">
-                  Lelang Aktif
+                  {t('Lelang Aktif')}
                 </h3>
                 <ul className="space-y-3">
                   <li className="flex items-center justify-between">
-                    <span className="text-xs text-slate-600">Sedang Berjalan</span>
+                    <span className="text-xs text-slate-600">{t('Sedang Berjalan')}</span>
                     <span className="bg-emerald-100 text-emerald-700 text-[10px] px-2 py-0.5 rounded-full font-bold">
                       {assets.filter(a => a.status === 'Open').length}
                     </span>
                   </li>
                   <li className="flex items-center justify-between">
-                    <span className="text-xs text-slate-600">Unit Terjual</span>
+                    <span className="text-xs text-slate-600">{t('Unit Terjual')}</span>
                     <span className="bg-blue-100 text-blue-700 text-[10px] px-2 py-0.5 rounded-full font-bold">
                       {assets.filter(a => a.status === 'Sold').length}
                     </span>
@@ -455,7 +508,7 @@ export default function App() {
             </div>
 
             <div className="p-4 bg-slate-50 rounded-xl border border-slate-200">
-              <p className="text-[10px] text-slate-500 mb-1.5 font-bold uppercase tracking-wide">Status Koneksi</p>
+              <p className="text-[10px] text-slate-500 mb-1.5 font-bold uppercase tracking-wide">{t('Status Koneksi')}</p>
               <div className="flex items-center gap-2">
                 <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></div>
                 <span className="text-[11px] font-semibold text-slate-700">Server: Singapore-01</span>
@@ -505,15 +558,15 @@ export default function App() {
           ) : (
             <div className="py-24 text-center max-w-md mx-auto space-y-4">
               <Shield className="w-16 h-16 text-blue-500 mx-auto" />
-              <h2 className="text-xl font-bold text-slate-800">Otorisasi Diperlukan</h2>
+              <h2 className="text-xl font-bold text-slate-800">{t('Otorisasi Diperlukan')}</h2>
               <p className="text-sm text-slate-500 leading-normal">
-                Halaman internal manajemen Pancaran Lelang dilindungi enkripsi. Silakan masuk menggunakan akun kredensial Anda.
+                {t('Halaman internal manajemen Pancaran Lelang dilindungi enkripsi. Silakan masuk menggunakan akun kredensial Anda.')}
               </p>
               <button
                 onClick={() => setIsLoginModalOpen(true)}
                 className="bg-blue-600 text-white px-6 py-2.5 rounded-xl font-bold text-sm shadow-md hover:bg-blue-700 transition-all"
               >
-                Masuk Sekarang
+                {t('Masuk Sekarang')}
               </button>
             </div>
           )}
@@ -523,14 +576,14 @@ export default function App() {
       {/* Footer */}
       <footer className="bg-white border-t border-slate-100 py-6 text-center text-xs text-slate-400" id="main-application-footer">
         <div className="max-w-7xl mx-auto px-4">
-          <p>© 2026 Pancaran Lelang Group - PT Pancaran Darma Logistics. Hak Cipta Dilindungi.</p>
+          <p>© 2026 Pancaran Lelang Group - PT Pancaran Darma Logistics. {t('Hak Cipta Dilindungi')}.</p>
           <div className="flex justify-center gap-4 mt-2 font-medium">
             <span className="text-slate-300">|</span>
-            <span className="text-slate-400">Pool Marunda</span>
+            <span className="text-slate-400">{t('Pool Marunda')}</span>
             <span className="text-slate-300">|</span>
-            <span className="text-slate-400">Pool Cakung</span>
+            <span className="text-slate-400">{t('Pool Cakung')}</span>
             <span className="text-slate-300">|</span>
-            <span className="text-slate-400">Pool Teluk Gong</span>
+            <span className="text-slate-400">{t('Pool Teluk Gong')}</span>
             <span className="text-slate-300">|</span>
           </div>
         </div>

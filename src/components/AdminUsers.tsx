@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { AdminUser } from '../types';
-import { 
-  UserPlus, 
+import { useLanguage } from './LanguageContext';
+import {   UserPlus, 
   Shield, 
   Mail, 
   Calendar, 
@@ -24,6 +24,7 @@ export default function AdminUsers({
   onDeleteAdmin,
   currentAdminEmail 
 }: AdminUsersProps) {
+  const { t } = useLanguage();
   const maskEmail = (email: string) => {
     if (!email || !email.includes('@')) return email;
     const [local, domain] = email.split('@');
@@ -48,20 +49,20 @@ export default function AdminUsers({
     setSuccessMsg('');
 
     if (!formData.name || !formData.email) {
-      setErrorMsg('Mohon lengkapi nama dan email admin.');
+      setErrorMsg(t('Mohon lengkapi nama dan email admin.'));
       return;
     }
 
     // Check if email already exists
     const emailExists = admins.some(a => a.email.toLowerCase() === formData.email.toLowerCase());
     if (emailExists) {
-      setErrorMsg('Email admin tersebut sudah terdaftar.');
+      setErrorMsg(t('Email admin tersebut sudah terdaftar.'));
       return;
     }
 
     // Validate email format
     if (!formData.email.endsWith('@pancaran-logistic.id') && !formData.email.endsWith('@pancaran-group.id') && !formData.email.includes('@')) {
-      setErrorMsg('Format email tidak valid. Direkomendasikan menggunakan email institusi Pancaran.');
+      setErrorMsg(t('Format email tidak valid. Direkomendasikan menggunakan email institusi Pancaran.'));
       return;
     }
 
@@ -72,7 +73,7 @@ export default function AdminUsers({
       createdAt: new Date().toISOString().split('T')[0]
     });
 
-    setSuccessMsg(`Akses admin berhasil dibuat untuk ${formData.name}!`);
+    setSuccessMsg(`${t('Akses admin berhasil dibuat untuk')} ${formData.name}!`);
     setFormData({
       name: '',
       email: '',
@@ -89,8 +90,8 @@ export default function AdminUsers({
       
       {/* View Header */}
       <div>
-        <h1 className="text-2xl font-bold text-slate-800 tracking-tight">Manajemen Akses Admin</h1>
-        <p className="text-sm text-slate-500 mt-1">Buat akses administrator baru, tinjau tingkatan hak akses, dan kelola otoritas keamanan internal Pancaran Lelang.</p>
+        <h1 className="text-2xl font-bold text-slate-800 tracking-tight">{t('Manajemen Akses Admin')}</h1>
+        <p className="text-sm text-slate-500 mt-1">{t('Buat akses administrator baru, tinjau tingkatan hak akses, dan kelola otoritas keamanan internal Pancaran Lelang.')}</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -99,9 +100,9 @@ export default function AdminUsers({
         <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-6 lg:col-span-1" id="create-access-form-container">
           <div className="space-y-1">
             <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-              <UserPlus className="w-5 h-5 text-blue-600" /> Buat Akses Baru
+              <UserPlus className="w-5 h-5 text-blue-600" /> {t('Buat Akses Baru')}
             </h2>
-            <p className="text-xs text-slate-500">Daftarkan akun email karyawan baru untuk memberikan akses masuk ke dashboard internal.</p>
+            <p className="text-xs text-slate-500">{t('Daftarkan akun email karyawan baru untuk memberikan akses masuk ke dashboard internal.')}</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -121,10 +122,10 @@ export default function AdminUsers({
 
             {/* Admin Name */}
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-600 uppercase tracking-wide">Nama Lengkap Admin</label>
+              <label className="text-xs font-bold text-slate-600 uppercase tracking-wide">{t('Nama Lengkap Admin')}</label>
               <input
                 type="text"
-                placeholder="Contoh: Achmad Subagja"
+                placeholder={t('Contoh: Achmad Subagja')}
                 value={formData.name}
                 onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
                 className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
@@ -134,7 +135,7 @@ export default function AdminUsers({
 
             {/* Admin Email */}
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-600 uppercase tracking-wide">Alamat Email Pancaran</label>
+              <label className="text-xs font-bold text-slate-600 uppercase tracking-wide">{t('Alamat Email Pancaran')}</label>
               <div className="relative">
                 <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
                 <input
@@ -146,20 +147,20 @@ export default function AdminUsers({
                   required
                 />
               </div>
-              <p className="text-[10px] text-slate-400">Harus berupa email institusi Pancaran.</p>
+              <p className="text-[10px] text-slate-400">{t('Harus berupa email institusi Pancaran.')}</p>
             </div>
 
             {/* Admin Role */}
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-600 uppercase tracking-wide">Tingkatan Peran (Role)</label>
+              <label className="text-xs font-bold text-slate-600 uppercase tracking-wide">{t('Tingkatan Peran (Role)')}</label>
               <select
                 value={formData.role}
                 onChange={(e) => setFormData(prev => ({ ...prev, role: e.target.value }))}
                 className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 font-medium text-slate-700"
               >
-                <option value="Admin Operasional">Admin Operasional (Input & Kelola Aset)</option>
-                <option value="Admin Keuangan">Admin Keuangan (Otorisasi Unit Terjual)</option>
-                <option value="Super Admin">Super Admin (Akses Penuh)</option>
+                <option value="Admin Operasional">{t('Admin Operasional (Input & Kelola Aset)')}</option>
+                <option value="Admin Keuangan">{t('Admin Keuangan (Otorisasi Unit Terjual)')}</option>
+                <option value="Super Admin">{t('Super Admin (Akses Penuh)')}</option>
               </select>
             </div>
 
@@ -168,7 +169,7 @@ export default function AdminUsers({
               className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl text-sm font-semibold shadow-md shadow-blue-600/10 hover:shadow-blue-600/20 active:scale-95 transition-all flex items-center justify-center gap-1.5"
             >
               <UserPlus className="w-4 h-4" />
-              <span>Buat Hak Akses</span>
+              <span>{t('Buat Hak Akses')}</span>
             </button>
           </form>
         </div>
@@ -177,20 +178,20 @@ export default function AdminUsers({
         <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-6 lg:col-span-2" id="admins-list-container">
           <div className="space-y-1">
             <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-              <Users className="w-5 h-5 text-blue-600" /> Daftar Administrator Terdaftar
+              <Users className="w-5 h-5 text-blue-600" /> {t('Daftar Administrator Terdaftar')}
             </h2>
-            <p className="text-xs text-slate-500">Daftar staf internal Pancaran Logistics yang memegang otoritas sistem Lelang.</p>
+            <p className="text-xs text-slate-500">{t('Daftar staf internal Pancaran Logistics yang memegang otoritas sistem Lelang.')}</p>
           </div>
 
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm border-collapse">
               <thead>
                 <tr className="border-b border-slate-200 text-xs text-slate-400 font-bold uppercase">
-                  <th className="py-3.5 px-4 font-bold">Nama / Karyawan</th>
-                  <th className="py-3.5 px-4 font-bold">Email Akun</th>
-                  <th className="py-3.5 px-4 font-bold">Peran</th>
-                  <th className="py-3.5 px-4 font-bold">Terdaftar Pada</th>
-                  <th className="py-3.5 px-4 text-center font-bold">Aksi</th>
+                  <th className="py-3.5 px-4 font-bold">{t('Nama / Karyawan')}</th>
+                  <th className="py-3.5 px-4 font-bold">{t('Email Akun')}</th>
+                  <th className="py-3.5 px-4 font-bold">{t('Peran')}</th>
+                  <th className="py-3.5 px-4 font-bold">{t('Terdaftar Pada')}</th>
+                  <th className="py-3.5 px-4 text-center font-bold">{t('Aksi')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
@@ -209,7 +210,7 @@ export default function AdminUsers({
                             <span className="font-semibold">{admin.name}</span>
                             {isCurrent && (
                               <span className="text-[9px] font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded w-max mt-0.5">
-                                Sedang Aktif
+                                {t('Sedang Aktif')}
                               </span>
                             )}
                           </div>
@@ -219,7 +220,7 @@ export default function AdminUsers({
                       <td className="py-4 px-4">
                         <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-blue-50 text-blue-700">
                           <Shield className="w-3.5 h-3.5" />
-                          {admin.role}
+                          {t(admin.role)}
                         </span>
                       </td>
                       <td className="py-4 px-4 text-slate-500 text-xs">
@@ -238,13 +239,13 @@ export default function AdminUsers({
                               }}
                               className="px-2 py-1 bg-rose-600 hover:bg-rose-700 text-white rounded text-[10px] font-bold shadow-sm transition-all"
                             >
-                              Ya
+                              {t('Ya')}
                             </button>
                             <button
                               onClick={() => setDeleteConfirmEmail(null)}
                               className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded text-[10px] font-semibold border border-slate-200 transition-all"
                             >
-                              Batal
+                              {t('Batal')}
                             </button>
                           </div>
                         ) : (
@@ -256,7 +257,7 @@ export default function AdminUsers({
                                 ? 'text-slate-300 border-slate-100 cursor-not-allowed bg-slate-50'
                                 : 'text-rose-500 border-slate-100 hover:border-rose-200 hover:bg-rose-50 active:scale-95'
                             }`}
-                            title={isCurrent ? "Anda sedang masuk dengan akun ini" : isMainSuperAdmin ? "Akun Super Admin Utama tidak bisa dihapus" : "Hapus Akses"}
+                            title={isCurrent ? t("Anda sedang masuk dengan akun ini") : isMainSuperAdmin ? t("Akun Super Admin Utama tidak bisa dihapus") : t("Hapus Akses")}
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>

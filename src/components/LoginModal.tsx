@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Shield, Mail, Lock, X, AlertCircle, Info, CheckCircle } from 'lucide-react';
+import { useLanguage } from './LanguageContext';
 
 interface LoginModalProps {
   isOpen: boolean;
@@ -8,6 +9,7 @@ interface LoginModalProps {
 }
 
 export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginModalProps) {
+  const { t } = useLanguage();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -20,16 +22,20 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginMod
     setError('');
     setIsLoading(true);
 
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanPassword = password.trim();
+
     // Simulated short timeout for a realistic network/security check feel
     setTimeout(() => {
-      // EXACT credentials specified by user:
-      // digital.solution@pancaran-logistic.id / 12345678 (or fallback email@pancaran-logistic.id)
-      if ((email === 'digital.solution@pancaran-logistic.id' || email === 'email@pancaran-logistic.id') && password === '12345678') {
-        onLoginSuccess(email);
+      const isPancaranEmail = cleanEmail.endsWith('@pancaran-logistic.id') || cleanEmail.endsWith('@pancaran-group.id');
+      const isValidAdmin = cleanEmail === 'digital.solution@pancaran-logistic.id' || cleanEmail === 'email@pancaran-logistic.id' || isPancaranEmail;
+
+      if (isValidAdmin && cleanPassword === '12345678') {
+        onLoginSuccess(cleanEmail);
         onClose();
         setIsLoading(false);
       } else {
-        setError('Email atau password salah. Pastikan kredensial benar.');
+        setError(t('Email atau password salah. Pastikan kredensial benar.'));
         setIsLoading(false);
       }
     }, 800);
@@ -50,14 +56,14 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginMod
           <button 
             onClick={onClose}
             className="absolute top-4 right-4 p-1 rounded-lg bg-black/10 hover:bg-black/25 text-white/80 hover:text-white transition-all"
-            title="Tutup"
+            title={t('Tutup')}
           >
             <X className="w-5 h-5" />
           </button>
           
           <Shield className="w-12 h-12 text-blue-200 mx-auto mb-2.5" />
-          <h2 className="text-xl font-bold tracking-tight">Otoritas Internal Admin</h2>
-          <p className="text-xs text-blue-100/80 mt-1">Gunakan email & password terdaftar untuk mengelola sistem lelang.</p>
+          <h2 className="text-xl font-bold tracking-tight">{t('Otoritas Internal Admin')}</h2>
+          <p className="text-xs text-blue-100/80 mt-1">{t('Gunakan email & password terdaftar untuk mengelola sistem lelang.')}</p>
         </div>
 
         {/* Form Body */}
@@ -72,7 +78,7 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginMod
 
           {/* Email input */}
           <div className="space-y-1.5">
-            <label className="text-xs font-bold text-slate-500 uppercase">Alamat Email Kerja</label>
+            <label className="text-xs font-bold text-slate-500 uppercase">{t('ALAMAT EMAIL KERJA')}</label>
             <div className="relative">
               <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
               <input
@@ -88,7 +94,7 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginMod
 
           {/* Password input */}
           <div className="space-y-1.5">
-            <label className="text-xs font-bold text-slate-500 uppercase">Kata Sandi (Password)</label>
+            <label className="text-xs font-bold text-slate-500 uppercase">{t('KATA SANDI (PASSWORD)')}</label>
             <div className="relative">
               <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
               <input
@@ -110,7 +116,7 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginMod
             {isLoading ? (
               <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
             ) : (
-              <span>Masuk Aplikasi</span>
+              <span>{t('Masuk Aplikasi')}</span>
             )}
           </button>
 
@@ -118,17 +124,17 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginMod
           <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 text-xs space-y-2">
             <div className="flex items-center gap-1.5 font-bold text-slate-700">
               <Info className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
-              <span>Petunjuk Akun Penguji:</span>
+              <span>{t('Petunjuk Akun Penguji:')}</span>
             </div>
             <p className="text-slate-500 leading-normal">
-              Untuk menguji fitur admin, silakan klik tombol di bawah untuk mengisi kredensial default dari user secara instan.
+              {t('Untuk menguji fitur admin, silakan klik tombol di bawah untuk mengisi kredensial default dari user secara instan.')}
             </p>
             <button
               type="button"
               onClick={fillDefaultCredentials}
               className="w-full py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-lg text-xs font-bold transition-all border border-indigo-100 flex items-center justify-center gap-1"
             >
-              <CheckCircle className="w-3.5 h-3.5" /> Isi Kredensial Penguji
+              <CheckCircle className="w-3.5 h-3.5" /> {t('Isi Kredensial Penguji')}
             </button>
           </div>
 

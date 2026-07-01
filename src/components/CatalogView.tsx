@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Asset, Bid } from '../types';
+import { useLanguage } from './LanguageContext';
 import { 
   Search, 
   Filter, 
@@ -37,6 +38,7 @@ interface CatalogCardProps {
 }
 
 function CatalogCard({ asset, onSelectAsset, formatIDR }: CatalogCardProps) {
+  const { t } = useLanguage();
   const [activeImgIdx, setActiveImgIdx] = useState(0);
   const images = asset.imageUrls && asset.imageUrls.length > 0
     ? asset.imageUrls
@@ -74,14 +76,14 @@ function CatalogCard({ asset, onSelectAsset, formatIDR }: CatalogCardProps) {
             <button
               onClick={handlePrev}
               className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white w-7 h-7 rounded-full flex items-center justify-center transition-all opacity-0 group-hover/img-container:opacity-100 z-10 text-xs font-bold"
-              title="Gambar Sebelumnya"
+              title={t('Gambar Sebelumnya')}
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
             <button
               onClick={handleNext}
               className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white w-7 h-7 rounded-full flex items-center justify-center transition-all opacity-0 group-hover/img-container:opacity-100 z-10 text-xs font-bold"
-              title="Gambar Berikutnya"
+              title={t('Gambar Berikutnya')}
             >
               <ChevronRight className="w-4 h-4" />
             </button>
@@ -112,7 +114,7 @@ function CatalogCard({ asset, onSelectAsset, formatIDR }: CatalogCardProps) {
         <div className="absolute top-3 right-3 z-10">
           <span className="text-[9px] font-bold uppercase tracking-wider bg-blue-600 text-white px-2.5 py-1 rounded-full shadow-sm flex items-center gap-1">
             <span className="w-1.5 h-1.5 bg-green-400 rounded-full animate-ping"></span>
-            Terbuka
+            {t('Terbuka')}
           </span>
         </div>
 
@@ -133,9 +135,9 @@ function CatalogCard({ asset, onSelectAsset, formatIDR }: CatalogCardProps) {
               <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0" /> {asset.location.split(',')[1] || asset.location}
             </span>
             <span>•</span>
-            <span>Kondisi: <strong>{asset.condition}</strong></span>
+            <span>{t('Kondisi')}: <strong>{t(asset.condition)}</strong></span>
             <span>•</span>
-            <span>Th: <strong>{asset.modelYear}</strong></span>
+            <span>{t('Th')}: <strong>{asset.modelYear}</strong></span>
           </div>
 
           <p className="text-xs text-slate-500 line-clamp-2 mt-2 leading-relaxed">
@@ -146,12 +148,12 @@ function CatalogCard({ asset, onSelectAsset, formatIDR }: CatalogCardProps) {
         {/* Price Status */}
         <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 flex items-center justify-between">
           <div>
-            <span className="text-[10px] text-slate-400 font-bold uppercase">Harga Pembuka</span>
+            <span className="text-[10px] text-slate-400 font-bold uppercase">{t('Harga Pembuka')}</span>
             <p className="text-xs font-semibold text-slate-500">{formatIDR(asset.startingPrice)}</p>
           </div>
           <div className="text-right">
             <span className="text-[10px] text-blue-600 font-bold uppercase flex items-center justify-end gap-1">
-              <TrendingUp className="w-3.5 h-3.5" /> Penawaran Tertinggi
+              <TrendingUp className="w-3.5 h-3.5" /> {t('Penawaran Tertinggi')}
             </span>
             <p className="text-base font-bold text-slate-900">{formatIDR(highestOffer)}</p>
           </div>
@@ -160,13 +162,13 @@ function CatalogCard({ asset, onSelectAsset, formatIDR }: CatalogCardProps) {
         {/* CTA Actions */}
         <div className="flex items-center justify-between text-xs font-semibold pt-1">
           <span className="text-slate-500 font-medium">
-            {asset.bids.length} Penawaran Masuk
+            {asset.bids.length} {t('Penawaran Masuk')}
           </span>
           <button
             onClick={() => onSelectAsset(asset.id)}
             className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1 group-hover:shadow-md shadow-blue-500/10"
           >
-            Tawar Aset <ArrowUpRight className="w-4 h-4" />
+            {t('Tawar Aset')} <ArrowUpRight className="w-4 h-4" />
           </button>
         </div>
       </div>
@@ -175,6 +177,7 @@ function CatalogCard({ asset, onSelectAsset, formatIDR }: CatalogCardProps) {
 }
 
 export default function CatalogView({ assets, onPlaceBid }: CatalogViewProps) {
+  const { t } = useLanguage();
   const [selectedAssetId, setSelectedAssetId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedBrand, setSelectedBrand] = useState('all');
@@ -334,32 +337,32 @@ export default function CatalogView({ assets, onPlaceBid }: CatalogViewProps) {
 
         <div className="space-y-4 md:max-w-2xl z-10 relative">
           <span className="text-[10px] uppercase tracking-wider bg-blue-500/20 text-blue-300 font-bold px-3 py-1.5 rounded-full border border-blue-500/30">
-            Portal Penawaran Umum (External)
+            {t('Portal Penawaran Umum (External)')}
           </span>
           <h1 className="text-3xl md:text-4xl font-bold tracking-tight leading-tight">
-            Pancaran Lelang <br/>
+            {t('Pancaran Lelang')} <br/>
             <span className="bg-gradient-to-r from-blue-400 to-blue-200 bg-clip-text text-transparent">
-              Likuidasi Armada Logistik & Heavy Equipment
+              {t('Likuidasi Armada Logistik & Heavy Equipment')}
             </span>
           </h1>
           <p className="text-slate-400 text-sm md:text-base leading-relaxed">
-            Dapatkan truk tangki, wingbox, trailer, cargo van, dan alat berat kualitas terbaik langsung dari ekosistem operasional Pancaran Logistics. Transparan, terpercaya, dan aman dengan jadwal survei fisik mandiri.
+            {t('Dapatkan truk tangki, wingbox, trailer, cargo van, dan alat berat kualitas terbaik langsung dari ekosistem operasional Pancaran Logistics. Transparan, terpercaya, dan aman dengan jadwal survei fisik mandiri.')}
           </p>
           <div className="flex flex-wrap items-center gap-4 pt-2 text-xs text-slate-300 font-medium">
             <span className="flex items-center gap-1.5 bg-slate-900 px-3 py-1.5 rounded-xl border border-slate-800">
-              <CheckCircle className="w-4 h-4 text-emerald-400" /> KIR & STNK Lengkap
+              <CheckCircle className="w-4 h-4 text-emerald-400" /> {t('KIR & STNK Lengkap')}
             </span>
             <span className="flex items-center gap-1.5 bg-slate-900 px-3 py-1.5 rounded-xl border border-slate-800">
-              <CalendarCheck className="w-4 h-4 text-blue-400" /> Bebas Atur Waktu Inspeksi
+              <CalendarCheck className="w-4 h-4 text-blue-400" /> {t('Bebas Atur Waktu Inspeksi')}
             </span>
           </div>
         </div>
 
         <div className="bg-slate-900/80 backdrop-blur-md p-6 rounded-2xl border border-slate-800 max-w-xs text-center z-10 relative">
           <Truck className="w-12 h-12 text-blue-400 mx-auto mb-3" />
-          <h3 className="font-bold text-sm text-slate-100">Bagaimana Cara Kerja?</h3>
+          <h3 className="font-bold text-sm text-slate-100">{t('Bagaimana Cara Kerja?')}</h3>
           <p className="text-slate-400 text-xs mt-1.5 leading-normal">
-            Pilih armada aktif di bawah, ajukan penawaran harga Anda, dan pilih waktu survei fisik untuk memeriksa kondisi mesin langsung di Pool kami sebelum lelang ditutup.
+            {t('Pilih armada aktif di bawah, ajukan penawaran harga Anda, dan pilih waktu survei fisik untuk memeriksa kondisi mesin langsung di Pool kami sebelum lelang ditutup.')}
           </p>
         </div>
       </div>
@@ -372,8 +375,8 @@ export default function CatalogView({ assets, onPlaceBid }: CatalogViewProps) {
           {/* Public Filters Header */}
           <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div>
-              <h2 className="text-lg font-bold text-slate-800">Katalog Armada Tersedia ({filteredAssets.length})</h2>
-              <p className="text-xs text-slate-500 mt-0.5">Semua armada di bawah siap dilepas dengan penawaran harga terbaik.</p>
+              <h2 className="text-lg font-bold text-slate-800">{t('Katalog Armada Tersedia')} ({filteredAssets.length})</h2>
+              <p className="text-xs text-slate-500 mt-0.5">{t('Semua armada di bawah siap dilepas dengan penawaran harga terbaik.')}</p>
             </div>
 
             {/* Quick Filter Controls */}
@@ -383,7 +386,7 @@ export default function CatalogView({ assets, onPlaceBid }: CatalogViewProps) {
                 <Search className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
                 <input
                   type="text"
-                  placeholder="Cari armada..."
+                  placeholder={t('Cari armada...')}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-xs"
@@ -396,7 +399,7 @@ export default function CatalogView({ assets, onPlaceBid }: CatalogViewProps) {
                 onChange={(e) => setSelectedBrand(e.target.value)}
                 className="px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
               >
-                <option value="all">Semua Brand</option>
+                <option value="all">{t('Semua Brand')}</option>
                 {uniqueBrands.map(b => (
                   <option key={b} value={b}>{b}</option>
                 ))}
@@ -408,7 +411,7 @@ export default function CatalogView({ assets, onPlaceBid }: CatalogViewProps) {
                 onChange={(e) => setSelectedCategory(e.target.value)}
                 className="px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
               >
-                <option value="all">Semua Kategori</option>
+                <option value="all">{t('Semua Kategori')}</option>
                 {uniqueCategories.map(c => (
                   <option key={c} value={c}>{c}</option>
                 ))}
@@ -430,12 +433,12 @@ export default function CatalogView({ assets, onPlaceBid }: CatalogViewProps) {
             {filteredAssets.length === 0 && (
               <div className="col-span-full text-center py-20 bg-white border border-dashed border-slate-200 rounded-3xl space-y-3">
                 <Info className="w-8 h-8 text-slate-400 mx-auto" />
-                <p className="text-slate-400 font-semibold text-sm">Tidak ada armada lelang yang terdaftar atau sesuai filter.</p>
+                <p className="text-slate-400 font-semibold text-sm">{t('Tidak ada armada lelang yang terdaftar atau sesuai filter.')}</p>
                 <button 
                   onClick={() => { setSelectedBrand('all'); setSelectedCategory('all'); setSearchQuery(''); }}
                   className="text-xs text-blue-600 hover:underline font-bold"
                 >
-                  Lihat Semua Koleksi
+                  {t('Lihat Semua Koleksi')}
                 </button>
               </div>
             )}
@@ -459,14 +462,14 @@ export default function CatalogView({ assets, onPlaceBid }: CatalogViewProps) {
             <div className="flex justify-between items-start border-b border-slate-100 p-6 pb-4 sticky top-0 bg-white z-20">
               <div>
                 <span className="text-[9px] font-mono font-bold bg-blue-50 text-blue-700 px-2.5 py-1 rounded-md border border-blue-100 uppercase">
-                  AJUKAN TAWAran
+                  {t('AJUKAN TAWAran')}
                 </span>
                 <h2 className="text-base font-bold text-slate-800 mt-2 line-clamp-1">{selectedAsset.name}</h2>
               </div>
               <button 
                 onClick={() => setSelectedAssetId(null)}
                 className="p-1.5 hover:bg-slate-100 rounded-xl text-slate-400 hover:text-slate-700 transition-colors"
-                title="Tutup Panel"
+                title={t('Tutup Panel')}
               >
                 <X className="w-5 h-5" />
               </button>
@@ -477,12 +480,12 @@ export default function CatalogView({ assets, onPlaceBid }: CatalogViewProps) {
               {/* Price Alert Rules */}
               <div className="bg-blue-50/50 p-4 rounded-2xl border border-blue-100/50 space-y-2 text-xs">
                 <div className="flex justify-between items-center">
-                  <span className="text-slate-500">Harga Awal:</span>
+                  <span className="text-slate-500">{t('Harga Awal:')}</span>
                   <span className="font-semibold text-slate-700">{formatIDR(selectedAsset.startingPrice)}</span>
                 </div>
                 <div className="flex justify-between items-center text-blue-900 bg-blue-100/40 p-2 rounded-xl border border-blue-100 font-bold">
                   <span className="flex items-center gap-1">
-                    <TrendingUp className="w-3.5 h-3.5 text-blue-600" /> Bid Tertinggi:
+                    <TrendingUp className="w-3.5 h-3.5 text-blue-600" /> {t('Bid Tertinggi:')}
                   </span>
                   <span>{formatIDR(currentHighestBid)}</span>
                 </div>
@@ -491,18 +494,18 @@ export default function CatalogView({ assets, onPlaceBid }: CatalogViewProps) {
               {/* Detail & Spesifikasi Aset */}
               <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 text-xs space-y-3">
                 <h3 className="font-bold text-slate-700 flex items-center gap-1.5 border-b border-slate-200/60 pb-2">
-                  <Info className="w-4 h-4 text-blue-600" /> Spesifikasi & Deskripsi Aset
+                  <Info className="w-4 h-4 text-blue-600" /> {t('Spesifikasi & Deskripsi Aset')}
                 </h3>
                 <p className="text-slate-600 leading-relaxed italic bg-white p-2.5 rounded-xl border border-slate-100">
                   "{selectedAsset.description}"
                 </p>
                 <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-slate-600 pt-1">
-                  <div><span className="text-slate-400">Brand:</span> <strong className="text-slate-700">{selectedAsset.brand}</strong></div>
-                  <div><span className="text-slate-400">Kategori:</span> <strong className="text-slate-700">{selectedAsset.category}</strong></div>
-                  <div><span className="text-slate-400">Tahun:</span> <strong className="text-slate-700">{selectedAsset.modelYear}</strong></div>
-                  <div><span className="text-slate-400">No. Polisi:</span> <strong className="text-slate-700 font-mono">{selectedAsset.plateNumber}</strong></div>
-                  <div><span className="text-slate-400">Kondisi:</span> <span className="px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 font-bold text-[10px]">{selectedAsset.condition}</span></div>
-                  <div><span className="text-slate-400">Lokasi:</span> <strong className="text-slate-700">{selectedAsset.location.split(',')[0]}</strong></div>
+                  <div><span className="text-slate-400">{t('Brand:')}</span> <strong className="text-slate-700">{selectedAsset.brand}</strong></div>
+                  <div><span className="text-slate-400">{t('Kategori:')}</span> <strong className="text-slate-700">{selectedAsset.category}</strong></div>
+                  <div><span className="text-slate-400">{t('Tahun:')}</span> <strong className="text-slate-700">{selectedAsset.modelYear}</strong></div>
+                  <div><span className="text-slate-400">{t('No. Polisi:')}</span> <strong className="text-slate-700 font-mono">{selectedAsset.plateNumber}</strong></div>
+                  <div><span className="text-slate-400">{t('Kondisi:')}</span> <span className="px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 font-bold text-[10px]">{t(selectedAsset.condition)}</span></div>
+                  <div><span className="text-slate-400">{t('Lokasi:')}</span> <strong className="text-slate-700">{selectedAsset.location.split(',')[0]}</strong></div>
                 </div>
               </div>
 
@@ -519,14 +522,14 @@ export default function CatalogView({ assets, onPlaceBid }: CatalogViewProps) {
 
                   {/* Name */}
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-600 uppercase">Nama Lengkap Anda *</label>
+                    <label className="text-xs font-bold text-slate-600 uppercase">{t('Nama Lengkap Anda *')}</label>
                     <div className="relative">
                       <User className="w-4 h-4 text-slate-400 absolute left-3 top-3.5" />
                       <input
                         type="text"
                         ref={nameInputRef}
                         required
-                        placeholder="Contoh: PT Samudera Transport"
+                        placeholder={t('Contoh: PT Samudera Transport')}
                         value={bidForm.name}
                         onChange={(e) => setBidForm(prev => ({ ...prev, name: e.target.value }))}
                         className="w-full pl-9 pr-4 py-2.5 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
@@ -536,7 +539,7 @@ export default function CatalogView({ assets, onPlaceBid }: CatalogViewProps) {
 
                   {/* Email */}
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-600 uppercase">Alamat Email Kontak *</label>
+                    <label className="text-xs font-bold text-slate-600 uppercase">{t('Alamat Email Kontak *')}</label>
                     <div className="relative">
                       <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-3.5" />
                       <input
@@ -552,13 +555,13 @@ export default function CatalogView({ assets, onPlaceBid }: CatalogViewProps) {
 
                   {/* Contact (Phone) */}
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-600 uppercase">No. Handphone / WhatsApp *</label>
+                    <label className="text-xs font-bold text-slate-600 uppercase">{t('No. Handphone / WhatsApp *')}</label>
                     <div className="relative">
                       <Phone className="w-4 h-4 text-slate-400 absolute left-3 top-3.5" />
                       <input
                         type="tel"
                         required
-                        placeholder="Contoh: 0812XXXXXXXX"
+                        placeholder={t('Contoh: 0812XXXXXXXX')}
                         value={bidForm.contact}
                         onChange={(e) => setBidForm(prev => ({ ...prev, contact: e.target.value }))}
                         className="w-full pl-9 pr-4 py-2.5 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
@@ -568,7 +571,7 @@ export default function CatalogView({ assets, onPlaceBid }: CatalogViewProps) {
 
                   {/* Bid Price ("input bid price" from flowchart) */}
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-600 uppercase">Harga Bid Anda (IDR) *</label>
+                    <label className="text-xs font-bold text-slate-600 uppercase">{t('Harga Bid Anda (IDR) *')}</label>
                     <div className="relative">
                       <span className="absolute left-3 top-2.5 font-bold text-xs text-slate-400">Rp</span>
                       <input
@@ -587,7 +590,7 @@ export default function CatalogView({ assets, onPlaceBid }: CatalogViewProps) {
                         className="w-full pl-8 pr-4 py-2.5 border border-slate-200 rounded-xl text-sm font-bold text-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
                       />
                     </div>
-                    <p className="text-[10px] text-slate-400">Minimal harga bid: <strong className="text-slate-600">{formatIDR(currentHighestBid + 1000000)}</strong></p>
+                    <p className="text-[10px] text-slate-400">{t('Minimal harga bid:')} <strong className="text-slate-600">{formatIDR(currentHighestBid + 1000000)}</strong></p>
                   </div>
 
                   {/* Request Survey Toggle ("input time survey" from flowchart) */}
@@ -600,8 +603,8 @@ export default function CatalogView({ assets, onPlaceBid }: CatalogViewProps) {
                         className="w-4.5 h-4.5 text-blue-600 border-slate-300 rounded focus:ring-blue-500"
                       />
                       <div className="text-xs">
-                        <p className="font-bold text-slate-800">Booking Jadwal Survei Fisik</p>
-                        <p className="text-slate-400 text-[10px]">Ingin cek kondisi mesin langsung di Pool?</p>
+                        <p className="font-bold text-slate-800">{t('Booking Jadwal Survei Fisik')}</p>
+                        <p className="text-slate-400 text-[10px]">{t('Ingin cek kondisi mesin langsung di Pool?')}</p>
                       </div>
                     </label>
                   </div>
@@ -610,12 +613,12 @@ export default function CatalogView({ assets, onPlaceBid }: CatalogViewProps) {
                   {bidForm.requestSurvey && (
                     <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-3.5 animate-slide-in">
                       <p className="text-[11px] font-bold text-slate-600 flex items-center gap-1.5">
-                        <CalendarCheck className="w-4 h-4 text-blue-600" /> Tentukan Waktu Kunjungan Pool
+                        <CalendarCheck className="w-4 h-4 text-blue-600" /> {t('Tentukan Waktu Kunjungan Pool')}
                       </p>
                       
                       <div className="grid grid-cols-2 gap-3">
                         <div className="space-y-1">
-                          <label className="text-[10px] font-bold text-slate-400 uppercase">Pilih Tanggal</label>
+                          <label className="text-[10px] font-bold text-slate-400 uppercase">{t('Pilih Tanggal')}</label>
                           <input
                             type="date"
                             min={new Date().toISOString().split('T')[0]}
@@ -627,21 +630,21 @@ export default function CatalogView({ assets, onPlaceBid }: CatalogViewProps) {
                         </div>
 
                         <div className="space-y-1">
-                          <label className="text-[10px] font-bold text-slate-400 uppercase">Pilih Sesi Jam</label>
+                          <label className="text-[10px] font-bold text-slate-400 uppercase">{t('Pilih Sesi Jam')}</label>
                           <select
                             value={bidForm.surveyTime}
                             onChange={(e) => setBidForm(prev => ({ ...prev, surveyTime: e.target.value }))}
                             className="w-full p-2 border border-slate-200 rounded-lg text-xs bg-white focus:outline-none font-medium"
                           >
-                            <option value="09:00">Pagi Sesi 1 (09:00 WIB)</option>
-                            <option value="11:00">Pagi Sesi 2 (11:00 WIB)</option>
-                            <option value="13:30">Siang Sesi 1 (13:30 WIB)</option>
-                            <option value="15:30">Sore Sesi 2 (15:30 WIB)</option>
+                            <option value="09:00">{t('Pagi Sesi 1 (09:00 WIB)')}</option>
+                            <option value="11:00">{t('Pagi Sesi 2 (11:00 WIB)')}</option>
+                            <option value="13:30">{t('Siang Sesi 1 (13:30 WIB)')}</option>
+                            <option value="15:30">{t('Sore Sesi 2 (15:30 WIB)')}</option>
                           </select>
                         </div>
                       </div>
                       <p className="text-[9px] text-slate-400 leading-normal">
-                        Lokasi inspeksi: <strong className="text-slate-600">{selectedAsset.location}</strong>. Tim teknis Pancaran Group akan mendampingi Anda di lokasi.
+                        {t('Lokasi inspeksi:')} <strong className="text-slate-600">{selectedAsset.location}</strong>. {t('Tim teknis Pancaran Group akan mendampingi Anda di lokasi.')}
                       </p>
                     </div>
                   )}
@@ -652,7 +655,7 @@ export default function CatalogView({ assets, onPlaceBid }: CatalogViewProps) {
                     className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-2xl text-xs font-bold shadow-md shadow-blue-500/15 hover:shadow-blue-500/30 transition-all flex items-center justify-center gap-1.5"
                   >
                     <ArrowUpRight className="w-4 h-4" />
-                    <span>Kirim Penawaran & Booking</span>
+                    <span>{t('Kirim Penawaran & Booking')}</span>
                   </button>
 
                 </form>
@@ -663,28 +666,28 @@ export default function CatalogView({ assets, onPlaceBid }: CatalogViewProps) {
                     <CheckCircle className="w-10 h-10" />
                   </div>
                   <div className="space-y-1">
-                    <h3 className="font-bold text-slate-800 text-base">Penawaran Berhasil Dikirim!</h3>
-                    <p className="text-xs text-slate-500">Harga penawaran Anda telah dicatat ke dalam sistem Pancaran.</p>
+                    <h3 className="font-bold text-slate-800 text-base">{t('Penawaran Berhasil Dikirim!')}</h3>
+                    <p className="text-xs text-slate-500">{t('Harga penawaran Anda telah dicatat ke dalam sistem Pancaran.')}</p>
                   </div>
                   <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 text-xs text-left space-y-1.5 font-medium">
                     <div className="flex justify-between">
-                      <span className="text-slate-400">Armada:</span>
+                      <span className="text-slate-400">{t('Armada:')}</span>
                       <span className="text-slate-800 font-bold">{selectedAsset.name}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-slate-400">Harga Bid Anda:</span>
+                      <span className="text-slate-400">{t('Harga Bid Anda:')}</span>
                       <span className="text-blue-700 font-bold">{formatIDR(Number(bidForm.price))}</span>
                     </div>
                     {bidForm.requestSurvey && (
                       <div className="flex justify-between border-t border-dashed border-slate-200 pt-1.5 mt-1.5 text-blue-700">
                         <span className="flex items-center gap-1 font-bold">
-                          <Calendar className="w-3.5 h-3.5" /> Jadwal Survei Fisik:
+                          <Calendar className="w-3.5 h-3.5" /> {t('Jadwal Survei Fisik:')}
                         </span>
                         <span className="font-bold">{bidForm.surveyDate} @ {bidForm.surveyTime} WIB</span>
                       </div>
                     )}
                   </div>
-                  <p className="text-[10px] text-slate-400">Halaman ini akan kembali ke katalog dalam beberapa detik...</p>
+                  <p className="text-[10px] text-slate-400">{t('Halaman ini akan kembali ke katalog dalam beberapa detik...')}</p>
                 </div>
               )}
 
@@ -692,7 +695,7 @@ export default function CatalogView({ assets, onPlaceBid }: CatalogViewProps) {
               <div className="pt-4 border-t border-slate-100 flex items-start gap-2 text-[10px] text-slate-400 leading-normal">
                 <ShieldAlert className="w-4 h-4 text-slate-400 shrink-0" />
                 <span>
-                  Dengan mengirimkan penawaran, Anda menyatakan tunduk pada Syarat & Ketentuan Umum Lelang Pancaran Logistics. Penawaran bersifat mengikat.
+                  {t('Dengan mengirimkan penawaran, Anda menyatakan tunduk pada Syarat & Ketentuan Umum Lelang Pancaran Logistics. Penawaran bersifat mengikat.')}
                 </span>
               </div>
 

@@ -12,6 +12,7 @@ import {
   Search,
   Filter
 } from 'lucide-react';
+import { useLanguage } from './LanguageContext';
 
 interface AdminDashboardProps {
   assets: Asset[];
@@ -19,6 +20,7 @@ interface AdminDashboardProps {
 }
 
 export default function AdminDashboard({ assets, onSelectAsset }: AdminDashboardProps) {
+  const { t, language } = useLanguage();
   const [surveyFilter, setSurveyFilter] = useState<'all' | 'upcoming' | 'past'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -131,18 +133,18 @@ export default function AdminDashboard({ assets, onSelectAsset }: AdminDashboard
       {/* Welcome Banner */}
       <div className="bg-slate-900 text-white rounded-2xl p-6 md:p-8 shadow-md border border-slate-800 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Dashboard Pancaran Lelang</h1>
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">{t('Dashboard Pancaran Lelang')}</h1>
           <p className="text-slate-300 mt-2 text-sm md:text-base">
-            Halo Admin, kelola aset lelang komersial, pantau penawaran harga, dan atur survei fisik dalam satu portal terpadu.
+            {t('Halo Admin, kelola aset lelang komersial, pantau penawaran harga, dan atur survei fisik dalam satu portal terpadu.')}
           </p>
         </div>
         <div className="bg-slate-800/80 px-4 py-3 rounded-xl border border-slate-700 text-xs md:text-sm font-mono self-stretch md:self-auto text-center md:text-left flex flex-col justify-center">
-          <p className="text-slate-400">Waktu Sistem (WIB)</p>
+          <p className="text-slate-400">{t('Waktu Sistem (WIB)')}</p>
           <p className="font-semibold text-white mt-1">
-            {currentTime.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+            {currentTime.toLocaleDateString(language === 'id' ? 'id-ID' : 'en-US', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
           </p>
           <p className="text-blue-400 font-bold mt-1 text-base md:text-lg tracking-wider">
-            {currentTime.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' })} WIB
+            {currentTime.toLocaleTimeString(language === 'id' ? 'id-ID' : 'en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' })} WIB
           </p>
         </div>
       </div>
@@ -152,9 +154,9 @@ export default function AdminDashboard({ assets, onSelectAsset }: AdminDashboard
         {/* Total Asset */}
         <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex items-center justify-between hover:shadow-md transition-all duration-300">
           <div className="space-y-1">
-            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Aset</span>
+            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">{t('Total Asset')}</span>
             <p className="text-2xl font-bold text-slate-800">{totalAssets}</p>
-            <span className="text-xs text-blue-600 font-medium">Unit Terdaftar</span>
+            <span className="text-xs text-blue-600 font-medium">{t('Unit di Database')}</span>
           </div>
           <div className="p-3 bg-blue-50 text-blue-600 rounded-xl">
             <Truck className="w-6 h-6" />
@@ -164,10 +166,10 @@ export default function AdminDashboard({ assets, onSelectAsset }: AdminDashboard
         {/* Total Sold */}
         <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex items-center justify-between hover:shadow-md transition-all duration-300">
           <div className="space-y-1">
-            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Aset Terjual</span>
+            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">{t('Aset Terjual')}</span>
             <p className="text-2xl font-bold text-emerald-600">{totalSold}</p>
             <span className="text-xs text-emerald-600 font-medium">
-              {totalAssets > 0 ? Math.round((totalSold / totalAssets) * 100) : 0}% Sukses Lelang
+              {totalAssets > 0 ? Math.round((totalSold / totalAssets) * 100) : 0}% {t('Sukses Lelang')}
             </span>
           </div>
           <div className="p-3 bg-emerald-50 text-emerald-600 rounded-xl">
@@ -178,9 +180,9 @@ export default function AdminDashboard({ assets, onSelectAsset }: AdminDashboard
         {/* Total Open */}
         <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex items-center justify-between hover:shadow-md transition-all duration-300">
           <div className="space-y-1">
-            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Aset Aktif</span>
+            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">{t('Aset Aktif')}</span>
             <p className="text-2xl font-bold text-blue-600">{totalOpen}</p>
-            <span className="text-xs text-blue-600 font-medium">Menerima Penawaran</span>
+            <span className="text-xs text-blue-600 font-medium">{t('Menerima Penawaran')}</span>
           </div>
           <div className="p-3 bg-blue-50 text-blue-600 rounded-xl">
             <Clock className="w-6 h-6" />
@@ -190,9 +192,9 @@ export default function AdminDashboard({ assets, onSelectAsset }: AdminDashboard
         {/* Total Bidder */}
         <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex items-center justify-between hover:shadow-md transition-all duration-300">
           <div className="space-y-1">
-            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Bidder</span>
+            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">{t('Total Bidder')}</span>
             <p className="text-2xl font-bold text-slate-800">{totalBidders}</p>
-            <span className="text-xs text-purple-600 font-medium">Partisipan Unik</span>
+            <span className="text-xs text-purple-600 font-medium">{t('Partisipan Unik')}</span>
           </div>
           <div className="p-3 bg-purple-50 text-purple-600 rounded-xl">
             <Users className="w-6 h-6" />
@@ -206,8 +208,8 @@ export default function AdminDashboard({ assets, onSelectAsset }: AdminDashboard
         {/* Brand Distribution Chart (Left/2-cols on desktop) */}
         <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-6 lg:col-span-1" id="brand-distribution-section">
           <div>
-            <h2 className="text-lg font-bold text-slate-800">Total Aset per Brand</h2>
-            <p className="text-xs text-slate-500 mt-1">Porsi distribusi armada lelang Pancaran Logistics berdasarkan merek manufaktur.</p>
+            <h2 className="text-lg font-bold text-slate-800">{t('Total Aset per Brand')}</h2>
+            <p className="text-xs text-slate-500 mt-1">{t('Porsi distribusi armada lelang Pancaran Logistics berdasarkan merek manufaktur.')}</p>
           </div>
 
           <div className="space-y-4">
@@ -215,7 +217,7 @@ export default function AdminDashboard({ assets, onSelectAsset }: AdminDashboard
               <div key={item.brand} className="space-y-2">
                 <div className="flex justify-between items-center text-sm font-medium">
                   <span className="text-slate-700">{item.brand}</span>
-                  <span className="text-slate-500">{item.count} Unit <span className="text-slate-400">({item.percentage}%)</span></span>
+                  <span className="text-slate-500">{item.count} {t('Unit')} <span className="text-slate-400">({item.percentage}%)</span></span>
                 </div>
                 {/* Horizontal Progress Bar */}
                 <div className="w-full bg-slate-100 rounded-full h-3 overflow-hidden">
@@ -235,13 +237,13 @@ export default function AdminDashboard({ assets, onSelectAsset }: AdminDashboard
 
             {brandData.length === 0 && (
               <div className="text-center py-8 text-slate-400 text-sm">
-                Belum ada data armada/brand tersedia.
+                {t('Belum ada data armada/brand tersedia.')}
               </div>
             )}
           </div>
 
           <div className="pt-4 border-t border-slate-100 flex justify-between items-center text-xs text-slate-400">
-            <span>Per 2026. Semua aset fisik di pool internal.</span>
+            <span>{t('Per 2026. Semua aset fisik di pool internal.')}</span>
           </div>
         </div>
 
@@ -250,9 +252,9 @@ export default function AdminDashboard({ assets, onSelectAsset }: AdminDashboard
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>
               <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-                <Calendar className="w-5 h-5 text-blue-600" /> Jadwal Survei Fisik
+                <Calendar className="w-5 h-5 text-blue-600" /> {t('Jadwal Survei Fisik')}
               </h2>
-              <p className="text-xs text-slate-500 mt-1">Daftar booking kunjungan calon pembeli untuk inspeksi fisik kendaraan.</p>
+              <p className="text-xs text-slate-500 mt-1">{t('Daftar booking kunjungan calon pembeli untuk inspeksi fisik kendaraan.')}</p>
             </div>
 
             {/* Filter Buttons */}
@@ -265,7 +267,7 @@ export default function AdminDashboard({ assets, onSelectAsset }: AdminDashboard
                     : 'text-slate-500 hover:text-slate-800'
                 }`}
               >
-                Semua
+                {t('Semua')}
               </button>
               <button
                 onClick={() => setSurveyFilter('upcoming')}
@@ -275,7 +277,7 @@ export default function AdminDashboard({ assets, onSelectAsset }: AdminDashboard
                     : 'text-slate-500 hover:text-slate-800'
                 }`}
               >
-                Mendatang
+                {t('Mendatang')}
               </button>
               <button
                 onClick={() => setSurveyFilter('past')}
@@ -285,7 +287,7 @@ export default function AdminDashboard({ assets, onSelectAsset }: AdminDashboard
                     : 'text-slate-500 hover:text-slate-800'
                 }`}
               >
-                Riwayat
+                {t('Riwayat')}
               </button>
             </div>
           </div>
@@ -295,7 +297,7 @@ export default function AdminDashboard({ assets, onSelectAsset }: AdminDashboard
             <Search className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
             <input
               type="text"
-              placeholder="Cari nama bidder, brand, atau armada..."
+              placeholder={t('Cari nama bidder, brand, atau armada...')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-9 pr-4 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
@@ -319,12 +321,12 @@ export default function AdminDashboard({ assets, onSelectAsset }: AdminDashboard
                       <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${
                         isUpcoming ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-200 text-slate-600'
                       }`}>
-                        {isUpcoming ? 'Mendatang' : 'Selesai'}
+                        {isUpcoming ? t('Mendatang') : t('Selesai')}
                       </span>
                     </div>
                     <h3 className="font-semibold text-slate-800 text-sm">{survey.assetName}</h3>
                     <div className="text-xs text-slate-500 flex flex-wrap gap-x-4 gap-y-1 pt-1">
-                      <span>Bidder: <strong className="text-slate-700">{survey.bidderName}</strong> ({survey.bidderContact})</span>
+                      <span>{t('Bidder')}: <strong className="text-slate-700">{survey.bidderName}</strong> ({survey.bidderContact})</span>
                       <span>Email: <strong className="text-slate-700">{survey.bidderEmail}</strong></span>
                     </div>
                   </div>
@@ -340,7 +342,7 @@ export default function AdminDashboard({ assets, onSelectAsset }: AdminDashboard
                         onClick={() => onSelectAsset(survey.assetId)}
                         className="text-blue-600 hover:text-blue-800 text-xs font-bold flex items-center gap-0.5 group-hover:translate-x-1 transition-all"
                       >
-                        Lihat Aset <ChevronRight className="w-3.5 h-3.5" />
+                        {t('Lihat Aset')} <ChevronRight className="w-3.5 h-3.5" />
                       </button>
                     </div>
                   </div>
@@ -350,7 +352,7 @@ export default function AdminDashboard({ assets, onSelectAsset }: AdminDashboard
 
             {filteredSurveys.length === 0 && (
               <div className="text-center py-12 bg-slate-50/50 rounded-2xl border border-dashed border-slate-200 text-slate-400 text-sm">
-                Tidak ada jadwal survei fisik ditemukan.
+                {t('Tidak ada jadwal survei fisik ditemukan.')}
               </div>
             )}
           </div>

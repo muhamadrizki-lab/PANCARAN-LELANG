@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Asset, AssetStatus, Bid } from '../types';
+import { useLanguage } from './LanguageContext';
 import { 
   Plus, 
   Search, 
@@ -108,6 +109,7 @@ export default function AdminAssets({
   onUpdateAssetStatus,
   onDeleteAsset
 }: AdminAssetsProps) {
+  const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState<'all' | 'Open' | 'Sold'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [brandFilter, setBrandFilter] = useState<string>('all');
@@ -318,8 +320,8 @@ export default function AdminAssets({
       {/* Top action header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-800 tracking-tight">Kelola Aset Lelang</h1>
-          <p className="text-sm text-slate-500 mt-1">Daftarkan armada logistik baru, pantau status lelang, dan verifikasi riwayat penawaran.</p>
+          <h1 className="text-2xl font-bold text-slate-800 tracking-tight">{t('Kelola Aset Lelang')}</h1>
+          <p className="text-sm text-slate-500 mt-1">{t('Daftarkan armada logistik baru, pantau status lelang, dan verifikasi riwayat penawaran.')}</p>
         </div>
         <button
           onClick={openNewAssetForm}
@@ -327,7 +329,7 @@ export default function AdminAssets({
           id="btn-add-new-asset"
         >
           <Plus className="w-5 h-5" />
-          <span>Tambah Aset Baru</span>
+          <span>{t('Tambah Aset Baru')}</span>
         </button>
       </div>
 
@@ -348,7 +350,7 @@ export default function AdminAssets({
                 <Search className="w-4 h-4 absolute left-3.5 top-3.5 text-slate-400" />
                 <input
                   type="text"
-                  placeholder="Cari berdasarkan nama aset, plat, kategori..."
+                  placeholder={t('Cari berdasarkan nama aset, plat, kategori...')}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full pl-10 pr-4 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-sm"
@@ -362,7 +364,7 @@ export default function AdminAssets({
                     onChange={(e) => setBrandFilter(e.target.value)}
                     className="w-full pl-3 pr-8 py-2.5 bg-white border border-slate-200 rounded-xl appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-sm font-medium text-slate-700"
                   >
-                    <option value="all">Semua Brand</option>
+                    <option value="all">{t('Semua Brand')}</option>
                     {uniqueBrands.map(b => (
                       <option key={b} value={b}>{b}</option>
                     ))}
@@ -382,7 +384,7 @@ export default function AdminAssets({
                     : 'border-transparent text-slate-500 hover:text-slate-800'
                 }`}
               >
-                Semua Aset ({assets.length})
+                {t('Semua Aset')} ({assets.length})
               </button>
               <button
                 onClick={() => setActiveTab('Open')}
@@ -392,7 +394,7 @@ export default function AdminAssets({
                     : 'border-transparent text-slate-500 hover:text-slate-800'
                 }`}
               >
-                Aktif / Open ({assets.filter(a => a.status === 'Open').length})
+                {t('Aktif / Open')} ({assets.filter(a => a.status === 'Open').length})
               </button>
               <button
                 onClick={() => setActiveTab('Sold')}
@@ -402,7 +404,7 @@ export default function AdminAssets({
                     : 'border-transparent text-slate-500 hover:text-slate-800'
                 }`}
               >
-                Terjual / Sold ({assets.filter(a => a.status === 'Sold').length})
+                {t('Terjual / Sold')} ({assets.filter(a => a.status === 'Sold').length})
               </button>
             </div>
 
@@ -447,7 +449,7 @@ export default function AdminAssets({
                           ? 'bg-blue-600 text-white' 
                           : 'bg-emerald-600 text-white'
                       }`}>
-                        {asset.status === 'Open' ? 'Menerima Bid' : 'Terjual'}
+                        {asset.status === 'Open' ? t('Menerima Bid') : t('Terjual')}
                       </span>
                     </div>
 
@@ -464,7 +466,7 @@ export default function AdminAssets({
                         {asset.name}
                       </h3>
                       <div className="flex items-center gap-2 text-xs text-slate-400 font-medium">
-                        <span>Tahun {asset.modelYear}</span>
+                        <span>{t('Tahun')} {asset.modelYear}</span>
                         <span>•</span>
                         <span>Plat: {asset.plateNumber}</span>
                       </div>
@@ -472,11 +474,11 @@ export default function AdminAssets({
 
                     <div className="pt-3 border-t border-slate-50 flex items-center justify-between">
                       <div>
-                        <p className="text-[10px] text-slate-400 font-bold uppercase">Harga Awal</p>
+                        <p className="text-[10px] text-slate-400 font-bold uppercase">{t('Harga Awal')}</p>
                         <p className="text-sm font-semibold text-slate-500">{formatIDR(asset.startingPrice)}</p>
                       </div>
                       <div className="text-right">
-                        <p className="text-[10px] text-blue-500 font-bold uppercase">Penawaran Tertinggi</p>
+                        <p className="text-[10px] text-blue-500 font-bold uppercase">{t('Penawaran Tertinggi')}</p>
                         <p className="text-base font-bold text-blue-700">{formatIDR(highestOffer)}</p>
                       </div>
                     </div>
@@ -484,10 +486,10 @@ export default function AdminAssets({
                     <div className="pt-2 flex items-center justify-between text-xs text-slate-500 font-medium bg-slate-50 -mx-5 -mb-5 px-5 py-3 border-t border-slate-100">
                       <span className="flex items-center gap-1">
                         <DollarSign className="w-4 h-4 text-slate-400" />
-                        {asset.bids.length} Penawaran
+                        {asset.bids.length} {t('Penawaran')}
                       </span>
                       <span className="text-blue-600 font-bold group-hover:underline flex items-center gap-0.5">
-                        Lihat Detail <Eye className="w-3.5 h-3.5" />
+                        {t('Lihat Detail')} <Eye className="w-3.5 h-3.5" />
                       </span>
                     </div>
                   </div>
@@ -497,12 +499,12 @@ export default function AdminAssets({
 
             {filteredAssets.length === 0 && (
               <div className="col-span-full py-16 bg-white border border-dashed border-slate-200 rounded-3xl text-center space-y-3">
-                <p className="text-slate-400 font-medium">Tidak ada aset lelang yang cocok dengan kriteria pencarian.</p>
+                <p className="text-slate-400 font-medium">{t('Tidak ada aset lelang yang cocok dengan kriteria pencarian.')}</p>
                 <button 
                   onClick={() => { setSearchQuery(''); setBrandFilter('all'); setActiveTab('all'); }} 
                   className="text-xs text-blue-600 hover:underline font-semibold"
                 >
-                  Reset Semua Filter
+                  {t('Reset Semua Filter')}
                 </button>
               </div>
             )}
