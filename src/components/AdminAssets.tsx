@@ -108,6 +108,7 @@ export default function AdminAssets({
   
   // Form State
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isFormFocused, setIsFormFocused] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [editAssetId, setEditAssetId] = useState<string | null>(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
@@ -116,6 +117,12 @@ export default function AdminAssets({
   useEffect(() => {
     setDetailImageIdx(0);
   }, [selectedAssetId]);
+
+  useEffect(() => {
+    if (!isFormOpen) {
+      setIsFormFocused(false);
+    }
+  }, [isFormOpen]);
   
   const [formData, setFormData] = useState({
     name: '',
@@ -747,11 +754,17 @@ export default function AdminAssets({
 
       {/* Input Asset Modal/Dialog Form */}
       {isFormOpen && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl shadow-xl w-full max-w-2xl overflow-hidden animate-zoom-in max-h-[90vh] flex flex-col">
+        <div className={`fixed inset-0 transition-all duration-300 z-50 flex items-center justify-center p-4 ${
+          isFormFocused ? 'bg-slate-950/92 backdrop-blur-md' : 'bg-slate-900/60 backdrop-blur-sm'
+        }`}>
+          <div className={`bg-white rounded-3xl shadow-xl w-full max-w-2xl overflow-hidden animate-zoom-in max-h-[90vh] flex flex-col transition-all duration-300 ${
+            isFormFocused ? 'ring-4 ring-blue-500/10' : ''
+          }`}>
             
             {/* Modal Header */}
-            <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+            <div className={`p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50 transition-all duration-300 ${
+              isFormFocused ? 'opacity-30 blur-[0.5px] pointer-events-none' : ''
+            }`}>
               <div>
                 <h2 className="text-lg font-bold text-slate-800">
                   {editAssetId ? `${t('Ubah Detail Unit')}: ${editAssetId}` : t('Daftarkan Aset Lelang Baru')}
@@ -769,10 +782,19 @@ export default function AdminAssets({
             </div>
 
             {/* Modal Body / Scrollable Form */}
-            <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-6">
+            <form 
+              onSubmit={handleSubmit}
+              onFocusCapture={() => setIsFormFocused(true)}
+              onBlurCapture={(e) => {
+                if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+                  setIsFormFocused(false);
+                }
+              }}
+              className="flex-1 overflow-y-auto p-6 space-y-6"
+            >
               
               {/* Quick Preset Templates */}
-              <div>
+              <div className={`transition-all duration-300 ${isFormFocused ? 'opacity-30 blur-[0.5px] pointer-events-none' : ''}`}>
                 <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-2">{t('PILIH TEMPLATE KENDARAAN (OPSIONAL)')}</label>
                 <div className="flex flex-wrap gap-2">
                   {VEHICLE_TEMPLATES.map(t => (

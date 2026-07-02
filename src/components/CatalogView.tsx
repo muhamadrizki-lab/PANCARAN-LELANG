@@ -213,6 +213,7 @@ export default function CatalogView({ assets, onPlaceBid }: CatalogViewProps) {
 
   const [formError, setFormError] = useState('');
   const [formSuccess, setFormSuccess] = useState(false);
+  const [isFormFocused, setIsFormFocused] = useState(false);
 
   // We only show "Open" assets in the public catalog
   const openAssets = assets.filter(a => a.status === 'Open');
@@ -448,18 +449,24 @@ export default function CatalogView({ assets, onPlaceBid }: CatalogViewProps) {
       {/* Right Side Overlay: Bid Input and Survey Scheduler ("input bid price" and "input time survey") */}
       {selectedAsset && (
         <div 
-          className="fixed inset-0 bg-slate-950/70 backdrop-blur-xs z-50 flex items-center justify-center p-4 md:p-6 overflow-y-auto animate-fade-in"
+          className={`fixed inset-0 transition-all duration-300 z-50 flex items-center justify-center p-4 md:p-6 overflow-y-auto ${
+            isFormFocused ? 'bg-slate-950/92 backdrop-blur-md' : 'bg-slate-950/70 backdrop-blur-xs'
+          }`}
           id="bidding-modal-overlay"
           onClick={() => setSelectedAssetId(null)}
         >
           <div 
-            className="bg-white rounded-3xl border border-slate-200 shadow-2xl space-y-6 w-full max-w-xl overflow-y-auto relative animate-zoom-in my-auto max-h-[95vh] focus:outline-none" 
+            className={`bg-white rounded-3xl border border-slate-200 shadow-2xl space-y-6 w-full max-w-xl overflow-y-auto relative animate-zoom-in my-auto max-h-[95vh] focus:outline-none transition-all duration-300 ${
+              isFormFocused ? 'ring-4 ring-blue-500/10' : ''
+            }`} 
             id="bidding-survey-panel"
             onClick={(e) => e.stopPropagation()}
           >
             
             {/* Panel Header */}
-            <div className="flex justify-between items-start border-b border-slate-100 p-6 pb-4 sticky top-0 bg-white z-20">
+            <div className={`flex justify-between items-start border-b border-slate-100 p-6 pb-4 sticky top-0 bg-white z-20 transition-all duration-300 ${
+              isFormFocused ? 'opacity-30 blur-[0.5px] scale-[0.98] pointer-events-none' : ''
+            }`}>
               <div>
                 <span className="text-[9px] font-mono font-bold bg-blue-50 text-blue-700 px-2.5 py-1 rounded-md border border-blue-100 uppercase">
                   {t('AJUKAN TAWAran')}
@@ -474,11 +481,13 @@ export default function CatalogView({ assets, onPlaceBid }: CatalogViewProps) {
                 <X className="w-5 h-5" />
               </button>
             </div>
-
+ 
             <div className="px-6 pb-6 space-y-6">
               
               {/* Price Alert Rules */}
-              <div className="bg-blue-50/50 p-4 rounded-2xl border border-blue-100/50 space-y-2 text-xs">
+              <div className={`bg-blue-50/50 p-4 rounded-2xl border border-blue-100/50 space-y-2 text-xs transition-all duration-300 ${
+                isFormFocused ? 'opacity-30 blur-[0.5px] scale-[0.98] pointer-events-none' : ''
+              }`}>
                 <div className="flex justify-between items-center">
                   <span className="text-slate-500">{t('Harga Awal:')}</span>
                   <span className="font-semibold text-slate-700">{formatIDR(selectedAsset.startingPrice)}</span>
@@ -490,9 +499,11 @@ export default function CatalogView({ assets, onPlaceBid }: CatalogViewProps) {
                   <span>{formatIDR(currentHighestBid)}</span>
                 </div>
               </div>
-
+ 
               {/* Detail & Spesifikasi Aset */}
-              <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 text-xs space-y-3">
+              <div className={`p-4 bg-slate-50 rounded-2xl border border-slate-200 text-xs space-y-3 transition-all duration-300 ${
+                isFormFocused ? 'opacity-30 blur-[0.5px] scale-[0.98] pointer-events-none' : ''
+              }`}>
                 <h3 className="font-bold text-slate-700 flex items-center gap-1.5 border-b border-slate-200/60 pb-2">
                   <Info className="w-4 h-4 text-blue-600" /> {t('Spesifikasi & Deskripsi Aset')}
                 </h3>
@@ -508,10 +519,23 @@ export default function CatalogView({ assets, onPlaceBid }: CatalogViewProps) {
                   <div><span className="text-slate-400">{t('Lokasi:')}</span> <strong className="text-slate-700">{selectedAsset.location.split(',')[0]}</strong></div>
                 </div>
               </div>
-
+ 
               {/* Bidding & Survey Form */}
               {!formSuccess ? (
-                <form onSubmit={handleBidSubmit} className="space-y-4">
+                <form 
+                  onSubmit={handleBidSubmit}
+                  onFocusCapture={() => setIsFormFocused(true)}
+                  onBlurCapture={(e) => {
+                    if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+                      setIsFormFocused(false);
+                    }
+                  }}
+                  className={`space-y-4 p-4 rounded-2xl transition-all duration-300 ${
+                    isFormFocused 
+                      ? 'bg-blue-50/20 ring-2 ring-blue-500/20 shadow-md border border-blue-500/10' 
+                      : 'border border-transparent'
+                  }`}
+                >
                   
                   {formError && (
                     <div className="p-3.5 bg-rose-50 border border-rose-100 text-rose-600 rounded-2xl text-xs font-semibold flex items-start gap-2 animate-shake">
