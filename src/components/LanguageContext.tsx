@@ -58,6 +58,14 @@ const translations: Record<Language, Record<string, string>> = {
     'Penawaran Tertinggi': 'Penawaran Tertinggi',
     'Belum ada penawaran': 'Belum ada penawaran',
     'Penawaran': 'Penawaran',
+    'Penawaran Masuk': 'Penawaran Masuk',
+    'Tawar Aset': 'Tawar Aset',
+    'Brand:': 'Brand:',
+    'Kategori:': 'Kategori:',
+    'Tahun:': 'Tahun:',
+    'No. Polisi:': 'No. Polisi:',
+    'Kondisi:': 'Kondisi:',
+    'Lokasi:': 'Lokasi:',
     'Lihat Detail': 'Lihat Detail',
     'Lihat Detail & Ajukan Bid': 'Lihat Detail & Ajukan Bid',
     'Detail Unit Lelang': 'Detail Unit Lelang',
@@ -392,6 +400,14 @@ const translations: Record<Language, Record<string, string>> = {
     'Penawaran Tertinggi': 'Highest Bid',
     'Belum ada penawaran': 'No bids yet',
     'Penawaran': 'Bid(s)',
+    'Penawaran Masuk': 'Bid(s) Submitted',
+    'Tawar Aset': 'Place Bid',
+    'Brand:': 'Brand:',
+    'Kategori:': 'Category:',
+    'Tahun:': 'Year:',
+    'No. Polisi:': 'License Plate:',
+    'Kondisi:': 'Condition:',
+    'Lokasi:': 'Location:',
     'Lihat Detail': 'View Details',
     'Lihat Detail & Ajukan Bid': 'View Details & Submit Bid',
     'Detail Unit Lelang': 'Auction Unit Details',
@@ -684,7 +700,7 @@ const LanguageContext = createContext<LanguageContextType | undefined>(undefined
 export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [language, setLanguageState] = useState<Language>(() => {
     const stored = localStorage.getItem('pancaran_language');
-    return (stored === 'en' || stored === 'id') ? (stored as Language) : 'id';
+    return (stored === 'en' || stored === 'id') ? (stored as Language) : 'en';
   });
 
   const setLanguage = (lang: Language) => {
