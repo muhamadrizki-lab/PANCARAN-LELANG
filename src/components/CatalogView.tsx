@@ -220,15 +220,10 @@ export default function CatalogView({ assets, onPlaceBid }: CatalogViewProps) {
   const [modalImageIdx, setModalImageIdx] = useState(0);
   const [lightboxImages, setLightboxImages] = useState<string[]>([]);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
-  const [isLightboxZoomed, setIsLightboxZoomed] = useState(false);
 
   useEffect(() => {
     setModalImageIdx(0);
   }, [selectedAssetId]);
-
-  useEffect(() => {
-    setIsLightboxZoomed(false);
-  }, [lightboxIndex]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -866,55 +861,30 @@ export default function CatalogView({ assets, onPlaceBid }: CatalogViewProps) {
 
           {/* Image Container with Smooth Animation */}
           <div 
-            className={`relative w-full max-w-6xl max-h-[85vh] transition-all duration-300 flex items-center justify-center animate-zoom-in ${
-              isLightboxZoomed ? 'overflow-auto cursor-zoom-out p-12' : 'overflow-hidden'
-            }`}
-            onClick={(e) => {
-              e.stopPropagation();
-              if (isLightboxZoomed) {
-                setIsLightboxZoomed(false);
-              }
-            }}
+            className="relative w-full max-w-6xl max-h-[85vh] flex items-center justify-center animate-zoom-in"
+            onClick={(e) => e.stopPropagation()}
           >
             <img
               src={lightboxImages[lightboxIndex]}
               alt={`Zoomed Asset - ${lightboxIndex + 1}`}
-              className={`transition-all duration-300 rounded-2xl shadow-2xl border border-slate-800 object-contain ${
-                isLightboxZoomed 
-                  ? 'max-w-none max-h-none w-[180%] h-auto md:w-[220%] lg:w-[250%] cursor-zoom-out' 
-                  : 'max-w-full max-h-[80vh] cursor-zoom-in hover:scale-[1.03]'
-              }`}
+              className="max-w-full max-h-[85vh] object-contain rounded-2xl shadow-2xl border border-slate-800"
               referrerPolicy="no-referrer"
-              onClick={(e) => {
-                e.stopPropagation();
-                setIsLightboxZoomed(!isLightboxZoomed);
-              }}
+              onClick={() => setLightboxIndex(null)}
               onError={(e) => {
                 e.currentTarget.src = "https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?auto=format&fit=crop&w=800&q=80";
               }}
             />
           </div>
 
-          {/* Position indicator & Instructions */}
+          {/* Position indicator & Close hint */}
           <div className="mt-4 flex flex-col items-center gap-1.5 text-center">
-            <div className="flex items-center gap-2">
-              {lightboxImages.length > 1 && (
-                <span className="text-xs text-slate-300 font-mono font-bold bg-slate-900/60 px-3 py-1 rounded-full border border-slate-800">
-                  {lightboxIndex + 1} / {lightboxImages.length}
-                </span>
-              )}
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setIsLightboxZoomed(!isLightboxZoomed);
-                }}
-                className="text-xs font-semibold bg-blue-600/90 hover:bg-blue-600 text-white px-3.5 py-1.5 rounded-full border border-blue-500 transition-all cursor-pointer flex items-center gap-1 shadow-sm"
-              >
-                <span>🔍 {isLightboxZoomed ? t('Perkecil') : t('Perbesar / Fokus Detail')}</span>
-              </button>
-            </div>
+            {lightboxImages.length > 1 && (
+              <span className="text-xs text-slate-300 font-mono font-bold bg-slate-900/60 px-3 py-1 rounded-full border border-slate-800">
+                {lightboxIndex + 1} / {lightboxImages.length}
+              </span>
+            )}
             <p className="text-[10px] text-slate-500 font-medium tracking-wider uppercase mt-1">
-              {isLightboxZoomed ? t('Seret/Scroll untuk melihat bagian gambar • Klik gambar untuk mengecilkan') : t('Klik gambar atau tombol untuk memperbesar penuh & jelas')}
+              {t('Klik di mana saja untuk kembali')}
             </p>
           </div>
         </div>

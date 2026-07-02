@@ -120,15 +120,10 @@ export default function AdminAssets({
   // States for fullscreen image lightbox
   const [lightboxImages, setLightboxImages] = useState<string[]>([]);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
-  const [isLightboxZoomed, setIsLightboxZoomed] = useState(false);
 
   useEffect(() => {
     setDetailImageIdx(0);
   }, [selectedAssetId]);
-
-  useEffect(() => {
-    setIsLightboxZoomed(false);
-  }, [lightboxIndex]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -782,50 +777,52 @@ export default function AdminAssets({
             </div>
 
             {/* Actions: Edit & Delete */}
-            {deleteConfirmId === selectedAsset.id ? (
-              <div className="pt-4 border-t border-rose-100 bg-rose-50/70 p-4 rounded-xl space-y-3 animate-fade-in">
-                <div className="flex gap-2 text-rose-800 text-xs font-semibold items-start">
-                  <AlertTriangle className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
-                  <div>
-                    <p className="font-bold text-rose-900">{t('Konfirmasi Hapus Unit')}</p>
-                    <p className="text-rose-700 font-normal mt-1 leading-relaxed">
-                      {t('Apakah Anda yakin ingin menghapus {name} secara permanen? Data historis penawaran juga akan ikut terhapus.').replace('{name}', selectedAsset.name)}
-                    </p>
+            {selectedAsset.status !== 'Sold' && (
+              deleteConfirmId === selectedAsset.id ? (
+                <div className="pt-4 border-t border-rose-100 bg-rose-50/70 p-4 rounded-xl space-y-3 animate-fade-in">
+                  <div className="flex gap-2 text-rose-800 text-xs font-semibold items-start">
+                    <AlertTriangle className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
+                    <div>
+                      <p className="font-bold text-rose-900">{t('Konfirmasi Hapus Unit')}</p>
+                      <p className="text-rose-700 font-normal mt-1 leading-relaxed">
+                        {t('Apakah Anda yakin ingin menghapus {name} secara permanen? Data historis penawaran juga akan ikut terhapus.').replace('{name}', selectedAsset.name)}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex gap-2 pt-1">
+                    <button
+                      onClick={() => setDeleteConfirmId(null)}
+                      className="flex-1 bg-white hover:bg-slate-100 text-slate-700 py-1.5 rounded-lg text-[11px] font-bold border border-slate-200 transition-colors"
+                    >
+                      {t('Batal')}
+                    </button>
+                    <button
+                      onClick={() => {
+                        onDeleteAsset(selectedAsset.id);
+                        setDeleteConfirmId(null);
+                      }}
+                      className="flex-1 bg-rose-600 hover:bg-rose-700 text-white py-1.5 rounded-lg text-[11px] font-bold shadow-sm transition-colors flex items-center justify-center gap-1"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" /> {t('Ya, Hapus')}
+                    </button>
                   </div>
                 </div>
-                <div className="flex gap-2 pt-1">
+              ) : (
+                <div className="pt-4 border-t border-slate-100 flex gap-3">
                   <button
-                    onClick={() => setDeleteConfirmId(null)}
-                    className="flex-1 bg-white hover:bg-slate-100 text-slate-700 py-1.5 rounded-lg text-[11px] font-bold border border-slate-200 transition-colors"
+                    onClick={() => handleEditClick(selectedAsset)}
+                    className="w-full bg-blue-50 hover:bg-blue-100 text-blue-600 py-2.5 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 border border-blue-200 transition-colors"
                   >
-                    {t('Batal')}
+                    <FileText className="w-4 h-4" /> {t('Edit Unit Aset')}
                   </button>
                   <button
-                    onClick={() => {
-                      onDeleteAsset(selectedAsset.id);
-                      setDeleteConfirmId(null);
-                    }}
-                    className="flex-1 bg-rose-600 hover:bg-rose-700 text-white py-1.5 rounded-lg text-[11px] font-bold shadow-sm transition-colors flex items-center justify-center gap-1"
+                    onClick={() => setDeleteConfirmId(selectedAsset.id)}
+                    className="w-full bg-rose-50 hover:bg-rose-100 text-rose-600 py-2.5 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 border border-rose-200 transition-colors"
                   >
-                    <Trash2 className="w-3.5 h-3.5" /> {t('Ya, Hapus')}
+                    <Trash2 className="w-4 h-4" /> {t('Hapus Unit Aset')}
                   </button>
                 </div>
-              </div>
-            ) : (
-              <div className="pt-4 border-t border-slate-100 flex gap-3">
-                <button
-                  onClick={() => handleEditClick(selectedAsset)}
-                  className="w-full bg-blue-50 hover:bg-blue-100 text-blue-600 py-2.5 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 border border-blue-200 transition-colors"
-                >
-                  <FileText className="w-4 h-4" /> {t('Edit Unit Aset')}
-                </button>
-                <button
-                  onClick={() => setDeleteConfirmId(selectedAsset.id)}
-                  className="w-full bg-rose-50 hover:bg-rose-100 text-rose-600 py-2.5 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 border border-rose-200 transition-colors"
-                >
-                  <Trash2 className="w-4 h-4" /> {t('Hapus Unit Aset')}
-                </button>
-              </div>
+              )
             )}
 
           </div>
@@ -1276,55 +1273,30 @@ export default function AdminAssets({
 
           {/* Image Container with Smooth Animation */}
           <div 
-            className={`relative w-full max-w-6xl max-h-[85vh] transition-all duration-300 flex items-center justify-center animate-zoom-in ${
-              isLightboxZoomed ? 'overflow-auto cursor-zoom-out p-12' : 'overflow-hidden'
-            }`}
-            onClick={(e) => {
-              e.stopPropagation();
-              if (isLightboxZoomed) {
-                setIsLightboxZoomed(false);
-              }
-            }}
+            className="relative w-full max-w-6xl max-h-[85vh] flex items-center justify-center animate-zoom-in"
+            onClick={(e) => e.stopPropagation()}
           >
             <img
               src={lightboxImages[lightboxIndex]}
               alt={`Zoomed Asset - ${lightboxIndex + 1}`}
-              className={`transition-all duration-300 rounded-2xl shadow-2xl border border-slate-800 object-contain ${
-                isLightboxZoomed 
-                  ? 'max-w-none max-h-none w-[180%] h-auto md:w-[220%] lg:w-[250%] cursor-zoom-out' 
-                  : 'max-w-full max-h-[80vh] cursor-zoom-in hover:scale-[1.03]'
-              }`}
+              className="max-w-full max-h-[85vh] object-contain rounded-2xl shadow-2xl border border-slate-800"
               referrerPolicy="no-referrer"
-              onClick={(e) => {
-                e.stopPropagation();
-                setIsLightboxZoomed(!isLightboxZoomed);
-              }}
+              onClick={() => setLightboxIndex(null)}
               onError={(e) => {
                 e.currentTarget.src = "https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?auto=format&fit=crop&w=800&q=80";
               }}
             />
           </div>
 
-          {/* Position indicator & Instructions */}
+          {/* Position indicator & Close hint */}
           <div className="mt-4 flex flex-col items-center gap-1.5 text-center">
-            <div className="flex items-center gap-2">
-              {lightboxImages.length > 1 && (
-                <span className="text-xs text-slate-300 font-mono font-bold bg-slate-900/60 px-3 py-1 rounded-full border border-slate-800">
-                  {lightboxIndex + 1} / {lightboxImages.length}
-                </span>
-              )}
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setIsLightboxZoomed(!isLightboxZoomed);
-                }}
-                className="text-xs font-semibold bg-blue-600/90 hover:bg-blue-600 text-white px-3.5 py-1.5 rounded-full border border-blue-500 transition-all cursor-pointer flex items-center gap-1 shadow-sm"
-              >
-                <span>🔍 {isLightboxZoomed ? t('Perkecil') : t('Perbesar / Fokus Detail')}</span>
-              </button>
-            </div>
+            {lightboxImages.length > 1 && (
+              <span className="text-xs text-slate-300 font-mono font-bold bg-slate-900/60 px-3 py-1 rounded-full border border-slate-800">
+                {lightboxIndex + 1} / {lightboxImages.length}
+              </span>
+            )}
             <p className="text-[10px] text-slate-500 font-medium tracking-wider uppercase mt-1">
-              {isLightboxZoomed ? t('Seret/Scroll untuk melihat bagian gambar • Klik gambar untuk mengecilkan') : t('Klik gambar atau tombol untuk memperbesar penuh & jelas')}
+              {t('Klik di mana saja untuk kembali')}
             </p>
           </div>
         </div>
