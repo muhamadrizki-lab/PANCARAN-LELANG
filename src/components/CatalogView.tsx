@@ -378,9 +378,9 @@ export default function CatalogView({ assets, onPlaceBid }: CatalogViewProps) {
         
         {/* Banner Background Image */}
         <div 
-          className="absolute inset-0 bg-cover bg-center opacity-40 z-0"
+          className="absolute inset-0 bg-cover bg-center opacity-55 md:opacity-40 z-0"
           style={{ 
-            backgroundImage: "url('https://lh3.googleusercontent.com/d/15gpj-0TTx8t4fjcRJY44ANhoU8GkVZWK')" 
+            backgroundImage: "url('https://lh3.googleusercontent.com/d/1ZKGlebZp5PDwYSnvPXBLyjqRT3bo929R')" 
           }}
         ></div>
 
