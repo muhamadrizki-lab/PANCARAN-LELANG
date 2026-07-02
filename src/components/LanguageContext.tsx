@@ -104,6 +104,10 @@ const translations: Record<Language, Record<string, string>> = {
     'Penawaran Pemenang': 'Penawaran Pemenang',
     'Kontak Pemenang': 'Kontak Pemenang',
     'Belum ada penawar': 'Belum ada penawar',
+    'Perkecil': 'Perkecil',
+    'Perbesar / Fokus Detail': 'Perbesar / Fokus Detail',
+    'Seret/Scroll untuk melihat bagian gambar • Klik gambar untuk mengecilkan': 'Seret/Scroll untuk melihat bagian gambar • Klik gambar untuk mengecilkan',
+    'Klik gambar atau tombol untuk memperbesar penuh & jelas': 'Klik gambar atau tombol untuk memperbesar penuh & jelas',
 
     // Login Modal
     'Otoritas Internal Admin': 'Otoritas Internal Admin',
@@ -451,6 +455,10 @@ const translations: Record<Language, Record<string, string>> = {
     'Penawaran Pemenang': 'Winning Bid',
     'Kontak Pemenang': 'Winner Contact',
     'Belum ada penawar': 'No bidders yet',
+    'Perkecil': 'Zoom Out',
+    'Perbesar / Fokus Detail': 'Zoom In / Focus Detail',
+    'Seret/Scroll untuk melihat bagian gambar • Klik gambar untuk mengecilkan': 'Drag/Scroll to view parts of the image • Click image to zoom out',
+    'Klik gambar atau tombol untuk memperbesar penuh & jelas': 'Click image or button to zoom in full & clear',
 
     // Login Modal
     'Otoritas Internal Admin': 'Internal Admin Authority',

@@ -63,8 +63,9 @@ function CatalogCard({ asset, onSelectAsset, formatIDR }: CatalogCardProps) {
         <img 
           src={images[activeImgIdx]} 
           alt={`${asset.name} - ${activeImgIdx + 1}`} 
-          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
+          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 cursor-pointer" 
           referrerPolicy="no-referrer"
+          onClick={() => onSelectAsset(asset.id)}
           onError={(e) => {
             e.currentTarget.src = "https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?auto=format&fit=crop&w=800&q=80";
           }}
@@ -214,6 +215,34 @@ export default function CatalogView({ assets, onPlaceBid }: CatalogViewProps) {
   const [formError, setFormError] = useState('');
   const [formSuccess, setFormSuccess] = useState(false);
   const [isFormFocused, setIsFormFocused] = useState(false);
+
+  // States for modal image carousel and fullscreen lightbox
+  const [modalImageIdx, setModalImageIdx] = useState(0);
+  const [lightboxImages, setLightboxImages] = useState<string[]>([]);
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+  const [isLightboxZoomed, setIsLightboxZoomed] = useState(false);
+
+  useEffect(() => {
+    setModalImageIdx(0);
+  }, [selectedAssetId]);
+
+  useEffect(() => {
+    setIsLightboxZoomed(false);
+  }, [lightboxIndex]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setLightboxIndex(null);
+      } else if (e.key === 'ArrowRight' && lightboxIndex !== null && lightboxImages.length > 1) {
+        setLightboxIndex(prev => (prev === null ? null : (prev === lightboxImages.length - 1 ? 0 : prev + 1)));
+      } else if (e.key === 'ArrowLeft' && lightboxIndex !== null && lightboxImages.length > 1) {
+        setLightboxIndex(prev => (prev === null ? null : (prev === 0 ? lightboxImages.length - 1 : prev - 1)));
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [lightboxIndex, lightboxImages]);
 
   // We only show "Open" assets in the public catalog
   const openAssets = assets.filter(a => a.status === 'Open');
@@ -484,6 +513,67 @@ export default function CatalogView({ assets, onPlaceBid }: CatalogViewProps) {
  
             <div className="px-6 pb-6 space-y-6">
               
+              {/* Image Carousel / Gallery */}
+              {selectedAsset && (() => {
+                const detailImages = selectedAsset.imageUrls && selectedAsset.imageUrls.length > 0 
+                  ? selectedAsset.imageUrls 
+                  : (selectedAsset.imageUrl ? [selectedAsset.imageUrl] : []);
+                return detailImages.length > 0 ? (
+                  <div className={`space-y-2 transition-all duration-300 ${
+                    isFormFocused ? 'opacity-30 blur-[0.5px] scale-[0.98] pointer-events-none' : ''
+                  }`}>
+                    <div className="aspect-video w-full rounded-2xl overflow-hidden bg-slate-50 relative group/modal-img border border-slate-200 shadow-xs">
+                      <img 
+                        src={detailImages[modalImageIdx] || "https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?auto=format&fit=crop&w=800&q=80"} 
+                        alt={`${selectedAsset.name} - ${modalImageIdx + 1}`} 
+                        className="w-full h-full object-cover cursor-zoom-in hover:scale-102 transition-transform duration-300" 
+                        referrerPolicy="no-referrer"
+                        onClick={() => {
+                          setLightboxImages(detailImages);
+                          setLightboxIndex(modalImageIdx);
+                        }}
+                        onError={(e) => {
+                          e.currentTarget.src = "https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?auto=format&fit=crop&w=800&q=80";
+                        }}
+                      />
+                      
+                      {/* Prev/Next Overlay buttons */}
+                      {detailImages.length > 1 && (
+                        <>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setModalImageIdx(prev => (prev === 0 ? detailImages.length - 1 : prev - 1));
+                            }}
+                            className="absolute left-2.5 top-1/2 -translate-y-1/2 bg-black/60 hover:bg-black/80 text-white p-1.5 rounded-full transition-all opacity-0 group-hover/modal-img:opacity-100 flex items-center justify-center w-7 h-7 text-xs font-bold animate-fade-in"
+                            title={t('Sebelumnya')}
+                          >
+                            <ChevronLeft className="w-4 h-4" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setModalImageIdx(prev => (prev === detailImages.length - 1 ? 0 : prev + 1));
+                            }}
+                            className="absolute right-2.5 top-1/2 -translate-y-1/2 bg-black/60 hover:bg-black/80 text-white p-1.5 rounded-full transition-all opacity-0 group-hover/modal-img:opacity-100 flex items-center justify-center w-7 h-7 text-xs font-bold animate-fade-in"
+                            title={t('Berikutnya')}
+                          >
+                            <ChevronRight className="w-4 h-4" />
+                          </button>
+                          
+                          {/* Image position label */}
+                          <span className="absolute bottom-2.5 right-2.5 bg-black/65 backdrop-blur-xs text-white text-[10px] px-2 py-1 rounded-md font-mono font-semibold">
+                            {modalImageIdx + 1} / {detailImages.length}
+                          </span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                ) : null;
+              })()}
+              
               {/* Price Alert Rules */}
               <div className={`bg-blue-50/50 p-4 rounded-2xl border border-blue-100/50 space-y-2 text-xs transition-all duration-300 ${
                 isFormFocused ? 'opacity-30 blur-[0.5px] scale-[0.98] pointer-events-none' : ''
@@ -729,6 +819,106 @@ export default function CatalogView({ assets, onPlaceBid }: CatalogViewProps) {
       )}
 
       </div>
+
+      {/* Immersive Fullscreen Lightbox Zoom Overlay */}
+      {lightboxIndex !== null && lightboxImages.length > 0 && (
+        <div 
+          className="fixed inset-0 bg-slate-950/95 backdrop-blur-md z-[100] flex flex-col items-center justify-center p-4 md:p-8 select-none animate-fade-in"
+          id="image-lightbox-overlay"
+          onClick={() => setLightboxIndex(null)}
+        >
+          {/* Close button */}
+          <button
+            onClick={() => setLightboxIndex(null)}
+            className="absolute top-4 right-4 bg-slate-900/80 hover:bg-slate-800 text-white p-2.5 rounded-full border border-slate-800 hover:border-slate-700 hover:scale-105 transition-all shadow-xl z-[110] flex items-center justify-center cursor-pointer"
+            title={t('Tutup')}
+          >
+            <X className="w-5 h-5" />
+          </button>
+
+          {/* Prev button */}
+          {lightboxImages.length > 1 && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setLightboxIndex(prev => (prev === null ? 0 : (prev === 0 ? lightboxImages.length - 1 : prev - 1)));
+              }}
+              className="absolute left-4 top-1/2 -translate-y-1/2 bg-slate-900/80 hover:bg-slate-800 text-white p-3 rounded-full border border-slate-800 hover:border-slate-700 hover:scale-105 transition-all shadow-xl z-[110] flex items-center justify-center w-12 h-12 cursor-pointer"
+              title={t('Sebelumnya')}
+            >
+              <ChevronLeft className="w-6 h-6" />
+            </button>
+          )}
+
+          {/* Next button */}
+          {lightboxImages.length > 1 && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setLightboxIndex(prev => (prev === null ? 0 : (prev === lightboxImages.length - 1 ? 0 : prev + 1)));
+              }}
+              className="absolute right-4 top-1/2 -translate-y-1/2 bg-slate-900/80 hover:bg-slate-800 text-white p-3 rounded-full border border-slate-800 hover:border-slate-700 hover:scale-105 transition-all shadow-xl z-[110] flex items-center justify-center w-12 h-12 cursor-pointer"
+              title={t('Berikutnya')}
+            >
+              <ChevronRight className="w-6 h-6" />
+            </button>
+          )}
+
+          {/* Image Container with Smooth Animation */}
+          <div 
+            className={`relative w-full max-w-6xl max-h-[85vh] transition-all duration-300 flex items-center justify-center animate-zoom-in ${
+              isLightboxZoomed ? 'overflow-auto cursor-zoom-out p-12' : 'overflow-hidden'
+            }`}
+            onClick={(e) => {
+              e.stopPropagation();
+              if (isLightboxZoomed) {
+                setIsLightboxZoomed(false);
+              }
+            }}
+          >
+            <img
+              src={lightboxImages[lightboxIndex]}
+              alt={`Zoomed Asset - ${lightboxIndex + 1}`}
+              className={`transition-all duration-300 rounded-2xl shadow-2xl border border-slate-800 object-contain ${
+                isLightboxZoomed 
+                  ? 'max-w-none max-h-none w-[180%] h-auto md:w-[220%] lg:w-[250%] cursor-zoom-out' 
+                  : 'max-w-full max-h-[80vh] cursor-zoom-in hover:scale-[1.03]'
+              }`}
+              referrerPolicy="no-referrer"
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsLightboxZoomed(!isLightboxZoomed);
+              }}
+              onError={(e) => {
+                e.currentTarget.src = "https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?auto=format&fit=crop&w=800&q=80";
+              }}
+            />
+          </div>
+
+          {/* Position indicator & Instructions */}
+          <div className="mt-4 flex flex-col items-center gap-1.5 text-center">
+            <div className="flex items-center gap-2">
+              {lightboxImages.length > 1 && (
+                <span className="text-xs text-slate-300 font-mono font-bold bg-slate-900/60 px-3 py-1 rounded-full border border-slate-800">
+                  {lightboxIndex + 1} / {lightboxImages.length}
+                </span>
+              )}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsLightboxZoomed(!isLightboxZoomed);
+                }}
+                className="text-xs font-semibold bg-blue-600/90 hover:bg-blue-600 text-white px-3.5 py-1.5 rounded-full border border-blue-500 transition-all cursor-pointer flex items-center gap-1 shadow-sm"
+              >
+                <span>🔍 {isLightboxZoomed ? t('Perkecil') : t('Perbesar / Fokus Detail')}</span>
+              </button>
+            </div>
+            <p className="text-[10px] text-slate-500 font-medium tracking-wider uppercase mt-1">
+              {isLightboxZoomed ? t('Seret/Scroll untuk melihat bagian gambar • Klik gambar untuk mengecilkan') : t('Klik gambar atau tombol untuk memperbesar penuh & jelas')}
+            </p>
+          </div>
+        </div>
+      )}
 
     </div>
   );
