@@ -50,29 +50,33 @@ export default function App() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   // Database States (pre-seeded from mockData and stored in localStorage)
-  const [assets, setAssets] = useState<Asset[]>([]);
-  const [admins, setAdmins] = useState<AdminUser[]>([]);
+  const [assets, setAssets] = useState<Asset[]>(INITIAL_ASSETS);
+  const [admins, setAdmins] = useState<AdminUser[]>(INITIAL_ADMINS);
   
   // Selected asset for highlighting or detailed specs in AdminAssets
   const [selectedAssetId, setSelectedAssetId] = useState<string | null>(null);
 
   // Initialize data and hook up Firebase subscription
   useEffect(() => {
+    let unsubscribeAssets: (() => void) | null = null;
+    let unsubscribeAdmins: (() => void) | null = null;
+
     // Seed default records if empty, then subscribe to collections in real-time
     seedDatabaseIfEmpty().then(() => {
-      const unsubscribeAssets = subscribeToAssets((updatedAssets) => {
-        // Keep descending ID order or keep order stable
-        setAssets(updatedAssets.sort((a, b) => b.id.localeCompare(a.id)));
+      unsubscribeAssets = subscribeToAssets((updatedAssets) => {
+        if (updatedAssets && updatedAssets.length > 0) {
+          // Keep descending ID order or keep order stable
+          setAssets(updatedAssets.sort((a, b) => b.id.localeCompare(a.id)));
+        }
       });
 
-      const unsubscribeAdmins = subscribeToAdmins((updatedAdmins) => {
-        setAdmins(updatedAdmins);
+      unsubscribeAdmins = subscribeToAdmins((updatedAdmins) => {
+        if (updatedAdmins && updatedAdmins.length > 0) {
+          setAdmins(updatedAdmins);
+        }
       });
-
-      return () => {
-        unsubscribeAssets();
-        unsubscribeAdmins();
-      };
+    }).catch((err) => {
+      console.warn("Firestore connection is offline or unavailable. Operating with local database.", err);
     });
 
     const storedSession = localStorage.getItem('pancaran_session_email');
@@ -80,65 +84,95 @@ export default function App() {
       setIsAdminLoggedIn(true);
       setLoggedInAdminEmail(storedSession);
     }
+
+    return () => {
+      if (unsubscribeAssets) unsubscribeAssets();
+      if (unsubscribeAdmins) unsubscribeAdmins();
+    };
   }, []);
 
   // 2. Business Actions (Admin Operations via Firestore)
   
   // Input Asset (Input Asset flow in Asset branch)
   const handleAddAsset = async (newAssetData: Omit<Asset, 'id' | 'bids' | 'highestBid'>) => {
+    const finalId = `PL-${new Date().getFullYear()}-${Math.floor(100 + Math.random() * 900)}`;
+    const newAsset: Asset = {
+      ...newAssetData,
+      id: finalId,
+      highestBid: newAssetData.startingPrice,
+      bids: []
+    };
+
+    // Optimistic / Local update in case Firestore is offline
+    setAssets(prev => [newAsset, ...prev]);
+
     try {
       await addAssetToDb({
         ...newAssetData,
+        id: finalId,
         highestBid: newAssetData.startingPrice,
         bids: []
       });
     } catch (error) {
-      console.error("Gagal menambahkan aset ke Firebase:", error);
+      console.warn("Firebase offline or error, saved locally:", error);
     }
   };
 
   // Update Asset (Edit specs/attributes)
   const handleUpdateAsset = async (assetId: string, updatedAsset: Partial<Asset>) => {
+    // Optimistic update
+    setAssets(prev => prev.map(a => a.id === assetId ? { ...a, ...updatedAsset } : a));
+
     try {
       await updateAssetInDb(assetId, updatedAsset);
     } catch (error) {
-      console.error("Gagal memperbarui aset di Firebase:", error);
+      console.warn("Firebase offline or error, saved locally:", error);
     }
   };
 
   // Update Asset Status (Open / Sold toggle)
   const handleUpdateAssetStatus = async (assetId: string, status: AssetStatus) => {
+    // Optimistic update
+    setAssets(prev => prev.map(a => a.id === assetId ? { ...a, status } : a));
+
     try {
       await updateAssetInDb(assetId, { status });
     } catch (error) {
-      console.error("Gagal memperbarui status aset di Firebase:", error);
+      console.warn("Firebase offline or error, saved locally:", error);
     }
   };
 
   // Delete Asset
   const handleDeleteAsset = async (assetId: string) => {
+    // Optimistic update
+    setAssets(prev => prev.filter(a => a.id !== assetId));
+    setSelectedAssetId(null);
+
     try {
       await deleteAssetFromDb(assetId);
-      setSelectedAssetId(null);
     } catch (error) {
-      console.error("Gagal menghapus aset dari Firebase:", error);
+      console.warn("Firebase offline or error, saved locally:", error);
     }
   };
 
   // Create Access / User Management (Create access flow)
   const handleAddAdmin = async (newAdmin: AdminUser) => {
+    setAdmins(prev => [...prev.filter(a => a.email !== newAdmin.email), newAdmin]);
+
     try {
       await addAdminToDb(newAdmin);
     } catch (error) {
-      console.error("Gagal mendaftarkan admin baru di Firebase:", error);
+      console.warn("Firebase offline or error, saved locally:", error);
     }
   };
 
   const handleDeleteAdmin = async (email: string) => {
+    setAdmins(prev => prev.filter(a => a.email !== email));
+
     try {
       await deleteAdminFromDb(email);
     } catch (error) {
-      console.error("Gagal menghapus admin dari Firebase:", error);
+      console.warn("Firebase offline or error, saved locally:", error);
     }
   };
 
@@ -153,10 +187,24 @@ export default function App() {
       timestamp: new Date().toISOString()
     };
 
+    // Optimistic update
+    setAssets(prev => prev.map(a => {
+      if (a.id === assetId) {
+        const updatedBids = [...(a.bids || []), newBid];
+        const highestBid = Math.max(...updatedBids.map(b => b.price), a.startingPrice);
+        return {
+          ...a,
+          bids: updatedBids,
+          highestBid: highestBid
+        };
+      }
+      return a;
+    }));
+
     try {
       await addBidToAsset(assetId, newBid);
     } catch (error) {
-      console.error("Gagal menaruh bid baru di Firebase:", error);
+      console.warn("Firebase offline or error, saved locally:", error);
     }
   };
 
