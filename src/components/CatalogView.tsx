@@ -380,7 +380,8 @@ export default function CatalogView({ assets, onPlaceBid }: CatalogViewProps) {
         <div 
           className="absolute inset-0 bg-cover bg-center opacity-55 md:opacity-40 z-0"
           style={{ 
-            backgroundImage: "url('https://lh3.googleusercontent.com/d/1ZKGlebZp5PDwYSnvPXBLyjqRT3bo929R')" 
+            backgroundImage: "url('https://lh3.googleusercontent.com/d/1ZKGlebZp5PDwYSnvPXBLyjqRT3bo929R')",
+            height: '376.992px'
           }}
         ></div>
 
