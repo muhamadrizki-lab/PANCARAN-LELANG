@@ -698,14 +698,10 @@ const translations: Record<Language, Record<string, string>> = {
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
 export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [language, setLanguageState] = useState<Language>(() => {
-    const stored = localStorage.getItem('pancaran_language');
-    return (stored === 'en' || stored === 'id') ? (stored as Language) : 'en';
-  });
+  const [language, setLanguageState] = useState<Language>('en');
 
   const setLanguage = (lang: Language) => {
     setLanguageState(lang);
-    localStorage.setItem('pancaran_language', lang);
   };
 
   const t = (key: string, variables?: Record<string, string | number>): string => {
