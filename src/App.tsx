@@ -203,7 +203,7 @@ export default function App() {
               </div>
               <div className="flex flex-col">
                 <span className="text-white font-bold text-lg tracking-tight">
-                  Pancaran <span className="text-blue-400">Lelang</span>
+                  Pancaran <span className="text-blue-400">{language === 'id' ? 'Lelang' : 'Auctions'}</span>
                 </span>
               </div>
             </div>
@@ -302,7 +302,31 @@ export default function App() {
             </div>
 
             {/* Mobile Menu Button */}
-            <div className="flex md:hidden items-center gap-3">
+            <div className="flex md:hidden items-center gap-2">
+              {/* Always visible mobile language switcher */}
+              <div className="flex bg-slate-800 p-0.5 rounded-lg border border-slate-700">
+                <button
+                  onClick={() => setLanguage('id')}
+                  className={`px-2 py-0.5 text-[9px] font-bold rounded-md transition-all ${
+                    language === 'id' 
+                      ? 'bg-blue-600 text-white shadow' 
+                      : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  ID
+                </button>
+                <button
+                  onClick={() => setLanguage('en')}
+                  className={`px-2 py-0.5 text-[9px] font-bold rounded-md transition-all ${
+                    language === 'en' 
+                      ? 'bg-blue-600 text-white shadow' 
+                      : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  EN
+                </button>
+              </div>
+
               {isAdminLoggedIn && (
                 <span className="text-[10px] font-mono font-bold bg-blue-500 text-white px-2 py-1 rounded">
                   {t('Admin Active')}

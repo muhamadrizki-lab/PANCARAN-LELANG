@@ -91,14 +91,6 @@ const VEHICLE_TEMPLATES = [
   { name: 'Caterpillar Forklift Diesel', brand: 'Caterpillar', category: 'Forklift', url: 'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=800&q=80' },
 ];
 
-const maskEmail = (email: string) => {
-  if (!email || !email.includes('@')) return email;
-  const [local, domain] = email.split('@');
-  if (local.length <= 3) {
-    return `${local.charAt(0)}••@${domain}`;
-  }
-  return `${local.substring(0, 3)}••••••••@${domain}`;
-};
 
 export default function AdminAssets({
   assets,
@@ -519,12 +511,12 @@ export default function AdminAssets({
                 <span className="text-[10px] font-mono font-bold bg-slate-100 text-slate-700 px-2 py-0.5 rounded">
                   {selectedAsset.id}
                 </span>
-                <h2 className="text-lg font-bold text-slate-800 mt-1">Detail Spesifikasi</h2>
+                <h2 className="text-lg font-bold text-slate-800 mt-1">{t('Detail Spesifikasi')}</h2>
               </div>
               <button
                 onClick={() => onSelectAsset(null)}
                 className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-400 hover:text-slate-700 transition-colors"
-                title="Tutup Detail"
+                title={t('Tutup Detail')}
               >
                 <X className="w-5 h-5" />
               </button>
@@ -533,11 +525,11 @@ export default function AdminAssets({
             {/* Asset quick status switcher */}
             <div className="bg-slate-50 p-4 rounded-xl space-y-3 border border-slate-200">
               <div className="flex justify-between items-center text-xs">
-                <span className="text-slate-500 font-medium">Status Lelang Saat Ini:</span>
+                <span className="text-slate-500 font-medium">{t('Status Lelang Saat Ini:')}</span>
                 <span className={`px-2 py-0.5 rounded-full font-bold uppercase text-[10px] ${
                   selectedAsset.status === 'Open' ? 'bg-blue-100 text-blue-700' : 'bg-emerald-100 text-emerald-700'
                 }`}>
-                  {selectedAsset.status === 'Open' ? 'Menerima Bid' : 'Terjual'}
+                  {selectedAsset.status === 'Open' ? t('Menerima Bid') : t('Terjual')}
                 </span>
               </div>
               <div className="flex gap-2">
@@ -550,7 +542,7 @@ export default function AdminAssets({
                       : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-100'
                   }`}
                 >
-                  <Clock className="w-3.5 h-3.5" /> Buka Bid
+                  <Clock className="w-3.5 h-3.5" /> {t('Buka Bid')}
                 </button>
                 <button
                   onClick={() => onUpdateAssetStatus(selectedAsset.id, 'Sold')}
@@ -561,7 +553,7 @@ export default function AdminAssets({
                       : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-100'
                   }`}
                 >
-                  <Check className="w-3.5 h-3.5" /> Set Terjual
+                  <Check className="w-3.5 h-3.5" /> {t('Set Terjual')}
                 </button>
               </div>
             </div>
@@ -587,14 +579,14 @@ export default function AdminAssets({
                       <button
                         onClick={() => setDetailImageIdx(prev => (prev === 0 ? selectedAsset.imageUrls!.length - 1 : prev - 1))}
                         className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white p-1.5 rounded-full transition-all opacity-0 group-hover/detail:opacity-100 flex items-center justify-center w-6 h-6 text-xs font-bold"
-                        title="Sebelumnya"
+                        title={t('Sebelumnya')}
                       >
                         ◀
                       </button>
                       <button
                         onClick={() => setDetailImageIdx(prev => (prev === selectedAsset.imageUrls!.length - 1 ? 0 : prev + 1))}
                         className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white p-1.5 rounded-full transition-all opacity-0 group-hover/detail:opacity-100 flex items-center justify-center w-6 h-6 text-xs font-bold"
-                        title="Berikutnya"
+                        title={t('Berikutnya')}
                       >
                         ▶
                       </button>
@@ -630,19 +622,19 @@ export default function AdminAssets({
 
               <div className="grid grid-cols-2 gap-y-3 gap-x-4 pt-2 border-t border-slate-50">
                 <div>
-                  <span className="text-[11px] text-slate-400 font-bold block">PLAT NOMOR</span>
+                  <span className="text-[11px] text-slate-400 font-bold block">{t('PLAT NOMOR')}</span>
                   <span className="font-mono font-semibold text-slate-800">{selectedAsset.plateNumber}</span>
                 </div>
                 <div>
-                  <span className="text-[11px] text-slate-400 font-bold block">TAHUN PRODUKSI</span>
+                  <span className="text-[11px] text-slate-400 font-bold block">{t('TAHUN PRODUKSI')}</span>
                   <span className="font-semibold text-slate-800">{selectedAsset.modelYear}</span>
                 </div>
                 <div>
-                  <span className="text-[11px] text-slate-400 font-bold block">KONDISI FISIK</span>
+                  <span className="text-[11px] text-slate-400 font-bold block">{t('KONDISI FISIK')}</span>
                   <span className="font-semibold text-slate-800">{selectedAsset.condition}</span>
                 </div>
                 <div>
-                  <span className="text-[11px] text-slate-400 font-bold block">LOKASI SEEDING</span>
+                  <span className="text-[11px] text-slate-400 font-bold block">{t('LOKASI SEEDING')}</span>
                   <span className="font-semibold text-slate-800 flex items-center gap-0.5 text-xs">
                     <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                     <span className="truncate" title={selectedAsset.location}>{selectedAsset.location}</span>
@@ -651,7 +643,7 @@ export default function AdminAssets({
               </div>
 
               <div className="pt-2 border-t border-slate-50">
-                <span className="text-[11px] text-slate-400 font-bold block">DESKRIPSI INTERNAL</span>
+                <span className="text-[11px] text-slate-400 font-bold block">{t('DESKRIPSI INTERNAL')}</span>
                 <p className="text-xs text-slate-600 mt-1 leading-relaxed bg-slate-50 p-2.5 rounded-lg border border-slate-100 max-h-24 overflow-y-auto">
                   {selectedAsset.description}
                 </p>
@@ -662,9 +654,9 @@ export default function AdminAssets({
             <div className="space-y-3 pt-2 border-t border-slate-100">
               <div className="flex justify-between items-center">
                 <h3 className="font-bold text-slate-800 text-sm flex items-center gap-1">
-                  <FileText className="w-4 h-4 text-blue-600" /> Histori Penawaran ({selectedAsset.bids.length})
+                  <FileText className="w-4 h-4 text-blue-600" /> {t('Histori Penawaran')} ({selectedAsset.bids.length})
                 </h3>
-                <span className="text-[10px] text-slate-400 font-medium">Bids Tertinggi Pertama</span>
+                <span className="text-[10px] text-slate-400 font-medium">{t('Bids Tertinggi Pertama')}</span>
               </div>
 
               <div className="space-y-2 max-h-52 overflow-y-auto pr-1">
@@ -677,15 +669,15 @@ export default function AdminAssets({
                         <span className="font-mono font-bold text-blue-600">{formatIDR(bid.price)}</span>
                       </div>
                       <div className="text-slate-500 flex flex-col gap-0.5">
-                        <span>Kontak: {bid.contact}</span>
-                        <span>Email: {maskEmail(bid.email)}</span>
+                        <span>{t('Hubungi')}: {bid.contact}</span>
+                        <span>Email: {bid.email}</span>
                       </div>
                       
                       {/* Survey date if requested */}
                       {bid.scheduleSurveyDate && (
                         <div className="mt-1.5 pt-1.5 border-t border-dashed border-slate-200 flex items-center justify-between text-[10px] font-semibold text-blue-600 bg-blue-50/50 px-2 py-1 rounded">
                           <span className="flex items-center gap-1">
-                            <Calendar className="w-3 h-3" /> Jadwal Survei:
+                            <Calendar className="w-3 h-3" /> {t('Jadwal Survei')}:
                           </span>
                           <span>{bid.scheduleSurveyDate} @ {bid.scheduleSurveyTime || 'N/A'} WIB</span>
                         </div>
@@ -695,7 +687,7 @@ export default function AdminAssets({
 
                 {selectedAsset.bids.length === 0 && (
                   <div className="text-center py-6 text-slate-400 text-xs">
-                    Belum ada penawaran harga masuk untuk aset ini.
+                    {t('Belum ada penawaran harga masuk untuk aset ini.')}
                   </div>
                 )}
               </div>
@@ -707,9 +699,9 @@ export default function AdminAssets({
                 <div className="flex gap-2 text-rose-800 text-xs font-semibold items-start">
                   <AlertTriangle className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
                   <div>
-                    <p className="font-bold text-rose-900">Konfirmasi Hapus Unit</p>
+                    <p className="font-bold text-rose-900">{t('Konfirmasi Hapus Unit')}</p>
                     <p className="text-rose-700 font-normal mt-1 leading-relaxed">
-                      Apakah Anda yakin ingin menghapus <strong>{selectedAsset.name}</strong> secara permanen? Data historis penawaran juga akan ikut terhapus.
+                      {t('Apakah Anda yakin ingin menghapus {name} secara permanen? Data historis penawaran juga akan ikut terhapus.').replace('{name}', selectedAsset.name)}
                     </p>
                   </div>
                 </div>
@@ -718,7 +710,7 @@ export default function AdminAssets({
                     onClick={() => setDeleteConfirmId(null)}
                     className="flex-1 bg-white hover:bg-slate-100 text-slate-700 py-1.5 rounded-lg text-[11px] font-bold border border-slate-200 transition-colors"
                   >
-                    Batal
+                    {t('Batal')}
                   </button>
                   <button
                     onClick={() => {
@@ -727,7 +719,7 @@ export default function AdminAssets({
                     }}
                     className="flex-1 bg-rose-600 hover:bg-rose-700 text-white py-1.5 rounded-lg text-[11px] font-bold shadow-sm transition-colors flex items-center justify-center gap-1"
                   >
-                    <Trash2 className="w-3.5 h-3.5" /> Ya, Hapus
+                    <Trash2 className="w-3.5 h-3.5" /> {t('Ya, Hapus')}
                   </button>
                 </div>
               </div>
@@ -737,13 +729,13 @@ export default function AdminAssets({
                   onClick={() => handleEditClick(selectedAsset)}
                   className="w-full bg-blue-50 hover:bg-blue-100 text-blue-600 py-2.5 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 border border-blue-200 transition-colors"
                 >
-                  <FileText className="w-4 h-4" /> Edit Unit Aset
+                  <FileText className="w-4 h-4" /> {t('Edit Unit Aset')}
                 </button>
                 <button
                   onClick={() => setDeleteConfirmId(selectedAsset.id)}
                   className="w-full bg-rose-50 hover:bg-rose-100 text-rose-600 py-2.5 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 border border-rose-200 transition-colors"
                 >
-                  <Trash2 className="w-4 h-4" /> Hapus Unit Aset
+                  <Trash2 className="w-4 h-4" /> {t('Hapus Unit Aset')}
                 </button>
               </div>
             )}
@@ -762,10 +754,10 @@ export default function AdminAssets({
             <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50">
               <div>
                 <h2 className="text-lg font-bold text-slate-800">
-                  {editAssetId ? `Ubah Detail Unit: ${editAssetId}` : 'Daftarkan Aset Lelang Baru'}
+                  {editAssetId ? `${t('Ubah Detail Unit')}: ${editAssetId}` : t('Daftarkan Aset Lelang Baru')}
                 </h2>
                 <p className="text-xs text-slate-500 mt-1">
-                  {editAssetId ? 'Perbarui spesifikasi teknis dan kelengkapan dokumen kendaraan lelang.' : 'Lengkapi spesifikasi teknis dan detail dokumen kendaraan di bawah.'}
+                  {editAssetId ? t('Perbarui spesifikasi teknis dan kelengkapan dokumen kendaraan lelang.') : t('Lengkapi spesifikasi teknis dan detail dokumen kendaraan di bawah.')}
                 </p>
               </div>
               <button 
@@ -781,7 +773,7 @@ export default function AdminAssets({
               
               {/* Quick Preset Templates */}
               <div>
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-2">Preset Template Armada</label>
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-2">{t('PILIH TEMPLATE KENDARAAN (OPSIONAL)')}</label>
                 <div className="flex flex-wrap gap-2">
                   {VEHICLE_TEMPLATES.map(t => (
                     <button
@@ -801,11 +793,11 @@ export default function AdminAssets({
                 
                 {/* Name */}
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-600 uppercase">Nama Armada/Unit *</label>
+                  <label className="text-xs font-bold text-slate-600 uppercase">{t('Nama Kendaraan / Aset')} *</label>
                   <input
                     type="text"
                     required
-                    placeholder="Contoh: Fuso Ranger FL Wingbox 2022"
+                    placeholder={t('Contoh: Fuso Ranger FL Wingbox 2022')}
                     value={formData.name}
                     onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
                     className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
@@ -814,7 +806,7 @@ export default function AdminAssets({
 
                 {/* Brand */}
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-600 uppercase">Merek (Brand) *</label>
+                  <label className="text-xs font-bold text-slate-600 uppercase">{t('Merek (Brand) *')}</label>
                   <select
                     value={formData.brand}
                     onChange={(e) => setFormData(prev => ({ ...prev, brand: e.target.value }))}
@@ -833,7 +825,7 @@ export default function AdminAssets({
 
                 {/* Category */}
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-600 uppercase">Kategori Unit *</label>
+                  <label className="text-xs font-bold text-slate-600 uppercase">{t('Kategori Unit *')}</label>
                   <select
                     value={formData.category}
                     onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
@@ -852,7 +844,7 @@ export default function AdminAssets({
 
                 {/* Model Year */}
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-600 uppercase">Tahun Produksi *</label>
+                  <label className="text-xs font-bold text-slate-600 uppercase">{t('Tahun Produksi *')}</label>
                   <input
                     type="number"
                     min="1990"
@@ -866,10 +858,10 @@ export default function AdminAssets({
 
                 {/* Plate Number */}
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-600 uppercase">No. Registrasi / Plat Nomor</label>
+                  <label className="text-xs font-bold text-slate-600 uppercase">{t('No. Registrasi / Plat Nomor')}</label>
                   <input
                     type="text"
-                    placeholder="Contoh: B 9912 PXT (kosongkan jika alat berat)"
+                    placeholder={t('Contoh: B 9912 PXT (kosongkan jika alat berat)')}
                     value={formData.plateNumber}
                     onChange={(e) => setFormData(prev => ({ ...prev, plateNumber: e.target.value }))}
                     className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-sm font-mono"
@@ -878,27 +870,27 @@ export default function AdminAssets({
 
                 {/* Condition */}
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-600 uppercase">Kondisi Fisik Unit *</label>
+                  <label className="text-xs font-bold text-slate-600 uppercase">{t('Kondisi Fisik Unit *')}</label>
                   <select
                     value={formData.condition}
                     onChange={(e) => setFormData(prev => ({ ...prev, condition: e.target.value as Asset['condition'] }))}
                     className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
                   >
-                    <option value="Sangat Baik">Sangat Baik (Siap Jalan & Bebas Masalah)</option>
-                    <option value="Baik">Baik (Mesin Bagus, Lecet Halus)</option>
-                    <option value="Cukup">Cukup (Butuh Perawatan Ringan)</option>
-                    <option value="Butuh Perbaikan">Butuh Perbaikan (Overhaul/Sasis/Body)</option>
+                    <option value="Sangat Baik">{t('Sangat Baik')} ({t('Siap Jalan & Bebas Masalah')})</option>
+                    <option value="Baik">{t('Baik')} ({t('Mesin Bagus, Lecet Halus')})</option>
+                    <option value="Cukup">{t('Cukup')} ({t('Butuh Perawatan Ringan')})</option>
+                    <option value="Butuh Perbaikan">{t('Butuh Perbaikan')} ({t('Overhaul/Sasis/Body')})</option>
                   </select>
                 </div>
 
                 {/* Starting Price */}
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-600 uppercase">Harga Awal Lelang (IDR) *</label>
+                  <label className="text-xs font-bold text-slate-600 uppercase">{t('Harga Awal Lelang (IDR) *')}</label>
                   <input
                     type="text"
                     inputMode="numeric"
                     required
-                    placeholder="Contoh: 150.000.000"
+                    placeholder={t('Contoh: 150.000.000')}
                     value={formatNumberWithDots(formData.startingPrice)}
                     onChange={(e) => {
                       const raw = e.target.value.replace(/\D/g, '');
@@ -910,11 +902,11 @@ export default function AdminAssets({
 
                 {/* Location */}
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-600 uppercase">Lokasi Pool / Depo Unit *</label>
+                  <label className="text-xs font-bold text-slate-600 uppercase">{t('Lokasi Pool / Depo Unit *')}</label>
                   <input
                     type="text"
                     required
-                    placeholder="Contoh: Pool Marunda Blok C, Jakut"
+                    placeholder={t('Contoh: Pool Marunda Blok C, Jakut')}
                     value={formData.location}
                     onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
                     className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
@@ -924,7 +916,7 @@ export default function AdminAssets({
 
               {/* Image Upload Component */}
               <div className="space-y-4">
-                <label className="text-xs font-bold text-slate-600 uppercase tracking-wider block">Foto / Gambar Unit * (Bisa Unggah Banyak)</label>
+                <label className="text-xs font-bold text-slate-600 uppercase tracking-wider block">{t('Foto / Gambar Unit * (Bisa Unggah Banyak)')}</label>
                 
                 {/* Drag and Drop Zone */}
                 <div
@@ -963,8 +955,8 @@ export default function AdminAssets({
                       <Upload className="w-6 h-6" />
                     </div>
                     <div>
-                      <p className="text-sm font-semibold text-slate-700">Pilih atau Seret Foto-Foto Armada</p>
-                      <p className="text-[11px] text-slate-400 mt-0.5">Mendukung format PNG, JPG, JPEG (Bisa pilih banyak sekaligus, Max 5MB per file)</p>
+                      <p className="text-sm font-semibold text-slate-700">{t('Pilih atau Seret Foto-Foto Armada')}</p>
+                      <p className="text-[11px] text-slate-400 mt-0.5">{t('Mendukung format PNG, JPG, JPEG (Bisa pilih banyak sekaligus, Max 5MB per file)')}</p>
                     </div>
                   </div>
                 </div>
@@ -972,7 +964,7 @@ export default function AdminAssets({
                 {/* List of uploaded images with custom preview and delete/cover buttons */}
                 {formData.imageUrls && formData.imageUrls.length > 0 && (
                   <div className="space-y-2">
-                    <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Koleksi Foto Terunggah ({formData.imageUrls.length})</p>
+                    <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">{t('Koleksi Foto Terunggah ({count})').replace('{count}', String(formData.imageUrls.length))}</p>
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                       {formData.imageUrls.map((url, idx) => {
                         const isCover = url === formData.imageUrl;
@@ -990,7 +982,7 @@ export default function AdminAssets({
                               />
                               {isCover && (
                                 <span className="absolute top-1 left-1 bg-blue-600 text-white text-[8px] font-bold px-1.5 py-0.5 rounded-md shadow-sm">
-                                  Cover Utama
+                                  {t('Cover Utama')}
                                 </span>
                               )}
                               
@@ -1006,7 +998,7 @@ export default function AdminAssets({
                                     }));
                                   }}
                                   className="bg-white hover:bg-blue-600 hover:text-white text-slate-800 text-[9px] font-bold px-2 py-1 rounded shadow-md transition-all active:scale-95"
-                                  title="Jadikan Cover Utama"
+                                  title={t('Jadikan Cover Utama')}
                                 >
                                   Cover
                                 </button>
@@ -1024,14 +1016,14 @@ export default function AdminAssets({
                                     });
                                   }}
                                   className="bg-rose-500 hover:bg-rose-600 text-white p-1 rounded shadow-md transition-all active:scale-95 flex items-center justify-center"
-                                  title="Hapus gambar"
+                                  title={t('Hapus gambar')}
                                 >
                                   <X className="w-3.5 h-3.5" />
                                 </button>
                               </div>
                             </div>
                             <div className="p-1 bg-white border-t border-slate-100 text-[10px] text-slate-500 text-center font-mono truncate">
-                              Foto {idx + 1}
+                              {t('Foto')} {idx + 1}
                             </div>
                           </div>
                         );
@@ -1045,13 +1037,13 @@ export default function AdminAssets({
                   <details className="group">
                     <summary className="text-[11px] font-semibold text-slate-500 hover:text-slate-800 cursor-pointer select-none flex items-center gap-1">
                       <span className="transition-transform group-open:rotate-90">▶</span>
-                      Tambah Foto via Tautan Gambar (URL)
+                      {t('Tambah Foto via Tautan Gambar (URL)')}
                     </summary>
                     <div className="mt-2 flex gap-2">
                       <input
                         type="url"
                         id="url-photo-input"
-                        placeholder="Masukkan link gambar (https://...)"
+                        placeholder={t('Masukkan link gambar (https://...)')}
                         className="flex-1 px-3.5 py-2 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
                         onKeyDown={(e) => {
                           if (e.key === 'Enter') {
@@ -1090,11 +1082,11 @@ export default function AdminAssets({
                         }}
                         className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 py-2 rounded-xl font-bold"
                       >
-                        Tambah
+                        {t('Tambah')}
                       </button>
                     </div>
                     <p className="text-[10px] text-slate-400 mt-1">
-                      Ketik atau tempel tautan gambar, lalu tekan tombol "Tambah" atau Enter untuk memasukkan ke galeri unit lelang ini.
+                      {t('Ketik atau tempel tautan gambar, lalu tekan tombol "Tambah" atau Enter untuk memasukkan ke galeri unit lelang ini.')}
                     </p>
                   </details>
                 </div>
@@ -1102,10 +1094,10 @@ export default function AdminAssets({
 
               {/* Description */}
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-600 uppercase">Deskripsi & Spesifikasi Tambahan</label>
+                <label className="text-xs font-bold text-slate-600 uppercase">{t('Deskripsi & Spesifikasi Tambahan')}</label>
                 <textarea
                   rows={3}
-                  placeholder="Jelaskan kondisi mesin, transmisi, kelengkapan surat KIR/STNK, riwayat perawatan, dsb."
+                  placeholder={t('Jelaskan kondisi mesin, transmisi, kelengkapan surat KIR/STNK, riwayat perawatan, dsb.')}
                   value={formData.description}
                   onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
                   className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
@@ -1119,13 +1111,13 @@ export default function AdminAssets({
                   onClick={() => setIsFormOpen(false)}
                   className="px-4 py-2 border border-slate-200 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-50 transition-colors"
                 >
-                  Batal
+                  {t('Batal')}
                 </button>
                 <button
                   type="submit"
                   className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-semibold shadow-md shadow-blue-600/10 hover:shadow-blue-600/20 transition-all flex items-center gap-1"
                 >
-                  <Check className="w-4 h-4" /> {editAssetId ? 'Simpan Perubahan' : 'Simpan Unit Baru'}
+                  <Check className="w-4 h-4" /> {editAssetId ? t('Simpan Perubahan') : t('Simpan Unit Baru')}
                 </button>
               </div>
 

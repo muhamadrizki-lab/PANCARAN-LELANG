@@ -285,18 +285,18 @@ export default function CatalogView({ assets, onPlaceBid }: CatalogViewProps) {
 
     // 1. Validation
     if (!bidForm.name || !bidForm.email || !bidForm.contact || !bidForm.price) {
-      setFormError('Mohon lengkapi semua data penawaran Anda.');
+      setFormError(t('Mohon lengkapi semua data penawaran Anda.'));
       return;
     }
 
     if (bidPriceNum <= currentHighestBid) {
-      setFormError(`Harga penawaran Anda harus lebih tinggi dari penawaran tertinggi saat ini (${formatIDR(currentHighestBid)}).`);
+      setFormError(`${t('Harga penawaran Anda harus lebih tinggi dari penawaran tertinggi saat ini')} (${formatIDR(currentHighestBid)}).`);
       return;
     }
 
     // Survey Validation if checked
     if (bidForm.requestSurvey && !bidForm.surveyDate) {
-      setFormError('Mohon tentukan tanggal rencana survei fisik.');
+      setFormError(t('Mohon tentukan tanggal rencana survei fisik.'));
       return;
     }
 
