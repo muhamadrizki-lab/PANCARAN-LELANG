@@ -733,7 +733,15 @@ export default function CatalogView({ assets, onPlaceBid }: CatalogViewProps) {
                       <input
                         type="checkbox"
                         checked={bidForm.requestSurvey}
-                        onChange={(e) => setBidForm(prev => ({ ...prev, requestSurvey: e.target.checked }))}
+                        onChange={(e) => {
+                          const isChecked = e.target.checked;
+                          const todayStr = new Date().toISOString().split('T')[0];
+                          setBidForm(prev => ({
+                            ...prev,
+                            requestSurvey: isChecked,
+                            surveyDate: isChecked && !prev.surveyDate ? todayStr : prev.surveyDate
+                          }));
+                        }}
                         className="w-4.5 h-4.5 text-blue-600 border-slate-300 rounded focus:ring-blue-500"
                       />
                       <div className="text-xs">
@@ -750,9 +758,10 @@ export default function CatalogView({ assets, onPlaceBid }: CatalogViewProps) {
                         <CalendarCheck className="w-4 h-4 text-blue-600" /> {t('Tentukan Waktu Kunjungan Pool')}
                       </p>
                       
-                      <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-3">
+                        {/* Select Date field */}
                         <div className="space-y-1">
-                          <label className="text-[10px] font-bold text-slate-400 uppercase">{t('Pilih Tanggal')}</label>
+                          <label className="text-[10px] font-bold text-slate-400 uppercase">{t('Pilih Tanggal Kunjungan')}</label>
                           <input
                             type="date"
                             min={new Date().toISOString().split('T')[0]}
@@ -771,33 +780,80 @@ export default function CatalogView({ assets, onPlaceBid }: CatalogViewProps) {
                                 return { ...prev, surveyDate: newDate, surveyTime: nextTime };
                               });
                             }}
-                            className="w-full p-2 border border-slate-200 rounded-lg text-xs bg-white focus:outline-none"
+                            className="w-full p-2.5 border border-slate-200 rounded-xl text-xs bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 font-semibold text-slate-700"
                             required={bidForm.requestSurvey}
                           />
                         </div>
 
-                        <div className="space-y-1">
-                          <label className="text-[10px] font-bold text-slate-400 uppercase">{t('Pilih Sesi Jam')}</label>
-                          <select
-                            value={bidForm.surveyTime}
-                            onChange={(e) => setBidForm(prev => ({ ...prev, surveyTime: e.target.value }))}
-                            className="w-full p-2 border border-slate-200 rounded-lg text-xs bg-white focus:outline-none font-medium text-slate-800"
-                          >
-                            <option value="09:00" disabled={isTimeBooked("09:00", bidForm.surveyDate)}>
-                              {t('Pagi Sesi 1 (09:00 WIB)')} {isTimeBooked("09:00", bidForm.surveyDate) ? ` (${t('Sudah Dibooking')})` : ''}
-                            </option>
-                            <option value="11:00" disabled={isTimeBooked("11:00", bidForm.surveyDate)}>
-                              {t('Pagi Sesi 2 (11:00 WIB)')} {isTimeBooked("11:00", bidForm.surveyDate) ? ` (${t('Sudah Dibooking')})` : ''}
-                            </option>
-                            <option value="13:30" disabled={isTimeBooked("13:30", bidForm.surveyDate)}>
-                              {t('Siang Sesi 1 (13:30 WIB)')} {isTimeBooked("13:30", bidForm.surveyDate) ? ` (${t('Sudah Dibooking')})` : ''}
-                            </option>
-                            <option value="15:30" disabled={isTimeBooked("15:30", bidForm.surveyDate)}>
-                              {t('Sore Sesi 2 (15:30 WIB)')} {isTimeBooked("15:30", bidForm.surveyDate) ? ` (${t('Sudah Dibooking')})` : ''}
-                            </option>
-                          </select>
+                        {/* Sesi Jam visual list */}
+                        <div className="space-y-1.5">
+                          <div className="flex justify-between items-center">
+                            <label className="text-[10px] font-bold text-slate-400 uppercase">{t('Pilih Sesi Jam Kunjungan')}</label>
+                            {/* Legend / Indicators */}
+                            <div className="flex items-center gap-2 text-[9px] font-semibold">
+                              <span className="flex items-center gap-1 text-slate-500">
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                {t('Ready')}
+                              </span>
+                              <span className="flex items-center gap-1 text-slate-400">
+                                <span className="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
+                                {t('Sudah Dibooking')}
+                              </span>
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2" id="visit-sessions-grid">
+                            {[
+                              { id: "09:00", label: t('Pagi Sesi 1 (09:00 WIB)'), time: "09:00 WIB", desc: t('Sesi Pagi I') },
+                              { id: "11:00", label: t('Pagi Sesi 2 (11:00 WIB)'), time: "11:00 WIB", desc: t('Sesi Pagi II') },
+                              { id: "13:30", label: t('Siang Sesi 1 (13:30 WIB)'), time: "13:30 WIB", desc: t('Sesi Siang I') },
+                              { id: "15:30", label: t('Sore Sesi 2 (15:30 WIB)'), time: "15:30 WIB", desc: t('Sesi Sore II') }
+                            ].map((session) => {
+                              const booked = isTimeBooked(session.id, bidForm.surveyDate);
+                              const selected = bidForm.surveyTime === session.id;
+
+                              return (
+                                <button
+                                  key={session.id}
+                                  type="button"
+                                  disabled={booked}
+                                  onClick={() => setBidForm(prev => ({ ...prev, surveyTime: session.id }))}
+                                  className={`p-3 rounded-xl border text-left flex flex-col justify-between transition-all relative ${
+                                    booked
+                                      ? 'bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed opacity-60'
+                                      : selected
+                                      ? 'bg-blue-50 border-blue-600 ring-2 ring-blue-500/10 text-blue-950'
+                                      : 'bg-white border-slate-200 text-slate-800 hover:border-slate-300 hover:bg-slate-50'
+                                  }`}
+                                >
+                                  <div className="flex justify-between items-start w-full gap-1">
+                                    <span className={`text-[11px] font-bold ${booked ? 'text-slate-400' : selected ? 'text-blue-800' : 'text-slate-700'}`}>
+                                      {session.time}
+                                    </span>
+                                    {booked ? (
+                                      <span className="bg-red-50 text-red-500 border border-red-100 text-[8px] font-extrabold px-1 py-0.5 rounded tracking-wide uppercase shrink-0">
+                                        {t('Booked')}
+                                      </span>
+                                    ) : (
+                                      <span className={`text-[8px] font-extrabold px-1 py-0.5 rounded tracking-wide uppercase shrink-0 ${
+                                        selected 
+                                          ? 'bg-blue-600 text-white' 
+                                          : 'bg-emerald-50 text-emerald-600 border border-emerald-100'
+                                      }`}>
+                                        {selected ? t('Selected') : t('Ready')}
+                                      </span>
+                                    )}
+                                  </div>
+                                  <span className="text-[10px] font-medium text-slate-400 mt-1">
+                                    {booked ? t('Sudah Dibooking') : session.desc}
+                                  </span>
+                                </button>
+                              );
+                            })}
+                          </div>
                         </div>
                       </div>
+
                       <p className="text-[9px] text-slate-400 leading-normal">
                         {t('Lokasi inspeksi:')} <strong className="text-slate-600">{selectedAsset.location}</strong>. {t('Tim teknis Pancaran Group akan mendampingi Anda di lokasi.')}
                       </p>
