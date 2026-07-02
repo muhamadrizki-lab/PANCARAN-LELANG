@@ -460,7 +460,7 @@ export default function AdminAssets({
                       <div className="flex items-center gap-2 text-xs text-slate-400 font-medium">
                         <span>{t('Tahun')} {asset.modelYear}</span>
                         <span>•</span>
-                        <span>Plat: {asset.plateNumber}</span>
+                        <span>{t('Plat')}: {asset.plateNumber}</span>
                       </div>
                     </div>
 
@@ -631,7 +631,7 @@ export default function AdminAssets({
                 </div>
                 <div>
                   <span className="text-[11px] text-slate-400 font-bold block">{t('KONDISI FISIK')}</span>
-                  <span className="font-semibold text-slate-800">{selectedAsset.condition}</span>
+                  <span className="font-semibold text-slate-800">{t(selectedAsset.condition)}</span>
                 </div>
                 <div>
                   <span className="text-[11px] text-slate-400 font-bold block">{t('LOKASI SEEDING')}</span>
