@@ -31,7 +31,8 @@ import {
   ChevronRight,
   MapPin,
   Menu,
-  X
+  X,
+  Globe
 } from 'lucide-react';
 
 export default function App() {
@@ -216,14 +217,15 @@ export default function App() {
                 <div className="flex items-center gap-6 text-sm font-medium">
                   <button
                     onClick={() => setRole('external')}
-                    className={`pb-1 transition-all ${
+                    className={`pb-1 transition-all flex items-center justify-center ${
                       role === 'external'
                         ? 'text-white border-b-2 border-blue-500 font-semibold'
                         : 'text-slate-300 hover:text-white'
                     }`}
                     id="tab-external-catalog"
+                    title={t('Katalog Eksternal')}
                   >
-                    {t('Katalog Eksternal')}
+                    <Globe className="w-5 h-5" />
                   </button>
                   <button
                     onClick={() => {
@@ -233,15 +235,15 @@ export default function App() {
                         setIsLoginModalOpen(true);
                       }
                     }}
-                    className={`pb-1 transition-all flex items-center gap-1.5 ${
+                    className={`pb-1 transition-all flex items-center justify-center ${
                       role === 'internal'
                         ? 'text-white border-b-2 border-blue-500 font-semibold'
                         : 'text-slate-300 hover:text-white'
                     }`}
                     id="tab-internal-admin"
+                    title={t('Area Admin Internal')}
                   >
-                    <Shield className="w-3.5 h-3.5" />
-                    {t('Area Admin Internal')}
+                    <Shield className="w-5 h-5" />
                   </button>
                 </div>
               )}
