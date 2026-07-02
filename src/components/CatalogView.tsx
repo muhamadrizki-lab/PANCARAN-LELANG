@@ -364,15 +364,16 @@ export default function CatalogView({ assets, onPlaceBid }: CatalogViewProps) {
   return (
     <div className="space-y-8 animate-fade-in" id="public-catalog-container">
       
+
       {/* Premium Hero Banner for Public Bidders */}
-      <div className="relative rounded-3xl overflow-hidden bg-slate-950 text-white p-8 md:p-12 shadow-xl border border-slate-800 flex flex-col md:flex-row justify-between items-center gap-8">
+      <div className="relative rounded-3xl overflow-hidden bg-slate-950 text-white p-8 md:p-12 shadow-xl border border-slate-800 flex flex-col md:flex-row justify-between items-center gap-8 md:h-[305px] min-h-[305px]">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-blue-900/50 via-slate-950 to-slate-950 opacity-90 z-0"></div>
         
         {/* Banner Background Image */}
         <div 
           className="absolute inset-0 bg-cover bg-center opacity-40 z-0"
           style={{ 
-            backgroundImage: "url('https://lh3.googleusercontent.com/d/10BOjcTy1DCyAZCZgj4gGWtiun32XCeFu')" 
+            backgroundImage: "url('https://lh3.googleusercontent.com/d/15gpj-0TTx8t4fjcRJY44ANhoU8GkVZWK')" 
           }}
         ></div>
 
