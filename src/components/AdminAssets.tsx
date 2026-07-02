@@ -21,7 +21,9 @@ import {
   Upload,
   Trophy,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  ZoomIn,
+  ZoomOut
 } from 'lucide-react';
 
 interface AdminAssetsProps {
@@ -120,6 +122,11 @@ export default function AdminAssets({
   // States for fullscreen image lightbox
   const [lightboxImages, setLightboxImages] = useState<string[]>([]);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+  const [isZoomed, setIsZoomed] = useState(false);
+
+  useEffect(() => {
+    setIsZoomed(false);
+  }, [lightboxIndex]);
 
   useEffect(() => {
     setDetailImageIdx(0);
@@ -1234,14 +1241,29 @@ export default function AdminAssets({
           id="image-lightbox-overlay"
           onClick={() => setLightboxIndex(null)}
         >
-          {/* Close button */}
-          <button
-            onClick={() => setLightboxIndex(null)}
-            className="absolute top-4 right-4 bg-slate-900/80 hover:bg-slate-800 text-white p-2.5 rounded-full border border-slate-800 hover:border-slate-700 hover:scale-105 transition-all shadow-xl z-[110] flex items-center justify-center cursor-pointer"
-            title={t('Tutup')}
-          >
-            <X className="w-5 h-5" />
-          </button>
+          {/* Controls Bar */}
+          <div className="absolute top-4 right-4 flex items-center gap-2 z-[110]">
+            {/* Zoom Button */}
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsZoomed(prev => !prev);
+              }}
+              className="bg-slate-900/80 hover:bg-slate-800 text-white p-2.5 rounded-full border border-slate-800 hover:border-slate-700 hover:scale-105 transition-all shadow-xl flex items-center justify-center cursor-pointer"
+              title={isZoomed ? t('Zoom Out') : t('Zoom In')}
+            >
+              {isZoomed ? <ZoomOut className="w-5 h-5" /> : <ZoomIn className="w-5 h-5" />}
+            </button>
+
+            {/* Close button */}
+            <button
+              onClick={() => setLightboxIndex(null)}
+              className="bg-slate-900/80 hover:bg-slate-800 text-white p-2.5 rounded-full border border-slate-800 hover:border-slate-700 hover:scale-105 transition-all shadow-xl flex items-center justify-center cursor-pointer"
+              title={t('Tutup')}
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
 
           {/* Prev button */}
           {lightboxImages.length > 1 && (
@@ -1271,23 +1293,30 @@ export default function AdminAssets({
             </button>
           )}
 
-          {/* Image Container with Smooth Animation */}
+          {/* Image Container with Smooth Animation & Zoom Scroll Support */}
           <div 
-            className="relative w-full max-w-6xl max-h-[85vh] flex items-center justify-center animate-zoom-in"
-            onClick={(e) => e.stopPropagation()}
+            className={`relative w-full max-w-6xl max-h-[85vh] flex items-center justify-center animate-zoom-in transition-all duration-300 ${
+              isZoomed ? "overflow-auto cursor-zoom-out p-4 justify-start items-start bg-slate-950/40 rounded-2xl border border-slate-900" : ""
+            }`}
+            onClick={(e) => {
+              e.stopPropagation();
+              if (isZoomed) {
+                setIsZoomed(false);
+              }
+            }}
           >
             <img
               src={lightboxImages[lightboxIndex]}
               alt={`Zoomed Asset - ${lightboxIndex + 1}`}
-              className="max-w-full max-h-[85vh] object-contain rounded-2xl shadow-2xl border border-slate-800 cursor-pointer hover:scale-[1.01] transition-transform duration-200"
+              className={`select-none transition-all duration-300 ${
+                isZoomed 
+                  ? "w-[200%] md:w-[150%] max-w-none max-h-none object-contain cursor-zoom-out rounded-lg shadow-2xl" 
+                  : "w-full max-w-full max-h-[85vh] object-contain rounded-2xl shadow-2xl border border-slate-800 cursor-zoom-in hover:scale-[1.01]"
+              }`}
               referrerPolicy="no-referrer"
               onClick={(e) => {
                 e.stopPropagation();
-                if (lightboxImages.length > 1) {
-                  setLightboxIndex(prev => (prev === null ? 0 : (prev === lightboxImages.length - 1 ? 0 : prev + 1)));
-                } else {
-                  setLightboxIndex(null);
-                }
+                setIsZoomed(prev => !prev);
               }}
               onError={(e) => {
                 e.currentTarget.src = "https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?auto=format&fit=crop&w=800&q=80";
@@ -1303,9 +1332,9 @@ export default function AdminAssets({
               </span>
             )}
             <p className="text-[10px] text-slate-400 font-semibold tracking-wider uppercase mt-1">
-              {lightboxImages.length > 1 
-                ? t('Klik gambar untuk berikutnya • Klik di luar untuk kembali') 
-                : t('Klik gambar atau di luar untuk kembali')}
+              {isZoomed 
+                ? t('Klik gambar untuk memperkecil • Geser untuk menjelajah detail') 
+                : t('Klik gambar untuk memperbesar • Klik di luar untuk kembali')}
             </p>
           </div>
         </div>

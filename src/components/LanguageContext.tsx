@@ -112,6 +112,10 @@ const translations: Record<Language, Record<string, string>> = {
     'Jadwal survei pada tanggal dan jam tersebut sudah di-booking oleh calon pembeli lain. Mohon pilih waktu atau hari lain.': 'Jadwal survei pada tanggal dan jam tersebut sudah di-booking oleh calon pembeli lain. Mohon pilih waktu atau hari lain.',
     'Klik gambar untuk berikutnya • Klik di luar untuk kembali': 'Klik gambar untuk berikutnya • Klik di luar untuk kembali',
     'Klik gambar atau di luar untuk kembali': 'Klik gambar atau di luar untuk kembali',
+    'Klik gambar untuk memperkecil • Geser untuk menjelajah detail': 'Klik gambar untuk memperkecil • Geser untuk menjelajah detail',
+    'Klik gambar untuk memperbesar • Klik di luar untuk kembali': 'Klik gambar untuk memperbesar • Klik di luar untuk kembali',
+    'Zoom In': 'Zoom In',
+    'Zoom Out': 'Zoom Out',
 
     // Login Modal
     'Otoritas Internal Admin': 'Otoritas Internal Admin',
@@ -467,6 +471,10 @@ const translations: Record<Language, Record<string, string>> = {
     'Jadwal survei pada tanggal dan jam tersebut sudah di-booking oleh calon pembeli lain. Mohon pilih waktu atau hari lain.': 'The survey schedule for that date and time has been booked by another prospective buyer. Please choose another time or day.',
     'Klik gambar untuk berikutnya • Klik di luar untuk kembali': 'Click image for next • Click outside to go back',
     'Klik gambar atau di luar untuk kembali': 'Click image or outside to go back',
+    'Klik gambar untuk memperkecil • Geser untuk menjelajah detail': 'Click image to zoom out • Scroll/pan to explore details',
+    'Klik gambar untuk memperbesar • Klik di luar untuk kembali': 'Click image to zoom in • Click outside to go back',
+    'Zoom In': 'Zoom In',
+    'Zoom Out': 'Zoom Out',
 
     // Login Modal
     'Otoritas Internal Admin': 'Internal Admin Authority',
