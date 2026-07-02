@@ -32,7 +32,8 @@ import {
   MapPin,
   Menu,
   X,
-  Globe
+  Globe,
+  Mail
 } from 'lucide-react';
 
 export default function App() {
@@ -648,18 +649,87 @@ export default function App() {
       )}
 
       {/* Footer */}
-      <footer className="bg-white border-t border-slate-100 py-6 text-center text-xs text-slate-400" id="main-application-footer">
-        <div className="max-w-7xl mx-auto px-4">
-          <p>© 2026 Pancaran Lelang Group - PT Pancaran Darma Logistics. {t('Hak Cipta Dilindungi')}.</p>
-          <div className="flex justify-center gap-4 mt-2 font-medium">
-            <span className="text-slate-300">|</span>
-            <span className="text-slate-400">{t('Pool Marunda')}</span>
-            <span className="text-slate-300">|</span>
-            <span className="text-slate-400">{t('Pool Cakung')}</span>
-            <span className="text-slate-300">|</span>
-            <span className="text-slate-400">{t('Pool Teluk Gong')}</span>
-            <span className="text-slate-300">|</span>
+      <footer className="bg-slate-900 border-t border-slate-800 text-slate-300 py-12 text-xs" id="main-application-footer">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          
+          {/* Main Footer Content */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 pb-8 border-b border-slate-800">
+            
+            {/* Column 1: Brand & Description */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-white rounded flex items-center justify-center shadow overflow-hidden">
+                  <img 
+                    src="https://lh3.googleusercontent.com/d/1LmpjB5qAX8ev5_JRzYQDwjM58RxHl18X" 
+                    alt="Pancaran Logo" 
+                    className="w-full h-full object-contain p-0.5"
+                    referrerPolicy="no-referrer"
+                    onError={(e) => {
+                      e.currentTarget.src = "https://drive.google.com/uc?export=download&id=1LmpjB5qAX8ev5_JRzYQDwjM58RxHl18X";
+                    }}
+                  />
+                </div>
+                <span className="text-white font-bold text-lg tracking-tight">
+                  Pancaran <span className="text-blue-400">Lelang</span>
+                </span>
+              </div>
+              <p className="text-slate-400 text-xs leading-relaxed max-w-sm">
+                {t('Portal resmi likuidasi armada aktif dan alat berat dari ekosistem operasional Pancaran Group. Transparan, tepercaya, dan terintegrasi.')}
+              </p>
+            </div>
+
+            {/* Column 2: COMPANY INFO (Our Office & Head Office 1) */}
+            <div className="space-y-4">
+              <h3 className="text-white font-bold tracking-wider text-sm uppercase">
+                {t('COMPANY INFO')}
+              </h3>
+              <div className="flex items-start gap-3">
+                <MapPin className="w-5 h-5 text-blue-400 shrink-0 mt-0.5" />
+                <div className="space-y-1">
+                  <p className="text-white font-semibold text-xs">{t('Our Office')}</p>
+                  <p className="text-slate-400 text-xs font-medium">{t('Head Office 1 :')}</p>
+                  <p className="text-slate-300 text-xs leading-relaxed">
+                    Jl. Tanah Merdeka No 20A Kalibaru Cilincing Jakarta Utara
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Column 3: Contact Info & Pools */}
+            <div className="space-y-4">
+              <h3 className="text-white font-bold tracking-wider text-sm uppercase">
+                {t('HUBUNGI KAMI')}
+              </h3>
+              <div className="space-y-3">
+                <div className="flex items-start gap-3">
+                  <Mail className="w-5 h-5 text-blue-400 shrink-0 mt-0.5" />
+                  <div className="space-y-0.5">
+                    <p className="text-white font-mono font-semibold text-xs">sales@pancaran-group.co.id</p>
+                    <p className="text-slate-400 text-[11px] font-medium">(Inland & Logistic Services)</p>
+                  </div>
+                </div>
+
+                <div className="pt-2 border-t border-slate-800">
+                  <p className="text-slate-400 text-[10px] font-bold uppercase tracking-wider mb-2">{t('Lokasi Pool Inspeksi:')}</p>
+                  <div className="flex flex-wrap gap-2">
+                    <span className="bg-slate-800 px-2.5 py-1 rounded-md text-[10px] font-semibold text-slate-300 border border-slate-700">{t('Cilincing')}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
           </div>
+
+          {/* Bottom Copyright */}
+          <div className="pt-6 flex flex-col md:flex-row justify-between items-center gap-4 text-slate-500 text-[11px]">
+            <p>© 2026 Pancaran Lelang Group - PT Pancaran Darma Logistics. {t('Hak Cipta Dilindungi')}.</p>
+            <div className="flex gap-4">
+              <span className="hover:text-slate-400 cursor-default">{t('Syarat & Ketentuan')}</span>
+              <span>•</span>
+              <span className="hover:text-slate-400 cursor-default">{t('Kebijakan Privasi')}</span>
+            </div>
+          </div>
+
         </div>
       </footer>
 
