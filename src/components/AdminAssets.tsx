@@ -18,7 +18,8 @@ import {
   MapPin,
   Clock,
   Sparkles,
-  Upload
+  Upload,
+  Trophy
 } from 'lucide-react';
 
 interface AdminAssetsProps {
@@ -564,6 +565,54 @@ export default function AdminAssets({
                 </button>
               </div>
             </div>
+
+            {/* Winner Section for Sold Units */}
+            {selectedAsset.status === 'Sold' && (() => {
+              const winnerBid = selectedAsset.bids.length > 0
+                ? [...selectedAsset.bids].sort((a, b) => b.price - a.price)[0]
+                : null;
+              return (
+                <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-4.5 space-y-3 shadow-xs">
+                  <div className="flex items-center gap-1.5 text-emerald-800 font-bold text-xs uppercase tracking-wider">
+                    <Trophy className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>{t('Pemenang Lelang')}</span>
+                  </div>
+                  {winnerBid ? (
+                    <div className="space-y-2.5 text-xs">
+                      <div className="flex justify-between items-center border-b border-emerald-100/70 pb-2">
+                        <span className="text-emerald-600 font-medium">{t('Pemenang')}:</span>
+                        <span className="font-bold text-emerald-900 text-sm">{winnerBid.name}</span>
+                      </div>
+                      <div className="flex justify-between items-center border-b border-emerald-100/70 pb-2">
+                        <span className="text-emerald-600 font-medium">{t('Penawaran Pemenang')}:</span>
+                        <span className="font-bold text-emerald-900 font-mono text-sm">{formatIDR(winnerBid.price)}</span>
+                      </div>
+                      <div className="space-y-1 pt-1 text-slate-700 bg-white/50 p-2.5 rounded-xl border border-emerald-100/30">
+                        <p className="text-[10px] text-emerald-700 font-bold uppercase tracking-wider mb-1.5">{t('Kontak Pemenang')}</p>
+                        <div className="space-y-1">
+                          <p className="flex items-center gap-1.5 font-medium">
+                            <span className="text-slate-400">📱</span> {winnerBid.contact}
+                          </p>
+                          <p className="flex items-center gap-1.5 font-medium">
+                            <span className="text-slate-400">✉️</span> {winnerBid.email}
+                          </p>
+                        </div>
+                        {winnerBid.scheduleSurveyDate && (
+                          <div className="text-[10px] text-emerald-800 bg-emerald-100/70 px-2.5 py-1.5 rounded-lg mt-2 font-semibold flex items-center gap-1.5">
+                            <Calendar className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                            <span>{t('Jadwal Survei')}: {winnerBid.scheduleSurveyDate} @ {winnerBid.scheduleSurveyTime || 'N/A'} WIB</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-xs text-slate-500 italic bg-white/40 p-3 rounded-xl border border-dashed border-slate-200 text-center">
+                      {t('Belum ada penawar')}
+                    </p>
+                  )}
+                </div>
+              );
+            })()}
 
             {/* Spec Details */}
             <div className="space-y-4 text-sm">

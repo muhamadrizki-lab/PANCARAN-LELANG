@@ -99,6 +99,11 @@ const translations: Record<Language, Record<string, string>> = {
     'Penawaran Anda Berhasil Dikirim!': 'Penawaran Anda Berhasil Dikirim!',
     'Terima kasih telah mengajukan penawaran. Tim Pancaran Logistic akan segera menghubungi Anda di nomor kontak yang tertera.': 'Terima kasih telah mengajukan penawaran. Tim Pancaran Logistic akan segera menghubungi Anda di nomor kontak yang tertera.',
     'Tutup': 'Tutup',
+    'Pemenang Lelang': 'Pemenang Lelang',
+    'Pemenang': 'Pemenang',
+    'Penawaran Pemenang': 'Penawaran Pemenang',
+    'Kontak Pemenang': 'Kontak Pemenang',
+    'Belum ada penawar': 'Belum ada penawar',
 
     // Login Modal
     'Otoritas Internal Admin': 'Otoritas Internal Admin',
@@ -441,6 +446,11 @@ const translations: Record<Language, Record<string, string>> = {
     'Penawaran Anda Berhasil Dikirim!': 'Your Bid Successfully Submitted!',
     'Terima kasih telah mengajukan penawaran. Tim Pancaran Logistic akan segera menghubungi Anda di nomor kontak yang tertera.': 'Thank you for submitting a bid. The Pancaran Logistics team will contact you shortly at the provided contact details.',
     'Tutup': 'Close',
+    'Pemenang Lelang': 'Auction Winner',
+    'Pemenang': 'Winner',
+    'Penawaran Pemenang': 'Winning Bid',
+    'Kontak Pemenang': 'Winner Contact',
+    'Belum ada penawar': 'No bidders yet',
 
     // Login Modal
     'Otoritas Internal Admin': 'Internal Admin Authority',
