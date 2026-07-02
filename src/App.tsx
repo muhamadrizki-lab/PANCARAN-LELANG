@@ -204,7 +204,7 @@ export default function App() {
               </div>
               <div className="flex flex-col">
                 <span className="text-white font-bold text-lg tracking-tight">
-                  Pancaran <span className="text-blue-400">{language === 'id' ? 'Lelang' : 'Auctions'}</span>
+                  Pancaran <span className="text-blue-400">Lelang</span>
                 </span>
               </div>
             </div>
@@ -277,7 +277,7 @@ export default function App() {
                 {isAdminLoggedIn ? (
                   <div className="flex items-center gap-3">
                     <div className="text-right">
-                      <p className="text-white text-xs font-semibold">{t('Admin Digital Solution')}</p>
+                      <p className="text-white text-xs font-semibold">Admin Digital Solution</p>
                       <p className="text-slate-400 text-[10px] truncate max-w-[150px] font-mono">{loggedInAdminEmail}</p>
                     </div>
                     <div className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center text-slate-300 border border-slate-700 font-bold uppercase text-xs">

@@ -209,7 +209,7 @@ export default function CatalogView({ assets, onPlaceBid }: CatalogViewProps) {
     price: '',
     requestSurvey: false,
     surveyDate: '',
-    surveyTime: '10:00'
+    surveyTime: '09:00'
   });
 
   const [formError, setFormError] = useState('');
@@ -278,6 +278,16 @@ export default function CatalogView({ assets, onPlaceBid }: CatalogViewProps) {
     return new Intl.NumberFormat('id-ID').format(Number(clean));
   };
 
+  const isTimeBooked = (time: string, date: string) => {
+    if (!date) return false;
+    return assets.some(asset => 
+      asset.bids.some(b => 
+        b.scheduleSurveyDate === date && 
+        b.scheduleSurveyTime === time
+      )
+    );
+  };
+
   const handleSelectAsset = (assetId: string) => {
     setSelectedAssetId(assetId);
     setFormError('');
@@ -294,7 +304,7 @@ export default function CatalogView({ assets, onPlaceBid }: CatalogViewProps) {
         price: '0',
         requestSurvey: false,
         surveyDate: '',
-        surveyTime: '10:00'
+        surveyTime: '09:00'
       });
     }
   };
@@ -320,9 +330,15 @@ export default function CatalogView({ assets, onPlaceBid }: CatalogViewProps) {
     }
 
     // Survey Validation if checked
-    if (bidForm.requestSurvey && !bidForm.surveyDate) {
-      setFormError(t('Mohon tentukan tanggal rencana survei fisik.'));
-      return;
+    if (bidForm.requestSurvey) {
+      if (!bidForm.surveyDate) {
+        setFormError(t('Mohon tentukan tanggal rencana survei fisik.'));
+        return;
+      }
+      if (isTimeBooked(bidForm.surveyTime, bidForm.surveyDate)) {
+        setFormError(t('Jadwal survei pada tanggal dan jam tersebut sudah di-booking oleh calon pembeli lain. Mohon pilih waktu atau hari lain.'));
+        return;
+      }
     }
 
     // 2. Submit
@@ -732,7 +748,20 @@ export default function CatalogView({ assets, onPlaceBid }: CatalogViewProps) {
                             type="date"
                             min={new Date().toISOString().split('T')[0]}
                             value={bidForm.surveyDate}
-                            onChange={(e) => setBidForm(prev => ({ ...prev, surveyDate: e.target.value }))}
+                            onChange={(e) => {
+                              const newDate = e.target.value;
+                              setBidForm(prev => {
+                                let nextTime = prev.surveyTime;
+                                if (isTimeBooked(nextTime, newDate)) {
+                                  const slots = ["09:00", "11:00", "13:30", "15:30"];
+                                  const available = slots.find(slot => !isTimeBooked(slot, newDate));
+                                  if (available) {
+                                    nextTime = available;
+                                  }
+                                }
+                                return { ...prev, surveyDate: newDate, surveyTime: nextTime };
+                              });
+                            }}
                             className="w-full p-2 border border-slate-200 rounded-lg text-xs bg-white focus:outline-none"
                             required={bidForm.requestSurvey}
                           />
@@ -743,12 +772,20 @@ export default function CatalogView({ assets, onPlaceBid }: CatalogViewProps) {
                           <select
                             value={bidForm.surveyTime}
                             onChange={(e) => setBidForm(prev => ({ ...prev, surveyTime: e.target.value }))}
-                            className="w-full p-2 border border-slate-200 rounded-lg text-xs bg-white focus:outline-none font-medium"
+                            className="w-full p-2 border border-slate-200 rounded-lg text-xs bg-white focus:outline-none font-medium text-slate-800"
                           >
-                            <option value="09:00">{t('Pagi Sesi 1 (09:00 WIB)')}</option>
-                            <option value="11:00">{t('Pagi Sesi 2 (11:00 WIB)')}</option>
-                            <option value="13:30">{t('Siang Sesi 1 (13:30 WIB)')}</option>
-                            <option value="15:30">{t('Sore Sesi 2 (15:30 WIB)')}</option>
+                            <option value="09:00" disabled={isTimeBooked("09:00", bidForm.surveyDate)}>
+                              {t('Pagi Sesi 1 (09:00 WIB)')} {isTimeBooked("09:00", bidForm.surveyDate) ? ` (${t('Sudah Dibooking')})` : ''}
+                            </option>
+                            <option value="11:00" disabled={isTimeBooked("11:00", bidForm.surveyDate)}>
+                              {t('Pagi Sesi 2 (11:00 WIB)')} {isTimeBooked("11:00", bidForm.surveyDate) ? ` (${t('Sudah Dibooking')})` : ''}
+                            </option>
+                            <option value="13:30" disabled={isTimeBooked("13:30", bidForm.surveyDate)}>
+                              {t('Siang Sesi 1 (13:30 WIB)')} {isTimeBooked("13:30", bidForm.surveyDate) ? ` (${t('Sudah Dibooking')})` : ''}
+                            </option>
+                            <option value="15:30" disabled={isTimeBooked("15:30", bidForm.surveyDate)}>
+                              {t('Sore Sesi 2 (15:30 WIB)')} {isTimeBooked("15:30", bidForm.surveyDate) ? ` (${t('Sudah Dibooking')})` : ''}
+                            </option>
                           </select>
                         </div>
                       </div>
@@ -867,9 +904,16 @@ export default function CatalogView({ assets, onPlaceBid }: CatalogViewProps) {
             <img
               src={lightboxImages[lightboxIndex]}
               alt={`Zoomed Asset - ${lightboxIndex + 1}`}
-              className="max-w-full max-h-[85vh] object-contain rounded-2xl shadow-2xl border border-slate-800"
+              className="max-w-full max-h-[85vh] object-contain rounded-2xl shadow-2xl border border-slate-800 cursor-pointer hover:scale-[1.01] transition-transform duration-200"
               referrerPolicy="no-referrer"
-              onClick={() => setLightboxIndex(null)}
+              onClick={(e) => {
+                e.stopPropagation();
+                if (lightboxImages.length > 1) {
+                  setLightboxIndex(prev => (prev === null ? 0 : (prev === lightboxImages.length - 1 ? 0 : prev + 1)));
+                } else {
+                  setLightboxIndex(null);
+                }
+              }}
               onError={(e) => {
                 e.currentTarget.src = "https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?auto=format&fit=crop&w=800&q=80";
               }}
@@ -883,8 +927,10 @@ export default function CatalogView({ assets, onPlaceBid }: CatalogViewProps) {
                 {lightboxIndex + 1} / {lightboxImages.length}
               </span>
             )}
-            <p className="text-[10px] text-slate-500 font-medium tracking-wider uppercase mt-1">
-              {t('Klik di mana saja untuk kembali')}
+            <p className="text-[10px] text-slate-400 font-semibold tracking-wider uppercase mt-1">
+              {lightboxImages.length > 1 
+                ? t('Klik gambar untuk berikutnya • Klik di luar untuk kembali') 
+                : t('Klik gambar atau di luar untuk kembali')}
             </p>
           </div>
         </div>

@@ -1279,9 +1279,16 @@ export default function AdminAssets({
             <img
               src={lightboxImages[lightboxIndex]}
               alt={`Zoomed Asset - ${lightboxIndex + 1}`}
-              className="max-w-full max-h-[85vh] object-contain rounded-2xl shadow-2xl border border-slate-800"
+              className="max-w-full max-h-[85vh] object-contain rounded-2xl shadow-2xl border border-slate-800 cursor-pointer hover:scale-[1.01] transition-transform duration-200"
               referrerPolicy="no-referrer"
-              onClick={() => setLightboxIndex(null)}
+              onClick={(e) => {
+                e.stopPropagation();
+                if (lightboxImages.length > 1) {
+                  setLightboxIndex(prev => (prev === null ? 0 : (prev === lightboxImages.length - 1 ? 0 : prev + 1)));
+                } else {
+                  setLightboxIndex(null);
+                }
+              }}
               onError={(e) => {
                 e.currentTarget.src = "https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?auto=format&fit=crop&w=800&q=80";
               }}
@@ -1295,8 +1302,10 @@ export default function AdminAssets({
                 {lightboxIndex + 1} / {lightboxImages.length}
               </span>
             )}
-            <p className="text-[10px] text-slate-500 font-medium tracking-wider uppercase mt-1">
-              {t('Klik di mana saja untuk kembali')}
+            <p className="text-[10px] text-slate-400 font-semibold tracking-wider uppercase mt-1">
+              {lightboxImages.length > 1 
+                ? t('Klik gambar untuk berikutnya • Klik di luar untuk kembali') 
+                : t('Klik gambar atau di luar untuk kembali')}
             </p>
           </div>
         </div>

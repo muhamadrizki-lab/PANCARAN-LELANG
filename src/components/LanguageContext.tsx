@@ -108,6 +108,10 @@ const translations: Record<Language, Record<string, string>> = {
     'Perbesar / Fokus Detail': 'Perbesar / Fokus Detail',
     'Seret/Scroll untuk melihat bagian gambar • Klik gambar untuk mengecilkan': 'Seret/Scroll untuk melihat bagian gambar • Klik gambar untuk mengecilkan',
     'Klik gambar atau tombol untuk memperbesar penuh & jelas': 'Klik gambar atau tombol untuk memperbesar penuh & jelas',
+    'Sudah Dibooking': 'Sudah Dibooking',
+    'Jadwal survei pada tanggal dan jam tersebut sudah di-booking oleh calon pembeli lain. Mohon pilih waktu atau hari lain.': 'Jadwal survei pada tanggal dan jam tersebut sudah di-booking oleh calon pembeli lain. Mohon pilih waktu atau hari lain.',
+    'Klik gambar untuk berikutnya • Klik di luar untuk kembali': 'Klik gambar untuk berikutnya • Klik di luar untuk kembali',
+    'Klik gambar atau di luar untuk kembali': 'Klik gambar atau di luar untuk kembali',
 
     // Login Modal
     'Otoritas Internal Admin': 'Otoritas Internal Admin',
@@ -459,6 +463,10 @@ const translations: Record<Language, Record<string, string>> = {
     'Perbesar / Fokus Detail': 'Zoom In / Focus Detail',
     'Seret/Scroll untuk melihat bagian gambar • Klik gambar untuk mengecilkan': 'Drag/Scroll to view parts of the image • Click image to zoom out',
     'Klik gambar atau tombol untuk memperbesar penuh & jelas': 'Click image or button to zoom in full & clear',
+    'Sudah Dibooking': 'Already Booked',
+    'Jadwal survei pada tanggal dan jam tersebut sudah di-booking oleh calon pembeli lain. Mohon pilih waktu atau hari lain.': 'The survey schedule for that date and time has been booked by another prospective buyer. Please choose another time or day.',
+    'Klik gambar untuk berikutnya • Klik di luar untuk kembali': 'Click image for next • Click outside to go back',
+    'Klik gambar atau di luar untuk kembali': 'Click image or outside to go back',
 
     // Login Modal
     'Otoritas Internal Admin': 'Internal Admin Authority',
