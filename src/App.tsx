@@ -233,20 +233,17 @@ export default function App() {
   return (
     <div className="min-h-screen bg-slate-50/50 flex flex-col font-sans" id="app-root-wrapper">
       
-      {/* Sleek, Sticky Header / Navigation with subtle premium light blue touch and custom requested background image */}
+      {/* Sleek, Sticky Header / Navigation with a premium dark blue and light blue color harmony */}
       <header 
-        className="sticky top-0 z-40 shadow-lg text-white border-b border-blue-800/30 overflow-hidden bg-slate-950 bg-cover bg-center"
-        style={{ 
-          backgroundImage: "linear-gradient(to right, rgba(15, 23, 42, 0.96), rgba(15, 23, 42, 0.85)), url('https://lh3.googleusercontent.com/d/1mhiKxfRXG4nzn8A5TRCDVd4WUZCiZ388')" 
-        }}
+        className="sticky top-0 z-40 shadow-lg text-white border-b border-blue-500/20 overflow-hidden bg-gradient-to-r from-slate-950 via-blue-950 to-slate-950"
         id="main-navigation-header"
       >
-        {/* Soft, multi-layered light blue ambient glows */}
-        <div className="absolute -top-12 left-1/4 w-80 h-24 bg-blue-500/10 rounded-full blur-2xl pointer-events-none"></div>
-        <div className="absolute -bottom-10 right-1/4 w-64 h-20 bg-cyan-400/10 rounded-full blur-2xl pointer-events-none"></div>
+        {/* Soft, multi-layered light blue and cyan ambient glows */}
+        <div className="absolute -top-10 left-1/4 w-96 h-20 bg-blue-500/15 rounded-full blur-3xl pointer-events-none animate-pulse" style={{ animationDuration: '6s' }}></div>
+        <div className="absolute -bottom-10 right-1/4 w-80 h-16 bg-cyan-400/15 rounded-full blur-3xl pointer-events-none animate-pulse" style={{ animationDuration: '4s' }}></div>
         
         {/* Glowing light blue bottom accent line */}
-        <div className="absolute bottom-0 left-0 right-0 h-[1.5px] bg-gradient-to-r from-transparent via-blue-400/70 to-transparent"></div>
+        <div className="absolute bottom-0 left-0 right-0 h-[1.5px] bg-gradient-to-r from-transparent via-blue-400/80 to-transparent"></div>
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="flex justify-between h-16 items-center">
