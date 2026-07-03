@@ -753,12 +753,15 @@ export default function CatalogView({ assets, onPlaceBid }: CatalogViewProps) {
 
                   {/* Survey Scheduler Details (Visible ONLY if requestSurvey is checked) */}
                   {bidForm.requestSurvey && (
-                    <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-3.5 animate-slide-in">
-                      <p className="text-[11px] font-bold text-slate-600 flex items-center gap-1.5">
+                    <div className="p-4.5 bg-gradient-to-br from-blue-50/60 to-indigo-50/20 rounded-2xl border border-blue-100/80 space-y-3.5 animate-slide-in relative overflow-hidden shadow-sm shadow-blue-50/50">
+                      <div className="absolute -right-6 -bottom-6 w-20 h-20 bg-blue-100/20 rounded-full blur-xl pointer-events-none"></div>
+                      <div className="absolute -left-6 -top-6 w-16 h-16 bg-sky-100/20 rounded-full blur-xl pointer-events-none"></div>
+
+                      <p className="text-[11px] font-bold text-slate-600 flex items-center gap-1.5 relative z-10">
                         <CalendarCheck className="w-4 h-4 text-blue-600" /> {t('Tentukan Waktu Kunjungan Pool')}
                       </p>
                       
-                      <div className="space-y-3">
+                      <div className="space-y-3 relative z-10">
                         {/* Select Date field */}
                         <div className="space-y-1">
                           <label className="text-[10px] font-bold text-slate-400 uppercase">{t('Pilih Tanggal Kunjungan')}</label>
@@ -854,9 +857,18 @@ export default function CatalogView({ assets, onPlaceBid }: CatalogViewProps) {
                         </div>
                       </div>
 
-                      <p className="text-[9px] text-slate-400 leading-normal">
-                        {t('Lokasi inspeksi:')} <strong className="text-slate-600">{selectedAsset.location}</strong>. {t('Tim teknis Pancaran Group akan mendampingi Anda di lokasi.')}
-                      </p>
+                      {/* Beautiful light blue informative banner below selection to avoid rigid look */}
+                      <div className="p-3 bg-gradient-to-r from-blue-100/60 to-sky-100/30 border border-blue-200/50 rounded-xl flex items-start gap-2.5 relative z-10 shadow-sm shadow-blue-100/20 mt-1">
+                        <div className="p-1.5 bg-blue-500/10 text-blue-600 rounded-lg shrink-0 mt-0.5">
+                          <MapPin className="w-3.5 h-3.5" />
+                        </div>
+                        <div className="space-y-0.5">
+                          <p className="text-[10px] font-bold text-blue-900 uppercase tracking-wider">{t('Informasi Lokasi & Pendampingan')}</p>
+                          <p className="text-[10.5px] text-blue-800 leading-normal font-medium">
+                            {t('Lokasi inspeksi:')} <strong className="font-extrabold text-blue-950">{selectedAsset.location}</strong>. {t('Tim teknis Pancaran Group akan mendampingi Anda di lokasi.')}
+                          </p>
+                        </div>
+                      </div>
                     </div>
                   )}
 

@@ -233,14 +233,27 @@ export default function App() {
   return (
     <div className="min-h-screen bg-slate-50/50 flex flex-col font-sans" id="app-root-wrapper">
       
-      {/* Sleek, Sticky Header / Navigation */}
-      <header className="bg-slate-900 border-b border-slate-800 sticky top-0 z-40 shadow-md text-white" id="main-navigation-header">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      {/* Sleek, Sticky Header / Navigation with subtle premium light blue touch and custom requested background image */}
+      <header 
+        className="sticky top-0 z-40 shadow-lg text-white border-b border-blue-800/30 overflow-hidden bg-slate-950 bg-cover bg-center"
+        style={{ 
+          backgroundImage: "linear-gradient(to right, rgba(15, 23, 42, 0.96), rgba(15, 23, 42, 0.85)), url('https://lh3.googleusercontent.com/d/1mhiKxfRXG4nzn8A5TRCDVd4WUZCiZ388')" 
+        }}
+        id="main-navigation-header"
+      >
+        {/* Soft, multi-layered light blue ambient glows */}
+        <div className="absolute -top-12 left-1/4 w-80 h-24 bg-blue-500/10 rounded-full blur-2xl pointer-events-none"></div>
+        <div className="absolute -bottom-10 right-1/4 w-64 h-20 bg-cyan-400/10 rounded-full blur-2xl pointer-events-none"></div>
+        
+        {/* Glowing light blue bottom accent line */}
+        <div className="absolute bottom-0 left-0 right-0 h-[1.5px] bg-gradient-to-r from-transparent via-blue-400/70 to-transparent"></div>
+
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="flex justify-between h-16 items-center">
             
             {/* Logo */}
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-white rounded flex items-center justify-center shadow overflow-hidden">
+              <div className="w-8 h-8 bg-white rounded flex items-center justify-center shadow-md shadow-blue-500/10 overflow-hidden">
                 <img 
                   src="https://lh3.googleusercontent.com/d/1LmpjB5qAX8ev5_JRzYQDwjM58RxHl18X" 
                   alt="Pancaran Logo" 
@@ -253,7 +266,7 @@ export default function App() {
               </div>
               <div className="flex flex-col">
                 <span className="text-white font-bold text-lg tracking-tight">
-                  Pancaran <span className="text-blue-400">Lelang</span>
+                  Pancaran <span className="text-blue-400 font-extrabold drop-shadow-[0_0_8px_rgba(96,165,250,0.35)]">Lelang</span>
                 </span>
               </div>
             </div>
@@ -266,15 +279,18 @@ export default function App() {
                 <div className="flex items-center gap-6 text-sm font-medium">
                   <button
                     onClick={() => setRole('external')}
-                    className={`pb-1 transition-all flex items-center justify-center ${
+                    className={`pb-1 transition-all flex items-center justify-center relative ${
                       role === 'external'
-                        ? 'text-white border-b-2 border-blue-500 font-semibold'
+                        ? 'text-blue-300 font-bold drop-shadow-[0_0_6px_rgba(147,197,253,0.3)]'
                         : 'text-slate-300 hover:text-white'
                     }`}
                     id="tab-external-catalog"
                     title={t('Katalog Eksternal')}
                   >
-                    <Globe className="w-5 h-5" />
+                    <Globe className="w-5 h-5 mr-1" />
+                    {role === 'external' && (
+                      <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-400 rounded-full shadow-[0_0_8px_rgba(96,165,250,0.8)]"></span>
+                    )}
                   </button>
                   <button
                     onClick={() => {
@@ -284,26 +300,29 @@ export default function App() {
                         setIsLoginModalOpen(true);
                       }
                     }}
-                    className={`pb-1 transition-all flex items-center justify-center ${
+                    className={`pb-1 transition-all flex items-center justify-center relative ${
                       role === 'internal'
-                        ? 'text-white border-b-2 border-blue-500 font-semibold'
+                        ? 'text-blue-300 font-bold drop-shadow-[0_0_6px_rgba(147,197,253,0.3)]'
                         : 'text-slate-300 hover:text-white'
                     }`}
                     id="tab-internal-admin"
                     title={t('Area Admin Internal')}
                   >
-                    <Shield className="w-5 h-5" />
+                    <Shield className="w-5 h-5 mr-1" />
+                    {role === 'internal' && (
+                      <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-400 rounded-full shadow-[0_0_8px_rgba(96,165,250,0.8)]"></span>
+                    )}
                   </button>
                 </div>
               )}
 
               {/* Desktop Language Selector */}
-              <div className="flex bg-slate-800 p-0.5 rounded-lg border border-slate-700">
+              <div className="flex bg-blue-950/40 p-0.5 rounded-lg border border-blue-800/40 shadow-inner">
                 <button
                   onClick={() => setLanguage('id')}
                   className={`px-2.5 py-1 text-[10px] font-bold rounded-md transition-all ${
                     language === 'id' 
-                      ? 'bg-blue-600 text-white shadow' 
+                      ? 'bg-gradient-to-r from-blue-600 to-sky-500 text-white shadow shadow-blue-500/20' 
                       : 'text-slate-400 hover:text-white'
                   }`}
                 >
@@ -313,7 +332,7 @@ export default function App() {
                   onClick={() => setLanguage('en')}
                   className={`px-2.5 py-1 text-[10px] font-bold rounded-md transition-all ${
                     language === 'en' 
-                      ? 'bg-blue-600 text-white shadow' 
+                      ? 'bg-gradient-to-r from-blue-600 to-sky-500 text-white shadow shadow-blue-500/20' 
                       : 'text-slate-400 hover:text-white'
                   }`}
                 >
@@ -329,12 +348,12 @@ export default function App() {
                       <p className="text-white text-xs font-semibold">Admin Digital Solution</p>
                       <p className="text-slate-400 text-[10px] truncate max-w-[150px] font-mono">{loggedInAdminEmail}</p>
                     </div>
-                    <div className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center text-slate-300 border border-slate-700 font-bold uppercase text-xs">
+                    <div className="w-10 h-10 rounded-full bg-blue-950/50 flex items-center justify-center text-blue-300 border border-blue-800/50 font-bold uppercase text-xs shadow-md shadow-blue-500/10">
                       {loggedInAdminEmail.slice(0, 2).toUpperCase()}
                     </div>
                     <button
                       onClick={handleLogout}
-                      className="p-1.5 hover:bg-slate-800 text-slate-400 hover:text-rose-400 rounded-lg transition-colors"
+                      className="p-1.5 hover:bg-slate-800/80 text-slate-400 hover:text-rose-400 rounded-lg transition-colors border border-transparent hover:border-slate-700/50"
                       title={t('Keluar')}
                     >
                       <LogOut className="w-4 h-4" />
@@ -343,7 +362,7 @@ export default function App() {
                 ) : (
                   <button
                     onClick={() => setIsLoginModalOpen(true)}
-                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-xs font-semibold shadow-sm transition-all flex items-center gap-1.5"
+                    className="bg-gradient-to-r from-blue-600 to-sky-500 hover:from-blue-700 hover:to-sky-600 text-white px-4 py-2 rounded-lg text-xs font-bold shadow-md shadow-blue-500/15 transition-all flex items-center gap-1.5"
                   >
                     <LogIn className="w-4 h-4" /> {t('Login Admin')}
                   </button>
@@ -355,12 +374,12 @@ export default function App() {
             {/* Mobile Menu Button */}
             <div className="flex md:hidden items-center gap-2">
               {/* Always visible mobile language switcher */}
-              <div className="flex bg-slate-800 p-0.5 rounded-lg border border-slate-700">
+              <div className="flex bg-blue-950/40 p-0.5 rounded-lg border border-blue-800/40 shadow-inner">
                 <button
                   onClick={() => setLanguage('id')}
                   className={`px-2 py-0.5 text-[9px] font-bold rounded-md transition-all ${
                     language === 'id' 
-                      ? 'bg-blue-600 text-white shadow' 
+                      ? 'bg-gradient-to-r from-blue-600 to-sky-500 text-white shadow shadow-blue-500/20' 
                       : 'text-slate-400 hover:text-white'
                   }`}
                 >
@@ -370,7 +389,7 @@ export default function App() {
                   onClick={() => setLanguage('en')}
                   className={`px-2 py-0.5 text-[9px] font-bold rounded-md transition-all ${
                     language === 'en' 
-                      ? 'bg-blue-600 text-white shadow' 
+                      ? 'bg-gradient-to-r from-blue-600 to-sky-500 text-white shadow shadow-blue-500/20' 
                       : 'text-slate-400 hover:text-white'
                   }`}
                 >
@@ -649,87 +668,154 @@ export default function App() {
       )}
 
       {/* Footer */}
-      <footer className="bg-slate-900 border-t border-slate-800 text-slate-300 py-12 text-xs" id="main-application-footer">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <footer className="relative overflow-hidden text-xs" id="main-application-footer">
+        {/* Top Dark Section */}
+        <div 
+          className="text-slate-300 pt-12 pb-2 relative bg-cover bg-center bg-slate-950"
+          style={{ 
+            backgroundImage: "linear-gradient(to bottom, rgba(15, 23, 42, 0.96), rgba(3, 7, 18, 0.98)), url('https://lh3.googleusercontent.com/d/1mhiKxfRXG4nzn8A5TRCDVd4WUZCiZ388')" 
+          }}
+        >
+          {/* Soft ambient glowing accents */}
+          <div className="absolute top-0 left-1/4 w-96 h-96 bg-blue-500/5 rounded-full blur-[100px] pointer-events-none"></div>
+          <div className="absolute bottom-0 right-1/4 w-80 h-80 bg-cyan-500/5 rounded-full blur-[80px] pointer-events-none"></div>
           
-          {/* Main Footer Content */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 pb-8 border-b border-slate-800">
-            
-            {/* Column 1: Brand & Description */}
-            <div className="space-y-4">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 bg-white rounded flex items-center justify-center shadow overflow-hidden">
-                  <img 
-                    src="https://lh3.googleusercontent.com/d/1LmpjB5qAX8ev5_JRzYQDwjM58RxHl18X" 
-                    alt="Pancaran Logo" 
-                    className="w-full h-full object-contain p-0.5"
-                    referrerPolicy="no-referrer"
-                    onError={(e) => {
-                      e.currentTarget.src = "https://drive.google.com/uc?export=download&id=1LmpjB5qAX8ev5_JRzYQDwjM58RxHl18X";
-                    }}
-                  />
-                </div>
-                <span className="text-white font-bold text-lg tracking-tight">
-                  Pancaran <span className="text-blue-400">Lelang</span>
-                </span>
-              </div>
-              <p className="text-slate-400 text-xs leading-relaxed max-w-sm">
-                {t('Portal resmi likuidasi armada aktif dan alat berat dari ekosistem operasional Pancaran Group. Transparan, tepercaya, dan terintegrasi.')}
-              </p>
-            </div>
+          {/* Glow Top Border Line */}
+          <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-blue-500/40 to-transparent"></div>
 
-            {/* Column 2: COMPANY INFO (Our Office & Head Office 1) */}
-            <div className="space-y-4">
-              <h3 className="text-white font-bold tracking-wider text-sm uppercase">
-                {t('COMPANY INFO')}
-              </h3>
-              <div className="flex items-start gap-3">
-                <MapPin className="w-5 h-5 text-blue-400 shrink-0 mt-0.5" />
-                <div className="space-y-1">
-                  <p className="text-white font-semibold text-xs">{t('Our Office')}</p>
-                  <p className="text-slate-400 text-xs font-medium">{t('Head Office 1 :')}</p>
-                  <p className="text-slate-300 text-xs leading-relaxed">
-                    Jl. Tanah Merdeka No 20A Kalibaru Cilincing Jakarta Utara
-                  </p>
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+            {/* Main Footer Content */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 pb-8">
+              
+              {/* Column 1: Brand & Description */}
+              <div className="space-y-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 bg-white rounded flex items-center justify-center shadow overflow-hidden">
+                    <img 
+                      src="https://lh3.googleusercontent.com/d/1LmpjB5qAX8ev5_JRzYQDwjM58RxHl18X" 
+                      alt="Pancaran Logo" 
+                      className="w-full h-full object-contain p-0.5"
+                      referrerPolicy="no-referrer"
+                      onError={(e) => {
+                        e.currentTarget.src = "https://drive.google.com/uc?export=download&id=1LmpjB5qAX8ev5_JRzYQDwjM58RxHl18X";
+                      }}
+                    />
+                  </div>
+                  <span className="text-white font-bold text-lg tracking-tight">
+                    Pancaran <span className="text-blue-400 font-extrabold drop-shadow-[0_0_10px_rgba(96,165,250,0.25)]">Lelang</span>
+                  </span>
                 </div>
+                <p className="text-slate-400 text-xs leading-relaxed max-w-sm">
+                  {t('Portal resmi likuidasi armada aktif dan alat berat dari ekosistem operasional Pancaran Group. Transparan, tepercaya, dan terintegrasi.')}
+                </p>
               </div>
-            </div>
 
-            {/* Column 3: Contact Info & Pools */}
-            <div className="space-y-4">
-              <h3 className="text-white font-bold tracking-wider text-sm uppercase">
-                {t('HUBUNGI KAMI')}
-              </h3>
-              <div className="space-y-3">
+              {/* Column 2: COMPANY INFO */}
+              <div className="space-y-4">
+                <h3 className="text-white font-bold tracking-wider text-sm uppercase flex items-center gap-2">
+                  <span className="w-1.5 h-3 bg-blue-500 rounded-sm shadow-sm shadow-blue-500/50"></span>
+                  {t('COMPANY INFO')}
+                </h3>
                 <div className="flex items-start gap-3">
-                  <Mail className="w-5 h-5 text-blue-400 shrink-0 mt-0.5" />
-                  <div className="space-y-0.5">
-                    <p className="text-white font-mono font-semibold text-xs">sales@pancaran-group.co.id</p>
-                    <p className="text-slate-400 text-[11px] font-medium">(Inland & Logistic Services)</p>
-                  </div>
-                </div>
-
-                <div className="pt-2 border-t border-slate-800">
-                  <p className="text-slate-400 text-[10px] font-bold uppercase tracking-wider mb-2">{t('Lokasi Pool Inspeksi:')}</p>
-                  <div className="flex flex-wrap gap-2">
-                    <span className="bg-slate-800 px-2.5 py-1 rounded-md text-[10px] font-semibold text-slate-300 border border-slate-700">{t('Cilincing')}</span>
+                  <MapPin className="w-5 h-5 text-blue-400 shrink-0 mt-0.5 drop-shadow-[0_0_4px_rgba(96,165,250,0.3)]" />
+                  <div className="space-y-1">
+                    <p className="text-white font-semibold text-xs">{t('Our Office')}</p>
+                    <p className="text-slate-400 text-xs font-medium">{t('Head Office 1 :')}</p>
+                    <p className="text-slate-300 text-xs leading-relaxed">
+                      Jl. Tanah Merdeka No 20A Kalibaru Cilincing Jakarta Utara
+                    </p>
                   </div>
                 </div>
               </div>
+
+              {/* Column 3: Contact Info & Pools */}
+              <div className="space-y-4">
+                <h3 className="text-white font-bold tracking-wider text-sm uppercase flex items-center gap-2">
+                  <span className="w-1.5 h-3 bg-blue-500 rounded-sm shadow-sm shadow-blue-500/50"></span>
+                  {t('HUBUNGI KAMI')}
+                </h3>
+                <div className="space-y-3">
+                  <div className="flex items-start gap-3">
+                    <Mail className="w-5 h-5 text-blue-400 shrink-0 mt-0.5 drop-shadow-[0_0_4px_rgba(96,165,250,0.3)]" />
+                    <div className="space-y-0.5">
+                      <p className="text-white font-mono font-semibold text-xs">sales@pancaran-group.co.id</p>
+                      <p className="text-slate-400 text-[11px] font-medium">(Inland & Logistic Services)</p>
+                    </div>
+                  </div>
+
+                  <div className="pt-2 border-t border-slate-800/80">
+                    <p className="text-slate-400 text-[10px] font-bold uppercase tracking-wider mb-2">{t('Lokasi Pool Inspeksi:')}</p>
+                    <div className="flex flex-wrap gap-2">
+                      <span className="bg-blue-950/60 px-3 py-1 rounded-lg text-[10px] font-bold text-blue-300 border border-blue-800/50 shadow-sm shadow-blue-500/10">{t('Cilincing')}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
             </div>
-
           </div>
+        </div>
 
-          {/* Bottom Copyright */}
-          <div className="pt-6 flex flex-col md:flex-row justify-between items-center gap-4 text-slate-500 text-[11px]">
-            <p>© 2026 Pancaran Lelang Group - PT Pancaran Darma Logistics. {t('Hak Cipta Dilindungi')}.</p>
-            <div className="flex gap-4">
-              <span className="hover:text-slate-400 cursor-default">{t('Syarat & Ketentuan')}</span>
-              <span>•</span>
-              <span className="hover:text-slate-400 cursor-default">{t('Kebijakan Privasi')}</span>
+        {/* Wavy transition section (Combines Slate and Multiple Light Blue waves) */}
+        <div className="w-full relative select-none pointer-events-none -mt-1 bg-slate-950">
+          <svg 
+            viewBox="0 0 1440 200" 
+            className="w-full h-auto block"
+            fill="none" 
+            xmlns="http://www.w3.org/2000/svg"
+            preserveAspectRatio="none"
+          >
+            {/* Wave 1: Background dark transition to blend seamlessly */}
+            <path 
+              d="M0 0 L1440 0 L1440 80 Q1080 30 720 100 T0 50 Z" 
+              fill="#030712" /* slate-950 */
+            />
+            {/* Wave 2: Cyan / Blue-300 semi-transparent */}
+            <path 
+              d="M0 40 Q360 120 720 50 T1440 100 L1440 200 L0 200 Z" 
+              fill="#7dd3fc" /* sky-300 */
+              opacity="0.3" 
+            />
+            {/* Wave 3: Light blue / Sky-200 */}
+            <path 
+              d="M0 65 Q360 145 720 75 T1440 130 L1440 200 L0 200 Z" 
+              fill="#bae6fd" /* sky-200 */
+              opacity="0.6" 
+            />
+            {/* Wave 4: Beautiful Soft Light Blue base */}
+            <path 
+              d="M0 95 Q360 170 720 105 T1440 160 L1440 200 L0 200 Z" 
+              fill="#e0f2fe" /* sky-100 */
+              opacity="0.9" 
+            />
+            {/* Wave 5: Clean white / light-sky-50 floor */}
+            <path 
+              d="M0 120 Q360 190 720 130 T1440 180 L1440 200 L0 200 Z" 
+              fill="#f0f9ff" /* sky-5 */
+            />
+          </svg>
+
+          {/* Floating animated ambient sparkles on the wave */}
+          <div className="absolute right-[8%] bottom-[45%] w-2.5 h-2.5 bg-sky-200 rounded-full opacity-60 blur-[0.5px] animate-pulse"></div>
+          <div className="absolute right-[15%] bottom-[60%] w-2 h-2 bg-blue-300 rounded-full opacity-45 blur-[0.5px] animate-pulse"></div>
+          <div className="absolute right-[22%] bottom-[35%] w-1.5 h-1.5 bg-white rounded-full opacity-70"></div>
+          <div className="absolute left-[12%] bottom-[40%] w-2 h-2 bg-sky-300 rounded-full opacity-40 blur-[1px]"></div>
+        </div>
+
+        {/* Bottom Copyright Section - Rendered on Light Sky Blue floor */}
+        <div className="bg-[#f0f9ff] text-slate-600 py-6 relative z-10">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-[11px] font-medium">
+              <p className="text-slate-500">
+                © 2026 Pancaran Lelang Group - PT Pancaran Darma Logistics. {t('Hak Cipta Dilindungi')}.
+              </p>
+              <div className="flex gap-4">
+                <span className="text-slate-600 hover:text-blue-600 transition-colors cursor-pointer font-bold">{t('Syarat & Ketentuan')}</span>
+                <span className="text-slate-300">•</span>
+                <span className="text-slate-600 hover:text-blue-600 transition-colors cursor-pointer font-bold">{t('Kebijakan Privasi')}</span>
+              </div>
             </div>
           </div>
-
         </div>
       </footer>
 
