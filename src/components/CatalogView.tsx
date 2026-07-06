@@ -849,7 +849,7 @@ export default function CatalogView({ assets, onPlaceBid }: CatalogViewProps) {
                       }}
                       className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all shadow-md shadow-blue-500/10 hover:shadow-blue-500/25 flex items-center justify-center gap-1.5 cursor-pointer"
                     >
-                      <span>Booking / Kirim Penawaran</span>
+                      <span>{t('Booking / Kirim Penawaran')}</span>
                     </button>
                   </div>
 

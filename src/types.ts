@@ -34,4 +34,5 @@ export interface AdminUser {
   name: string;
   role: string;
   createdAt: string;
+  password?: string;
 }

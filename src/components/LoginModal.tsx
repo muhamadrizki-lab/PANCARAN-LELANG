@@ -1,14 +1,16 @@
 import React, { useState } from 'react';
 import { Shield, Mail, Lock, X, AlertCircle, Info, CheckCircle } from 'lucide-react';
 import { useLanguage } from './LanguageContext';
+import { AdminUser } from '../types';
 
 interface LoginModalProps {
   isOpen: boolean;
   onClose: () => void;
   onLoginSuccess: (email: string) => void;
+  admins: AdminUser[];
 }
 
-export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginModalProps) {
+export default function LoginModal({ isOpen, onClose, onLoginSuccess, admins }: LoginModalProps) {
   const { t } = useLanguage();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -27,10 +29,24 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginMod
 
     // Simulated short timeout for a realistic network/security check feel
     setTimeout(() => {
+      // 1. First, look for a matching registered admin
+      const matchedAdmin = admins.find(a => a.email.toLowerCase() === cleanEmail);
+
+      if (matchedAdmin) {
+        const expectedPassword = matchedAdmin.password || '12345678';
+        if (cleanPassword === expectedPassword) {
+          onLoginSuccess(cleanEmail);
+          onClose();
+          setIsLoading(false);
+          return;
+        }
+      }
+
+      // 2. Fallback to default test login credentials for standard testing
       const isPancaranEmail = cleanEmail.endsWith('@pancaran-logistic.id') || cleanEmail.endsWith('@pancaran-group.id');
       const isValidAdmin = cleanEmail === 'digital.solution@pancaran-logistic.id' || cleanEmail === 'email@pancaran-logistic.id' || isPancaranEmail;
 
-      if (isValidAdmin && cleanPassword === '12345678') {
+      if (isValidAdmin && cleanPassword === '12345678' && !matchedAdmin) {
         onLoginSuccess(cleanEmail);
         onClose();
         setIsLoading(false);

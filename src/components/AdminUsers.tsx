@@ -4,6 +4,7 @@ import { useLanguage } from './LanguageContext';
 import {   UserPlus, 
   Shield, 
   Mail, 
+  Lock,
   Calendar, 
   Trash2, 
   Check, 
@@ -29,6 +30,7 @@ export default function AdminUsers({
   const [formData, setFormData] = useState({
     name: '',
     email: '',
+    password: '',
     role: 'Admin Operasional'
   });
   const [errorMsg, setErrorMsg] = useState('');
@@ -40,8 +42,13 @@ export default function AdminUsers({
     setErrorMsg('');
     setSuccessMsg('');
 
-    if (!formData.name || !formData.email) {
-      setErrorMsg(t('Mohon lengkapi nama dan email admin.'));
+    if (!formData.name || !formData.email || !formData.password) {
+      setErrorMsg(t('Mohon lengkapi nama, email, dan kata sandi admin.'));
+      return;
+    }
+
+    if (formData.password.length < 6) {
+      setErrorMsg(t('Kata sandi minimal 6 karakter.'));
       return;
     }
 
@@ -62,6 +69,7 @@ export default function AdminUsers({
       email: formData.email.toLowerCase(),
       name: formData.name,
       role: formData.role,
+      password: formData.password,
       createdAt: new Date().toISOString().split('T')[0]
     });
 
@@ -69,6 +77,7 @@ export default function AdminUsers({
     setFormData({
       name: '',
       email: '',
+      password: '',
       role: 'Admin Operasional'
     });
 
@@ -140,6 +149,24 @@ export default function AdminUsers({
                 />
               </div>
               <p className="text-[10px] text-slate-400">{t('Harus berupa email institusi Pancaran.')}</p>
+            </div>
+
+            {/* Admin Password */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-600 uppercase tracking-wide">{t('Kata Sandi (Password)')}</label>
+              <div className="relative">
+                <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
+                <input
+                  type="password"
+                  placeholder="••••••••"
+                  value={formData.password}
+                  onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
+                  className="w-full pl-10 pr-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                  required
+                  minLength={6}
+                />
+              </div>
+              <p className="text-[10px] text-slate-400">{t('Minimal 6 karakter.')}</p>
             </div>
 
             {/* Admin Role */}
