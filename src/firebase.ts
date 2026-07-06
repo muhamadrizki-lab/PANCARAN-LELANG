@@ -234,7 +234,10 @@ export async function addBidToAsset(assetId: string, bid: Bid): Promise<void> {
     }
     const currentAsset = assetSnap.data() as Asset;
     const updatedBids = [...(currentAsset.bids || []), bid];
-    const highestBid = Math.max(...updatedBids.map(b => b.price), currentAsset.startingPrice);
+    const scheduledBids = updatedBids.filter(b => b.scheduleSurveyDate && b.scheduleSurveyTime);
+    const highestBid = scheduledBids.length > 0
+      ? Math.max(...scheduledBids.map(b => b.price), currentAsset.startingPrice)
+      : currentAsset.startingPrice;
 
     await updateDoc(assetRef, {
       bids: updatedBids,

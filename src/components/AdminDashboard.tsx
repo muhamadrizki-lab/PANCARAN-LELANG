@@ -39,7 +39,8 @@ export default function AdminDashboard({ assets, onSelectAsset }: AdminDashboard
 
   // Highest price calculation (from starting prices or bids)
   const maxPrice = assets.reduce((max, asset) => {
-    const highestVal = Math.max(asset.startingPrice, asset.highestBid, ...asset.bids.map(b => b.price));
+    const scheduledBids = (asset.bids || []).filter(b => b.scheduleSurveyDate && b.scheduleSurveyTime);
+    const highestVal = Math.max(asset.startingPrice, asset.highestBid, ...scheduledBids.map(b => b.price));
     return highestVal > max ? highestVal : max;
   }, 0);
 
@@ -152,7 +153,7 @@ export default function AdminDashboard({ assets, onSelectAsset }: AdminDashboard
       {/* Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4" id="stats-metric-grid">
         {/* Total Asset */}
-        <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex items-center justify-between hover:shadow-md transition-all duration-300">
+        <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 border-l-[6px] border-l-slate-300 flex items-center justify-between hover:shadow-md transition-all duration-300">
           <div className="space-y-1">
             <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">{t('Total Asset')}</span>
             <p className="text-2xl font-bold text-slate-800">{totalAssets}</p>
@@ -164,7 +165,7 @@ export default function AdminDashboard({ assets, onSelectAsset }: AdminDashboard
         </div>
 
         {/* Total Sold */}
-        <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex items-center justify-between hover:shadow-md transition-all duration-300">
+        <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 border-l-[6px] border-l-slate-300 flex items-center justify-between hover:shadow-md transition-all duration-300">
           <div className="space-y-1">
             <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">{t('Aset Terjual')}</span>
             <p className="text-2xl font-bold text-emerald-600">{totalSold}</p>
@@ -178,7 +179,7 @@ export default function AdminDashboard({ assets, onSelectAsset }: AdminDashboard
         </div>
 
         {/* Total Open */}
-        <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex items-center justify-between hover:shadow-md transition-all duration-300">
+        <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 border-l-[6px] border-l-slate-300 flex items-center justify-between hover:shadow-md transition-all duration-300">
           <div className="space-y-1">
             <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">{t('Aset Aktif')}</span>
             <p className="text-2xl font-bold text-blue-600">{totalOpen}</p>
@@ -190,7 +191,7 @@ export default function AdminDashboard({ assets, onSelectAsset }: AdminDashboard
         </div>
 
         {/* Total Bidder */}
-        <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex items-center justify-between hover:shadow-md transition-all duration-300">
+        <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 border-l-[6px] border-l-slate-300 flex items-center justify-between hover:shadow-md transition-all duration-300">
           <div className="space-y-1">
             <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">{t('Total Bidder')}</span>
             <p className="text-2xl font-bold text-slate-800">{totalBidders}</p>
@@ -206,7 +207,7 @@ export default function AdminDashboard({ assets, onSelectAsset }: AdminDashboard
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         
         {/* Brand Distribution Chart (Left/2-cols on desktop) */}
-        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-6 lg:col-span-1" id="brand-distribution-section">
+        <div className="bg-white p-6 rounded-2xl border border-slate-200 border-l-[6px] border-l-slate-300 shadow-sm space-y-6 lg:col-span-1" id="brand-distribution-section">
           <div>
             <h2 className="text-lg font-bold text-slate-800">{t('Total Aset per Brand')}</h2>
             <p className="text-xs text-slate-500 mt-1">{t('Porsi distribusi armada lelang Pancaran Logistics berdasarkan merek manufaktur.')}</p>
@@ -248,7 +249,7 @@ export default function AdminDashboard({ assets, onSelectAsset }: AdminDashboard
         </div>
 
         {/* Schedule Survey (Right/2-cols on desktop) */}
-        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-6 lg:col-span-2" id="schedule-survey-section">
+        <div className="bg-white p-6 rounded-2xl border border-slate-200 border-l-[6px] border-l-slate-300 shadow-sm space-y-6 lg:col-span-2" id="schedule-survey-section">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>
               <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">

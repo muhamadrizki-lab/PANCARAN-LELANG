@@ -457,7 +457,8 @@ export default function AdminAssets({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {filteredAssets.map((asset) => {
               const isSelected = asset.id === selectedAssetId;
-              const highestOffer = asset.bids.length > 0 ? Math.max(...asset.bids.map(b => b.price)) : asset.startingPrice;
+              const scheduledBids = (asset.bids || []).filter(b => b.scheduleSurveyDate && b.scheduleSurveyTime);
+              const highestOffer = scheduledBids.length > 0 ? Math.max(...scheduledBids.map(b => b.price)) : asset.startingPrice;
               
               return (
                 <div
@@ -789,8 +790,9 @@ export default function AdminAssets({
                               type="button"
                               onClick={() => {
                                 const updatedBids = selectedAsset.bids.filter(b => b.id !== bid.id);
-                                const highestBid = updatedBids.length > 0
-                                  ? Math.max(...updatedBids.map(b => b.price), selectedAsset.startingPrice)
+                                const scheduledBids = updatedBids.filter(b => b.scheduleSurveyDate && b.scheduleSurveyTime);
+                                const highestBid = scheduledBids.length > 0
+                                  ? Math.max(...scheduledBids.map(b => b.price), selectedAsset.startingPrice)
                                   : selectedAsset.startingPrice;
                                 onUpdateAsset(selectedAsset.id, { 
                                   bids: updatedBids,
@@ -870,7 +872,14 @@ export default function AdminAssets({
                                   }
                                   return b;
                                 });
-                                onUpdateAsset(selectedAsset.id, { bids: updatedBids });
+                                const scheduledBids = updatedBids.filter(b => b.scheduleSurveyDate && b.scheduleSurveyTime);
+                                const highestBid = scheduledBids.length > 0
+                                  ? Math.max(...scheduledBids.map(b => b.price), selectedAsset.startingPrice)
+                                  : selectedAsset.startingPrice;
+                                onUpdateAsset(selectedAsset.id, { 
+                                  bids: updatedBids,
+                                  highestBid: highestBid
+                                });
                                 setEditingBidId(null);
                               }}
                               className="flex-1 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-[10px] font-bold transition-colors shadow-xs cursor-pointer"
@@ -905,7 +914,14 @@ export default function AdminAssets({
                                         }
                                         return b;
                                       });
-                                      onUpdateAsset(selectedAsset.id, { bids: updatedBids });
+                                      const scheduledBids = updatedBids.filter(b => b.scheduleSurveyDate && b.scheduleSurveyTime);
+                                      const highestBid = scheduledBids.length > 0
+                                        ? Math.max(...scheduledBids.map(b => b.price), selectedAsset.startingPrice)
+                                        : selectedAsset.startingPrice;
+                                      onUpdateAsset(selectedAsset.id, { 
+                                        bids: updatedBids,
+                                        highestBid: highestBid
+                                      });
                                       setSurveyCancelConfirmId(null);
                                     }}
                                     className="px-1.5 py-0.5 bg-rose-600 hover:bg-rose-700 text-white rounded text-[9px] font-bold cursor-pointer"

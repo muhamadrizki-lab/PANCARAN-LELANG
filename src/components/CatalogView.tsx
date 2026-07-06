@@ -67,11 +67,11 @@ function CatalogCard({ asset, onSelectAsset, formatIDR }: CatalogCardProps) {
     setActiveImgIdx(prev => (prev === images.length - 1 ? 0 : prev + 1));
   };
 
-  const hasBids = asset.bids.length > 0;
-  const highestOffer = hasBids ? Math.max(...asset.bids.map(b => b.price)) : asset.startingPrice;
+  const scheduledBids = (asset.bids || []).filter(b => b.scheduleSurveyDate && b.scheduleSurveyTime);
+  const highestOffer = scheduledBids.length > 0 ? Math.max(...scheduledBids.map(b => b.price)) : asset.startingPrice;
 
   return (
-    <div className="bg-white rounded-3xl overflow-hidden border border-slate-200 hover:border-blue-200 hover:shadow-xl transition-all duration-300 flex flex-col justify-between group">
+    <div className="bg-white rounded-3xl overflow-hidden border border-slate-200 border-l-[6px] border-l-slate-300 hover:border-blue-200 hover:shadow-xl transition-all duration-300 flex flex-col justify-between group">
       <div className="relative h-48 bg-slate-50 overflow-hidden group/img-container">
         <img 
           src={images[activeImgIdx]} 
@@ -378,8 +378,9 @@ export default function CatalogView({ assets, onPlaceBid, selectedAssetId: propS
   const uniqueCategories = Array.from(new Set(openAssets.map(a => a.category)));
 
   const selectedAsset = assets.find(a => a.id === selectedAssetId);
+  const selectedScheduledBids = selectedAsset ? (selectedAsset.bids || []).filter(b => b.scheduleSurveyDate && b.scheduleSurveyTime) : [];
   const currentHighestBid = selectedAsset 
-    ? (selectedAsset.bids.length > 0 ? Math.max(...selectedAsset.bids.map(b => b.price)) : selectedAsset.startingPrice)
+    ? (selectedScheduledBids.length > 0 ? Math.max(...selectedScheduledBids.map(b => b.price)) : selectedAsset.startingPrice)
     : 0;
 
   const formatIDR = (value: number) => {
@@ -534,7 +535,7 @@ export default function CatalogView({ assets, onPlaceBid, selectedAssetId: propS
         <div className="space-y-6 lg:col-span-3" id="public-catalog-catalog-col">
           
           {/* Public Filters Header */}
-          <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <div className="bg-white p-5 rounded-2xl border border-slate-200 border-l-[6px] border-l-slate-300 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div>
               <h2 className="text-lg font-bold text-slate-800">{t('Katalog Armada Tersedia')} ({filteredAssets.length})</h2>
               <p className="text-xs text-slate-500 mt-0.5">{t('Semua armada di bawah siap dilepas dengan penawaran harga terbaik.')}</p>
@@ -724,7 +725,7 @@ export default function CatalogView({ assets, onPlaceBid, selectedAssetId: propS
                 <div className="lg:col-span-2 space-y-6">
                   
                   {/* Title & Badge card */}
-                  <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs space-y-4">
+                  <div className="bg-white p-6 rounded-2xl border border-slate-200/80 border-l-[6px] border-l-slate-300 shadow-xs space-y-4">
                     <div className="flex flex-wrap gap-2">
                       <span className="bg-amber-500 text-white text-[10px] font-extrabold px-3 py-1 rounded-md shadow-xs tracking-wider uppercase">
                         ⭐ {t('UNIT PILIHAN')}
@@ -780,7 +781,7 @@ export default function CatalogView({ assets, onPlaceBid, selectedAssetId: propS
                   </div>
 
                   {/* Ikhtisar Card */}
-                  <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs space-y-4">
+                  <div className="bg-white p-6 rounded-2xl border border-slate-200/80 border-l-[6px] border-l-slate-300 shadow-xs space-y-4">
                     <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2 border-b border-slate-100 pb-2.5">
                       <Info className="w-4 h-4 text-blue-600" />
                       <span>{t('Ikhtisar Spesifikasi')}</span>
@@ -814,7 +815,7 @@ export default function CatalogView({ assets, onPlaceBid, selectedAssetId: propS
                   </div>
 
                   {/* Deskripsi (OLX-style Truncated preview + "Selengkapnya" modal link) */}
-                  <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs space-y-4">
+                  <div className="bg-white p-6 rounded-2xl border border-slate-200/80 border-l-[6px] border-l-slate-300 shadow-xs space-y-4">
                     <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2 border-b border-slate-100 pb-2.5">
                       <Info className="w-4 h-4 text-blue-600" />
                       <span>{t('Deskripsi Lengkap')}</span>
@@ -843,7 +844,7 @@ export default function CatalogView({ assets, onPlaceBid, selectedAssetId: propS
                 <div className="space-y-6">
                   
                   {/* Price & CTA Trigger Card */}
-                  <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs space-y-4">
+                  <div className="bg-white p-6 rounded-2xl border border-slate-200/80 border-l-[6px] border-l-slate-300 shadow-xs space-y-4">
                     <div>
                       <p className="text-slate-400 text-[10px] font-bold uppercase tracking-wider">{t('Penawaran Tertinggi')}</p>
                       <h2 className="text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight mt-1">
@@ -874,7 +875,7 @@ export default function CatalogView({ assets, onPlaceBid, selectedAssetId: propS
                   {/* Interactive Bidding & Survey Scheduler Form */}
                   <div 
                     id="bid-form-card"
-                    className={`bg-white p-6 rounded-2xl border transition-all duration-300 space-y-4 ${
+                    className={`bg-white p-6 rounded-2xl border border-l-[6px] border-l-slate-300 transition-all duration-300 space-y-4 ${
                       isFormFocused 
                         ? 'relative z-40 border-blue-500 shadow-2xl ring-2 ring-blue-500/20 scale-[1.02] bg-white' 
                         : 'relative z-10 border-slate-200/80 shadow-xs'

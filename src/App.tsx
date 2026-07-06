@@ -188,19 +188,25 @@ export default function App() {
       return b;
     });
 
+    const scheduledBids = updatedBids.filter(b => b.scheduleSurveyDate && b.scheduleSurveyTime);
+    const highestBid = scheduledBids.length > 0
+      ? Math.max(...scheduledBids.map(b => b.price), targetAsset.startingPrice)
+      : targetAsset.startingPrice;
+
     // Optimistic local state update
     setAssets(prev => prev.map(a => {
       if (a.id === assetId) {
         return {
           ...a,
-          bids: updatedBids
+          bids: updatedBids,
+          highestBid: highestBid
         };
       }
       return a;
     }));
 
     try {
-      await updateAssetInDb(assetId, { bids: updatedBids });
+      await updateAssetInDb(assetId, { bids: updatedBids, highestBid: highestBid });
       addNotification(
         'info',
         t('Jadwal Survei Dibatalkan'),
@@ -558,7 +564,10 @@ export default function App() {
     setAssets(prev => prev.map(a => {
       if (a.id === assetId) {
         const updatedBids = [...(a.bids || []), newBid];
-        const highestBid = Math.max(...updatedBids.map(b => b.price), a.startingPrice);
+        const scheduledBids = updatedBids.filter(b => b.scheduleSurveyDate && b.scheduleSurveyTime);
+        const highestBid = scheduledBids.length > 0
+          ? Math.max(...scheduledBids.map(b => b.price), a.startingPrice)
+          : a.startingPrice;
         return {
           ...a,
           bids: updatedBids,
@@ -707,221 +716,223 @@ export default function App() {
               </div>
 
               {/* Notification Popover */}
-              <div ref={notifRef} className="relative">
-                <button
-                  onClick={handleOpenNotifications}
-                  className="p-1.5 hover:bg-slate-800/80 text-slate-300 hover:text-white rounded-lg transition-colors border border-transparent hover:border-slate-700/50 relative cursor-pointer flex items-center justify-center"
-                  title={t('Notifikasi Terkini')}
-                >
-                  <Bell className={`w-4.5 h-4.5 ${unreadCount > 0 ? 'text-amber-400 animate-pulse' : ''}`} />
-                  {unreadCount > 0 && (
-                    <span className="absolute -top-0.5 -right-0.5 bg-rose-500 text-white text-[8px] font-extrabold px-1 py-0.5 rounded-full min-w-4 text-center leading-none">
-                      {unreadCount}
-                    </span>
-                  )}
-                </button>
+              {isAdminLoggedIn && (
+                <div ref={notifRef} className="relative">
+                  <button
+                    onClick={handleOpenNotifications}
+                    className="p-1.5 hover:bg-slate-800/80 text-slate-300 hover:text-white rounded-lg transition-colors border border-transparent hover:border-slate-700/50 relative cursor-pointer flex items-center justify-center"
+                    title={t('Notifikasi Terkini')}
+                  >
+                    <Bell className={`w-4.5 h-4.5 ${unreadCount > 0 ? 'text-amber-400 animate-pulse' : ''}`} />
+                    {unreadCount > 0 && (
+                      <span className="absolute -top-0.5 -right-0.5 bg-rose-500 text-white text-[8px] font-extrabold px-1 py-0.5 rounded-full min-w-4 text-center leading-none">
+                        {unreadCount}
+                      </span>
+                    )}
+                  </button>
 
-                {/* Notifications Dropdown Panel */}
-                <AnimatePresence>
-                  {isNotifOpen && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                      transition={{ duration: 0.15 }}
-                      className="absolute right-0 mt-2.5 w-80 bg-white rounded-2xl border border-slate-200/80 shadow-2xl z-50 overflow-hidden font-sans text-slate-800"
-                    >
-                      <div className="p-3.5 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
-                        <div className="flex items-center gap-1.5">
-                          <Bell className="w-4 h-4 text-blue-600" />
-                          <span className="font-bold text-xs text-slate-800 uppercase tracking-wide">{t('Notifikasi Terkini')}</span>
+                  {/* Notifications Dropdown Panel */}
+                  <AnimatePresence>
+                    {isNotifOpen && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                        transition={{ duration: 0.15 }}
+                        className="absolute right-0 mt-2.5 w-80 bg-white rounded-2xl border border-slate-200/80 shadow-2xl z-50 overflow-hidden font-sans text-slate-800"
+                      >
+                        <div className="p-3.5 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
+                          <div className="flex items-center gap-1.5">
+                            <Bell className="w-4 h-4 text-blue-600" />
+                            <span className="font-bold text-xs text-slate-800 uppercase tracking-wide">{t('Notifikasi Terkini')}</span>
+                          </div>
+                          {notifTab === 'logs' && notificationHistory.length > 0 && (
+                            <button
+                              onClick={handleClearNotifications}
+                              className="text-[10px] text-slate-400 hover:text-rose-500 font-bold transition-colors uppercase cursor-pointer"
+                            >
+                              {t('Bersihkan')}
+                            </button>
+                          )}
                         </div>
-                        {notifTab === 'logs' && notificationHistory.length > 0 && (
+
+                        {/* Tab Switcher */}
+                        <div className="flex border-b border-slate-100 bg-slate-50 p-1">
                           <button
-                            onClick={handleClearNotifications}
-                            className="text-[10px] text-slate-400 hover:text-rose-500 font-bold transition-colors uppercase cursor-pointer"
+                            onClick={() => setNotifTab('logs')}
+                            className={`flex-1 py-1.5 text-[10px] font-bold rounded-lg transition-all flex items-center justify-center gap-1 cursor-pointer ${
+                              notifTab === 'logs'
+                                ? 'bg-white text-blue-600 shadow-sm'
+                                : 'text-slate-500 hover:text-slate-800'
+                            }`}
                           >
-                            {t('Bersihkan')}
+                            <span>🔔</span> {t('Log Notifikasi')}
                           </button>
-                        )}
-                      </div>
+                          <button
+                            onClick={() => setNotifTab('bookings')}
+                            className={`flex-1 py-1.5 text-[10px] font-bold rounded-lg transition-all flex items-center justify-center gap-1 cursor-pointer ${
+                              notifTab === 'bookings'
+                                ? 'bg-white text-blue-600 shadow-sm'
+                                : 'text-slate-500 hover:text-slate-800'
+                            }`}
+                          >
+                            <span>📅</span> {t('Daftar Booking')} ({getBookingsList().length})
+                          </button>
+                        </div>
 
-                      {/* Tab Switcher */}
-                      <div className="flex border-b border-slate-100 bg-slate-50 p-1">
-                        <button
-                          onClick={() => setNotifTab('logs')}
-                          className={`flex-1 py-1.5 text-[10px] font-bold rounded-lg transition-all flex items-center justify-center gap-1 cursor-pointer ${
-                            notifTab === 'logs'
-                              ? 'bg-white text-blue-600 shadow-sm'
-                              : 'text-slate-500 hover:text-slate-800'
-                          }`}
-                        >
-                          <span>🔔</span> {t('Log Notifikasi')}
-                        </button>
-                        <button
-                          onClick={() => setNotifTab('bookings')}
-                          className={`flex-1 py-1.5 text-[10px] font-bold rounded-lg transition-all flex items-center justify-center gap-1 cursor-pointer ${
-                            notifTab === 'bookings'
-                              ? 'bg-white text-blue-600 shadow-sm'
-                              : 'text-slate-500 hover:text-slate-800'
-                          }`}
-                        >
-                          <span>📅</span> {t('Daftar Booking')} ({getBookingsList().length})
-                        </button>
-                      </div>
-
-                      <div className="max-h-72 overflow-y-auto divide-y divide-slate-100">
-                        {notifTab === 'logs' ? (
-                          notificationHistory.length > 0 ? (
-                            notificationHistory.map((notif) => (
-                              <div 
-                                key={notif.id} 
-                                onClick={() => handleNotificationClick(notif)}
-                                className={`p-3 hover:bg-slate-50/75 transition-colors flex items-start gap-2.5 text-left relative group ${notif.assetId ? 'cursor-pointer border-l-2 border-l-blue-500/30' : ''}`}
-                              >
-                                <div className="mt-0.5 shrink-0">
-                                  {notif.type === 'bid' && <span className="text-blue-500 text-sm">💰</span>}
-                                  {notif.type === 'success' && <span className="text-emerald-500 text-sm">📅</span>}
-                                  {notif.type === 'info' && <span className="text-indigo-500 text-sm">ℹ️</span>}
-                                  {notif.type === 'warning' && <span className="text-amber-500 text-sm">⚠️</span>}
-                                  {notif.type === 'sync' && <span className="text-sky-500 text-sm">🔄</span>}
-                                </div>
-                                <div className="space-y-0.5 flex-1 min-w-0 pr-5">
-                                  <p className="font-bold text-slate-800 text-[11px] leading-tight truncate">{notif.title}</p>
-                                  <p className="text-[10px] text-slate-500 leading-normal font-medium whitespace-normal break-words">{notif.message}</p>
-                                  {notif.assetId && (
-                                    <span className="inline-flex items-center gap-0.5 text-[9px] text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded font-bold mt-1">
-                                      {t('Lihat Unit')} &rarr;
-                                    </span>
-                                  )}
-                                  <p className="text-[9px] text-slate-400 font-mono mt-1">
-                                    {notif.timestamp ? new Date(notif.timestamp).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) : ''}
-                                  </p>
-                                </div>
-                                <button
-                                  onClick={(e) => handleDeleteNotification(notif.id, e)}
-                                  className="p-1 text-slate-300 hover:text-rose-500 rounded transition-colors cursor-pointer"
-                                  title={t('Hapus')}
+                        <div className="max-h-72 overflow-y-auto divide-y divide-slate-100">
+                          {notifTab === 'logs' ? (
+                            notificationHistory.length > 0 ? (
+                              notificationHistory.map((notif) => (
+                                <div 
+                                  key={notif.id} 
+                                  onClick={() => handleNotificationClick(notif)}
+                                  className={`p-3 hover:bg-slate-50/75 transition-colors flex items-start gap-2.5 text-left relative group ${notif.assetId ? 'cursor-pointer border-l-2 border-l-blue-500/30' : ''}`}
                                 >
-                                  <Trash2 className="w-3.5 h-3.5" />
-                                </button>
-                              </div>
-                            ))
-                          ) : (
-                            <div className="py-8 px-4 text-center text-slate-400 text-xs flex flex-col items-center justify-center gap-1.5 font-medium">
-                              <span className="text-xl">🔔</span>
-                              <span>{t('Tidak ada notifikasi baru')}</span>
-                            </div>
-                          )
-                        ) : (
-                          /* Bookings Tab */
-                          getBookingsList().length > 0 ? (
-                            getBookingsList().map((booking) => (
-                              <div 
-                                key={booking.bidId}
-                                className="p-3 hover:bg-slate-50/75 transition-colors flex flex-col gap-1.5 text-left border-l-2 border-l-emerald-500/30"
-                              >
-                                <div className="flex items-center justify-between">
-                                  <span className="text-[9px] font-mono font-bold bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded truncate max-w-[80px]">
-                                    {booking.assetId}
-                                  </span>
-                                  <span className="text-[10px] font-extrabold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded-full">
-                                    📅 {booking.date} @ {booking.time}
-                                  </span>
-                                </div>
-
-                                <div className="space-y-0.5">
-                                  <h4 className="font-bold text-slate-800 text-xs truncate leading-tight">
-                                    {booking.assetBrand} {booking.assetName}
-                                  </h4>
-                                  <p className="text-[10px] text-slate-600 font-semibold truncate">
-                                    👤 {booking.name} ({booking.contact})
-                                  </p>
-                                  <p className="text-[9px] text-slate-400 font-medium truncate">
-                                    ✉️ {booking.email}
-                                  </p>
-                                  <p className="text-[10px] text-emerald-600 font-bold font-mono">
-                                    💰 {formatIDR(booking.price)}
-                                  </p>
-                                </div>
-
-                                <div className="flex items-center gap-1.5 pt-1">
+                                  <div className="mt-0.5 shrink-0">
+                                    {notif.type === 'bid' && <span className="text-blue-500 text-sm">💰</span>}
+                                    {notif.type === 'success' && <span className="text-emerald-500 text-sm">📅</span>}
+                                    {notif.type === 'info' && <span className="text-indigo-500 text-sm">ℹ️</span>}
+                                    {notif.type === 'warning' && <span className="text-amber-500 text-sm">⚠️</span>}
+                                    {notif.type === 'sync' && <span className="text-sky-500 text-sm">🔄</span>}
+                                  </div>
+                                  <div className="space-y-0.5 flex-1 min-w-0 pr-5">
+                                    <p className="font-bold text-slate-800 text-[11px] leading-tight truncate">{notif.title}</p>
+                                    <p className="text-[10px] text-slate-500 leading-normal font-medium whitespace-normal break-words">{notif.message}</p>
+                                    {notif.assetId && (
+                                      <span className="inline-flex items-center gap-0.5 text-[9px] text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded font-bold mt-1">
+                                        {t('Lihat Unit')} &rarr;
+                                      </span>
+                                    )}
+                                    <p className="text-[9px] text-slate-400 font-mono mt-1">
+                                      {notif.timestamp ? new Date(notif.timestamp).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) : ''}
+                                    </p>
+                                  </div>
                                   <button
-                                    onClick={() => {
-                                      const mockNotif: ToastNotification = {
-                                        id: booking.bidId,
-                                        type: 'success',
-                                        title: 'View',
-                                        message: '',
-                                        timestamp: new Date(),
-                                        assetId: booking.assetId
-                                      };
-                                      handleNotificationClick(mockNotif);
-                                    }}
-                                    className="flex-1 py-1 text-center bg-blue-600 hover:bg-blue-700 text-white font-bold text-[9px] rounded-lg transition-all cursor-pointer"
+                                    onClick={(e) => handleDeleteNotification(notif.id, e)}
+                                    className="p-1 text-slate-300 hover:text-rose-500 rounded transition-colors cursor-pointer"
+                                    title={t('Hapus')}
                                   >
-                                    {t('Lihat Unit')}
+                                    <Trash2 className="w-3.5 h-3.5" />
                                   </button>
-                                  <a
-                                    href={`https://wa.me/${booking.contact.replace(/\D/g, '') || '#'}`}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="px-2 py-1 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 font-bold text-[9px] rounded-lg transition-all border border-emerald-200/50 flex items-center justify-center gap-0.5"
-                                  >
-                                    📱 {t('Hubungi')}
-                                  </a>
-                                  {bookingCancelConfirmId === booking.bidId ? (
-                                    <div className="flex items-center gap-1 bg-rose-50 p-1 rounded-lg border border-rose-200/50">
-                                      <button
-                                        type="button"
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          setBookingCancelConfirmId(null);
-                                        }}
-                                        className="px-1.5 py-0.5 bg-white text-slate-600 rounded text-[8px] font-bold hover:bg-slate-50 border border-slate-200 cursor-pointer animate-fade-in"
-                                      >
-                                        {t('Batal')}
-                                      </button>
-                                      <button
-                                        type="button"
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          handleCancelBookingSchedule(booking.assetId, booking.bidId, true);
-                                          setBookingCancelConfirmId(null);
-                                        }}
-                                        className="px-1.5 py-0.5 bg-rose-600 hover:bg-rose-700 text-white rounded text-[8px] font-bold cursor-pointer animate-fade-in"
-                                      >
-                                        {t('Ya')}
-                                      </button>
-                                    </div>
-                                  ) : (
-                                    <button
-                                      type="button"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        setBookingCancelConfirmId(booking.bidId);
-                                      }}
-                                      className="px-2 py-1 bg-rose-50 text-rose-500 hover:bg-rose-100 border border-rose-200/50 hover:border-rose-300 font-bold text-[9px] rounded-lg transition-all flex items-center justify-center cursor-pointer"
-                                      title={t('Batalkan Booking')}
-                                    >
-                                      <Trash2 className="w-3.5 h-3.5" />
-                                    </button>
-                                  )}
                                 </div>
+                              ))
+                            ) : (
+                              <div className="py-8 px-4 text-center text-slate-400 text-xs flex flex-col items-center justify-center gap-1.5 font-medium">
+                                <span className="text-xl">🔔</span>
+                                <span>{t('Tidak ada notifikasi baru')}</span>
                               </div>
-                            ))
+                            )
                           ) : (
-                            <div className="py-8 px-4 text-center text-slate-400 text-xs flex flex-col items-center justify-center gap-1.5 font-medium">
-                              <span className="text-xl">📅</span>
-                              <span>{t('Belum ada jadwal booking survei.')}</span>
-                            </div>
-                          )
-                        )}
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
+                            /* Bookings Tab */
+                            getBookingsList().length > 0 ? (
+                              getBookingsList().map((booking) => (
+                                <div 
+                                  key={booking.bidId}
+                                  className="p-3 hover:bg-slate-50/75 transition-colors flex flex-col gap-1.5 text-left border-l-2 border-l-emerald-500/30"
+                                >
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-[9px] font-mono font-bold bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded truncate max-w-[80px]">
+                                      {booking.assetId}
+                                    </span>
+                                    <span className="text-[10px] font-extrabold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded-full">
+                                      📅 {booking.date} @ {booking.time}
+                                    </span>
+                                  </div>
+
+                                  <div className="space-y-0.5">
+                                    <h4 className="font-bold text-slate-800 text-xs truncate leading-tight">
+                                      {booking.assetBrand} {booking.assetName}
+                                    </h4>
+                                    <p className="text-[10px] text-slate-600 font-semibold truncate">
+                                      👤 {booking.name} ({booking.contact})
+                                    </p>
+                                    <p className="text-[9px] text-slate-400 font-medium truncate">
+                                      ✉️ {booking.email}
+                                    </p>
+                                    <p className="text-[10px] text-emerald-600 font-bold font-mono">
+                                      💰 {formatIDR(booking.price)}
+                                    </p>
+                                  </div>
+
+                                  <div className="flex items-center gap-1.5 pt-1">
+                                    <button
+                                      onClick={() => {
+                                        const mockNotif: ToastNotification = {
+                                          id: booking.bidId,
+                                          type: 'success',
+                                          title: 'View',
+                                          message: '',
+                                          timestamp: new Date(),
+                                          assetId: booking.assetId
+                                        };
+                                        handleNotificationClick(mockNotif);
+                                      }}
+                                      className="flex-1 py-1 text-center bg-blue-600 hover:bg-blue-700 text-white font-bold text-[9px] rounded-lg transition-all cursor-pointer"
+                                    >
+                                      {t('Lihat Unit')}
+                                    </button>
+                                    <a
+                                      href={`https://wa.me/${booking.contact.replace(/\D/g, '') || '#'}`}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="px-2 py-1 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 font-bold text-[9px] rounded-lg transition-all border border-emerald-200/50 flex items-center justify-center gap-0.5"
+                                    >
+                                      📱 {t('Hubungi')}
+                                    </a>
+                                    {bookingCancelConfirmId === booking.bidId ? (
+                                      <div className="flex items-center gap-1 bg-rose-50 p-1 rounded-lg border border-rose-200/50">
+                                        <button
+                                          type="button"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            setBookingCancelConfirmId(null);
+                                          }}
+                                          className="px-1.5 py-0.5 bg-white text-slate-600 rounded text-[8px] font-bold hover:bg-slate-50 border border-slate-200 cursor-pointer animate-fade-in"
+                                        >
+                                          {t('Batal')}
+                                        </button>
+                                        <button
+                                          type="button"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleCancelBookingSchedule(booking.assetId, booking.bidId, true);
+                                            setBookingCancelConfirmId(null);
+                                          }}
+                                          className="px-1.5 py-0.5 bg-rose-600 hover:bg-rose-700 text-white rounded text-[8px] font-bold cursor-pointer animate-fade-in"
+                                        >
+                                          {t('Ya')}
+                                        </button>
+                                      </div>
+                                    ) : (
+                                      <button
+                                        type="button"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setBookingCancelConfirmId(booking.bidId);
+                                        }}
+                                        className="px-2 py-1 bg-rose-50 text-rose-500 hover:bg-rose-100 border border-rose-200/50 hover:border-rose-300 font-bold text-[9px] rounded-lg transition-all flex items-center justify-center cursor-pointer"
+                                        title={t('Batalkan Booking')}
+                                      >
+                                        <Trash2 className="w-3.5 h-3.5" />
+                                      </button>
+                                    )}
+                                  </div>
+                                </div>
+                              ))
+                            ) : (
+                              <div className="py-8 px-4 text-center text-slate-400 text-xs flex flex-col items-center justify-center gap-1.5 font-medium">
+                                <span className="text-xl">📅</span>
+                                <span>{t('Belum ada jadwal booking survei.')}</span>
+                              </div>
+                            )
+                          )}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              )}
 
               {/* Logged In Info */}
               <div className="flex items-center gap-4">
@@ -978,221 +989,223 @@ export default function App() {
               </div>
 
               {/* Mobile Notification Popover */}
-              <div className="relative">
-                <button
-                  onClick={handleOpenNotifications}
-                  className="p-1 text-slate-300 hover:text-white rounded-lg transition-colors relative cursor-pointer flex items-center justify-center"
-                  title={t('Notifikasi Terkini')}
-                >
-                  <Bell className={`w-4 h-5 ${unreadCount > 0 ? 'text-amber-400 animate-pulse' : ''}`} />
-                  {unreadCount > 0 && (
-                    <span className="absolute -top-1 -right-1 bg-rose-500 text-white text-[7px] font-extrabold px-1 rounded-full min-w-3 text-center leading-none">
-                      {unreadCount}
-                    </span>
-                  )}
-                </button>
+              {isAdminLoggedIn && (
+                <div className="relative">
+                  <button
+                    onClick={handleOpenNotifications}
+                    className="p-1 text-slate-300 hover:text-white rounded-lg transition-colors relative cursor-pointer flex items-center justify-center"
+                    title={t('Notifikasi Terkini')}
+                  >
+                    <Bell className={`w-4 h-5 ${unreadCount > 0 ? 'text-amber-400 animate-pulse' : ''}`} />
+                    {unreadCount > 0 && (
+                      <span className="absolute -top-1 -right-1 bg-rose-500 text-white text-[7px] font-extrabold px-1 rounded-full min-w-3 text-center leading-none">
+                        {unreadCount}
+                      </span>
+                    )}
+                  </button>
 
-                {/* Mobile Dropdown Panel */}
-                <AnimatePresence>
-                  {isNotifOpen && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                      transition={{ duration: 0.15 }}
-                      className="absolute right-0 mt-2.5 w-80 bg-white rounded-2xl border border-slate-200/80 shadow-2xl z-50 overflow-hidden font-sans text-slate-800"
-                    >
-                      <div className="p-3 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
-                        <div className="flex items-center gap-1.5">
-                          <Bell className="w-4 h-4 text-blue-600" />
-                          <span className="font-bold text-xs text-slate-800 uppercase tracking-wide">{t('Notifikasi Terkini')}</span>
+                  {/* Mobile Dropdown Panel */}
+                  <AnimatePresence>
+                    {isNotifOpen && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                        transition={{ duration: 0.15 }}
+                        className="absolute right-0 mt-2.5 w-80 bg-white rounded-2xl border border-slate-200/80 shadow-2xl z-50 overflow-hidden font-sans text-slate-800"
+                      >
+                        <div className="p-3 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
+                          <div className="flex items-center gap-1.5">
+                            <Bell className="w-4 h-4 text-blue-600" />
+                            <span className="font-bold text-xs text-slate-800 uppercase tracking-wide">{t('Notifikasi Terkini')}</span>
+                          </div>
+                          {notifTab === 'logs' && notificationHistory.length > 0 && (
+                            <button
+                              onClick={handleClearNotifications}
+                              className="text-[10px] text-slate-400 hover:text-rose-500 font-bold transition-colors uppercase cursor-pointer"
+                            >
+                              {t('Bersihkan')}
+                            </button>
+                          )}
                         </div>
-                        {notifTab === 'logs' && notificationHistory.length > 0 && (
+
+                        {/* Mobile Tab Switcher */}
+                        <div className="flex border-b border-slate-100 bg-slate-50 p-1">
                           <button
-                            onClick={handleClearNotifications}
-                            className="text-[10px] text-slate-400 hover:text-rose-500 font-bold transition-colors uppercase cursor-pointer"
+                            onClick={() => setNotifTab('logs')}
+                            className={`flex-1 py-1.5 text-[10px] font-bold rounded-lg transition-all flex items-center justify-center gap-1 cursor-pointer ${
+                              notifTab === 'logs'
+                                ? 'bg-white text-blue-600 shadow-sm'
+                                : 'text-slate-500 hover:text-slate-800'
+                            }`}
                           >
-                            {t('Bersihkan')}
+                            <span>🔔</span> {t('Log Notifikasi')}
                           </button>
-                        )}
-                      </div>
+                          <button
+                            onClick={() => setNotifTab('bookings')}
+                            className={`flex-1 py-1.5 text-[10px] font-bold rounded-lg transition-all flex items-center justify-center gap-1 cursor-pointer ${
+                              notifTab === 'bookings'
+                                ? 'bg-white text-blue-600 shadow-sm'
+                                : 'text-slate-500 hover:text-slate-800'
+                            }`}
+                          >
+                            <span>📅</span> {t('Daftar Booking')} ({getBookingsList().length})
+                          </button>
+                        </div>
 
-                      {/* Mobile Tab Switcher */}
-                      <div className="flex border-b border-slate-100 bg-slate-50 p-1">
-                        <button
-                          onClick={() => setNotifTab('logs')}
-                          className={`flex-1 py-1.5 text-[10px] font-bold rounded-lg transition-all flex items-center justify-center gap-1 cursor-pointer ${
-                            notifTab === 'logs'
-                              ? 'bg-white text-blue-600 shadow-sm'
-                              : 'text-slate-500 hover:text-slate-800'
-                          }`}
-                        >
-                          <span>🔔</span> {t('Log Notifikasi')}
-                        </button>
-                        <button
-                          onClick={() => setNotifTab('bookings')}
-                          className={`flex-1 py-1.5 text-[10px] font-bold rounded-lg transition-all flex items-center justify-center gap-1 cursor-pointer ${
-                            notifTab === 'bookings'
-                              ? 'bg-white text-blue-600 shadow-sm'
-                              : 'text-slate-500 hover:text-slate-800'
-                          }`}
-                        >
-                          <span>📅</span> {t('Daftar Booking')} ({getBookingsList().length})
-                        </button>
-                      </div>
-
-                      <div className="max-h-64 overflow-y-auto divide-y divide-slate-100">
-                        {notifTab === 'logs' ? (
-                          notificationHistory.length > 0 ? (
-                            notificationHistory.map((notif) => (
-                              <div 
-                                key={notif.id} 
-                                onClick={() => handleNotificationClick(notif)}
-                                className={`p-3 hover:bg-slate-50/75 transition-colors flex items-start gap-2 text-left relative group ${notif.assetId ? 'cursor-pointer border-l-2 border-l-blue-500/30' : ''}`}
-                              >
-                                <div className="mt-0.5 shrink-0">
-                                  {notif.type === 'bid' && <span className="text-blue-500 text-sm">💰</span>}
-                                  {notif.type === 'success' && <span className="text-emerald-500 text-sm">📅</span>}
-                                  {notif.type === 'info' && <span className="text-indigo-500 text-sm">ℹ️</span>}
-                                  {notif.type === 'warning' && <span className="text-amber-500 text-sm">⚠️</span>}
-                                  {notif.type === 'sync' && <span className="text-sky-500 text-sm">🔄</span>}
-                                </div>
-                                <div className="space-y-0.5 flex-1 min-w-0 pr-5">
-                                  <p className="font-bold text-slate-800 text-[11px] leading-tight truncate">{notif.title}</p>
-                                  <p className="text-[10px] text-slate-500 leading-normal font-medium whitespace-normal break-words">{notif.message}</p>
-                                  {notif.assetId && (
-                                    <span className="inline-flex items-center gap-0.5 text-[9px] text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded font-bold mt-1">
-                                      {t('Lihat Unit')} &rarr;
-                                    </span>
-                                  )}
-                                  <p className="text-[9px] text-slate-400 font-mono mt-1">
-                                    {notif.timestamp ? new Date(notif.timestamp).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) : ''}
-                                  </p>
-                                </div>
-                                <button
-                                  onClick={(e) => handleDeleteNotification(notif.id, e)}
-                                  className="p-1 text-slate-300 hover:text-rose-500 rounded transition-colors cursor-pointer"
-                                  title={t('Hapus')}
+                        <div className="max-h-64 overflow-y-auto divide-y divide-slate-100">
+                          {notifTab === 'logs' ? (
+                            notificationHistory.length > 0 ? (
+                              notificationHistory.map((notif) => (
+                                <div 
+                                  key={notif.id} 
+                                  onClick={() => handleNotificationClick(notif)}
+                                  className={`p-3 hover:bg-slate-50/75 transition-colors flex items-start gap-2 text-left relative group ${notif.assetId ? 'cursor-pointer border-l-2 border-l-blue-500/30' : ''}`}
                                 >
-                                  <Trash2 className="w-3.5 h-3.5" />
-                                </button>
-                              </div>
-                            ))
-                          ) : (
-                            <div className="py-6 px-4 text-center text-slate-400 text-xs flex flex-col items-center justify-center gap-1.5 font-medium">
-                              <span className="text-xl">🔔</span>
-                              <span>{t('Tidak ada notifikasi baru')}</span>
-                            </div>
-                          )
-                        ) : (
-                          /* Bookings Tab */
-                          getBookingsList().length > 0 ? (
-                            getBookingsList().map((booking) => (
-                              <div 
-                                key={booking.bidId}
-                                className="p-3 hover:bg-slate-50/75 transition-colors flex flex-col gap-1.5 text-left border-l-2 border-l-emerald-500/30"
-                              >
-                                <div className="flex items-center justify-between">
-                                  <span className="text-[9px] font-mono font-bold bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded truncate max-w-[80px]">
-                                    {booking.assetId}
-                                  </span>
-                                  <span className="text-[10px] font-extrabold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded-full">
-                                    📅 {booking.date} @ {booking.time}
-                                  </span>
-                                </div>
-
-                                <div className="space-y-0.5">
-                                  <h4 className="font-bold text-slate-800 text-xs truncate leading-tight">
-                                    {booking.assetBrand} {booking.assetName}
-                                  </h4>
-                                  <p className="text-[10px] text-slate-600 font-semibold truncate">
-                                    👤 {booking.name} ({booking.contact})
-                                  </p>
-                                  <p className="text-[9px] text-slate-400 font-medium truncate">
-                                    ✉️ {booking.email}
-                                  </p>
-                                  <p className="text-[10px] text-emerald-600 font-bold font-mono">
-                                    💰 {formatIDR(booking.price)}
-                                  </p>
-                                </div>
-
-                                <div className="flex items-center gap-1.5 pt-1">
+                                  <div className="mt-0.5 shrink-0">
+                                    {notif.type === 'bid' && <span className="text-blue-500 text-sm">💰</span>}
+                                    {notif.type === 'success' && <span className="text-emerald-500 text-sm">📅</span>}
+                                    {notif.type === 'info' && <span className="text-indigo-500 text-sm">ℹ️</span>}
+                                    {notif.type === 'warning' && <span className="text-amber-500 text-sm">⚠️</span>}
+                                    {notif.type === 'sync' && <span className="text-sky-500 text-sm">🔄</span>}
+                                  </div>
+                                  <div className="space-y-0.5 flex-1 min-w-0 pr-5">
+                                    <p className="font-bold text-slate-800 text-[11px] leading-tight truncate">{notif.title}</p>
+                                    <p className="text-[10px] text-slate-500 leading-normal font-medium whitespace-normal break-words">{notif.message}</p>
+                                    {notif.assetId && (
+                                      <span className="inline-flex items-center gap-0.5 text-[9px] text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded font-bold mt-1">
+                                        {t('Lihat Unit')} &rarr;
+                                      </span>
+                                    )}
+                                    <p className="text-[9px] text-slate-400 font-mono mt-1">
+                                      {notif.timestamp ? new Date(notif.timestamp).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) : ''}
+                                    </p>
+                                  </div>
                                   <button
-                                    onClick={() => {
-                                      const mockNotif: ToastNotification = {
-                                        id: booking.bidId,
-                                        type: 'success',
-                                        title: 'View',
-                                        message: '',
-                                        timestamp: new Date(),
-                                        assetId: booking.assetId
-                                      };
-                                      handleNotificationClick(mockNotif);
-                                    }}
-                                    className="flex-1 py-1 text-center bg-blue-600 hover:bg-blue-700 text-white font-bold text-[9px] rounded-lg transition-all cursor-pointer"
+                                    onClick={(e) => handleDeleteNotification(notif.id, e)}
+                                    className="p-1 text-slate-300 hover:text-rose-500 rounded transition-colors cursor-pointer"
+                                    title={t('Hapus')}
                                   >
-                                    {t('Lihat Unit')}
+                                    <Trash2 className="w-3.5 h-3.5" />
                                   </button>
-                                  <a
-                                    href={`https://wa.me/${booking.contact.replace(/\D/g, '') || '#'}`}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="px-2 py-1 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 font-bold text-[9px] rounded-lg transition-all border border-emerald-200/50 flex items-center justify-center gap-0.5"
-                                  >
-                                    📱 {t('Hubungi')}
-                                  </a>
-                                  {bookingCancelConfirmId === booking.bidId ? (
-                                    <div className="flex items-center gap-1 bg-rose-50 p-1 rounded-lg border border-rose-200/50">
-                                      <button
-                                        type="button"
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          setBookingCancelConfirmId(null);
-                                        }}
-                                        className="px-1.5 py-0.5 bg-white text-slate-600 rounded text-[8px] font-bold hover:bg-slate-50 border border-slate-200 cursor-pointer animate-fade-in"
-                                      >
-                                        {t('Batal')}
-                                      </button>
-                                      <button
-                                        type="button"
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          handleCancelBookingSchedule(booking.assetId, booking.bidId, true);
-                                          setBookingCancelConfirmId(null);
-                                        }}
-                                        className="px-1.5 py-0.5 bg-rose-600 hover:bg-rose-700 text-white rounded text-[8px] font-bold cursor-pointer animate-fade-in"
-                                      >
-                                        {t('Ya')}
-                                      </button>
-                                    </div>
-                                  ) : (
-                                    <button
-                                      type="button"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        setBookingCancelConfirmId(booking.bidId);
-                                      }}
-                                      className="px-2 py-1 bg-rose-50 text-rose-500 hover:bg-rose-100 border border-rose-200/50 hover:border-rose-300 font-bold text-[9px] rounded-lg transition-all flex items-center justify-center cursor-pointer"
-                                      title={t('Batalkan Booking')}
-                                    >
-                                      <Trash2 className="w-3.5 h-3.5" />
-                                    </button>
-                                  )}
                                 </div>
+                              ))
+                            ) : (
+                              <div className="py-8 px-4 text-center text-slate-400 text-xs flex flex-col items-center justify-center gap-1.5 font-medium">
+                                <span className="text-xl">🔔</span>
+                                <span>{t('Tidak ada notifikasi baru')}</span>
                               </div>
-                            ))
+                            )
                           ) : (
-                            <div className="py-6 px-4 text-center text-slate-400 text-xs flex flex-col items-center justify-center gap-1.5 font-medium">
-                              <span className="text-xl">📅</span>
-                              <span>{t('Belum ada jadwal booking survei.')}</span>
-                            </div>
-                          )
-                        )}
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
+                            /* Bookings Tab */
+                            getBookingsList().length > 0 ? (
+                              getBookingsList().map((booking) => (
+                                <div 
+                                  key={booking.bidId}
+                                  className="p-3 hover:bg-slate-50/75 transition-colors flex flex-col gap-1.5 text-left border-l-2 border-l-emerald-500/30"
+                                >
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-[9px] font-mono font-bold bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded truncate max-w-[80px]">
+                                      {booking.assetId}
+                                    </span>
+                                    <span className="text-[10px] font-extrabold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded-full">
+                                      📅 {booking.date} @ {booking.time}
+                                    </span>
+                                  </div>
+
+                                  <div className="space-y-0.5">
+                                    <h4 className="font-bold text-slate-800 text-xs truncate leading-tight">
+                                      {booking.assetBrand} {booking.assetName}
+                                    </h4>
+                                    <p className="text-[10px] text-slate-600 font-semibold truncate">
+                                      👤 {booking.name} ({booking.contact})
+                                    </p>
+                                    <p className="text-[9px] text-slate-400 font-medium truncate">
+                                      ✉️ {booking.email}
+                                    </p>
+                                    <p className="text-[10px] text-emerald-600 font-bold font-mono">
+                                      💰 {formatIDR(booking.price)}
+                                    </p>
+                                  </div>
+
+                                  <div className="flex items-center gap-1.5 pt-1">
+                                    <button
+                                      onClick={() => {
+                                        const mockNotif: ToastNotification = {
+                                          id: booking.bidId,
+                                          type: 'success',
+                                          title: 'View',
+                                          message: '',
+                                          timestamp: new Date(),
+                                          assetId: booking.assetId
+                                        };
+                                        handleNotificationClick(mockNotif);
+                                      }}
+                                      className="flex-1 py-1 text-center bg-blue-600 hover:bg-blue-700 text-white font-bold text-[9px] rounded-lg transition-all cursor-pointer"
+                                    >
+                                      {t('Lihat Unit')}
+                                    </button>
+                                    <a
+                                      href={`https://wa.me/${booking.contact.replace(/\D/g, '') || '#'}`}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="px-2 py-1 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 font-bold text-[9px] rounded-lg transition-all border border-emerald-200/50 flex items-center justify-center gap-0.5"
+                                    >
+                                      📱 {t('Hubungi')}
+                                    </a>
+                                    {bookingCancelConfirmId === booking.bidId ? (
+                                      <div className="flex items-center gap-1 bg-rose-50 p-1 rounded-lg border border-rose-200/50">
+                                        <button
+                                          type="button"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            setBookingCancelConfirmId(null);
+                                          }}
+                                          className="px-1.5 py-0.5 bg-white text-slate-600 rounded text-[8px] font-bold hover:bg-slate-50 border border-slate-200 cursor-pointer animate-fade-in"
+                                        >
+                                          {t('Batal')}
+                                        </button>
+                                        <button
+                                          type="button"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleCancelBookingSchedule(booking.assetId, booking.bidId, true);
+                                            setBookingCancelConfirmId(null);
+                                          }}
+                                          className="px-1.5 py-0.5 bg-rose-600 hover:bg-rose-700 text-white rounded text-[8px] font-bold cursor-pointer animate-fade-in"
+                                        >
+                                          {t('Ya')}
+                                        </button>
+                                      </div>
+                                    ) : (
+                                      <button
+                                        type="button"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setBookingCancelConfirmId(booking.bidId);
+                                        }}
+                                        className="px-2 py-1 bg-rose-50 text-rose-500 hover:bg-rose-100 border border-rose-200/50 hover:border-rose-300 font-bold text-[9px] rounded-lg transition-all flex items-center justify-center cursor-pointer"
+                                        title={t('Batalkan Booking')}
+                                      >
+                                        <Trash2 className="w-3.5 h-3.5" />
+                                      </button>
+                                    )}
+                                  </div>
+                                </div>
+                              ))
+                            ) : (
+                              <div className="py-6 px-4 text-center text-slate-400 text-xs flex flex-col items-center justify-center gap-1.5 font-medium">
+                                <span className="text-xl">📅</span>
+                                <span>{t('Belum ada jadwal booking survei.')}</span>
+                              </div>
+                            )
+                          )}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              )}
 
               {isAdminLoggedIn && (
                 <span className="text-[10px] font-mono font-bold bg-blue-500 text-white px-2 py-1 rounded">
@@ -1400,17 +1413,7 @@ export default function App() {
               </div>
             </div>
 
-            <div className="space-y-3">
-              <div className="p-4 bg-slate-50 rounded-xl border border-slate-200">
-                <p className="text-[10px] text-slate-500 mb-1.5 font-bold uppercase tracking-wide">{t('Status Koneksi')}</p>
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></div>
-                  <span className="text-[11px] font-semibold text-slate-700">Server: Singapore-01</span>
-                </div>
-              </div>
 
-
-            </div>
           </aside>
 
           {/* Main Panel Content */}
