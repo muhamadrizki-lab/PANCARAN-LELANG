@@ -151,7 +151,7 @@ export default function AdminAssets({
       setIsFormFocused(false);
     }
   }, [isFormOpen]);
-  
+
   const [formData, setFormData] = useState({
     name: '',
     brand: 'Hino',
@@ -162,9 +162,18 @@ export default function AdminAssets({
     location: '',
     description: '',
     startingPrice: '',
-    imageUrl: VEHICLE_TEMPLATES[0].url,
-    imageUrls: [VEHICLE_TEMPLATES[0].url] as string[]
+    imageUrl: '',
+    imageUrls: [] as string[]
   });
+
+  const descriptionRef = React.useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    if (isFormOpen && descriptionRef.current) {
+      descriptionRef.current.style.height = 'auto';
+      descriptionRef.current.style.height = `${Math.max(descriptionRef.current.scrollHeight, 100)}px`;
+    }
+  }, [formData.description, isFormOpen]);
 
   const openNewAssetForm = () => {
     setEditAssetId(null);
@@ -178,8 +187,8 @@ export default function AdminAssets({
       location: '',
       description: '',
       startingPrice: '',
-      imageUrl: VEHICLE_TEMPLATES[0].url,
-      imageUrls: [VEHICLE_TEMPLATES[0].url]
+      imageUrl: '',
+      imageUrls: []
     });
     setIsFormOpen(true);
   };
@@ -321,8 +330,8 @@ export default function AdminAssets({
       location: '',
       description: '',
       startingPrice: '',
-      imageUrl: VEHICLE_TEMPLATES[0].url,
-      imageUrls: [VEHICLE_TEMPLATES[0].url]
+      imageUrl: '',
+      imageUrls: []
     });
     setIsFormOpen(false);
   };
@@ -878,24 +887,6 @@ export default function AdminAssets({
               className="flex-1 overflow-y-auto p-6 space-y-6"
             >
               
-              {/* Quick Preset Templates */}
-              <div className={`transition-all duration-300 ${isFormFocused ? 'opacity-30 blur-[0.5px] pointer-events-none' : ''}`}>
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-2">{t('PILIH TEMPLATE KENDARAAN (OPSIONAL)')}</label>
-                <div className="flex flex-wrap gap-2">
-                  {VEHICLE_TEMPLATES.map(t => (
-                    <button
-                      type="button"
-                      key={t.name}
-                      onClick={() => handleTemplateClick(t)}
-                      className="px-3 py-1.5 text-xs border border-slate-200 hover:border-blue-400 rounded-lg text-slate-600 hover:text-blue-600 hover:bg-blue-50/20 font-medium flex items-center gap-1 transition-all"
-                    >
-                      <Sparkles className="w-3 h-3 text-blue-500" />
-                      {t.brand} {t.category}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 
                 {/* Name */}
@@ -1203,11 +1194,12 @@ export default function AdminAssets({
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-slate-600 uppercase">{t('Deskripsi & Spesifikasi Tambahan')}</label>
                 <textarea
-                  rows={3}
+                  ref={descriptionRef}
+                  rows={4}
                   placeholder={t('Jelaskan kondisi mesin, transmisi, kelengkapan surat KIR/STNK, riwayat perawatan, dsb.')}
                   value={formData.description}
                   onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                  className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                  className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 min-h-[100px] resize-none overflow-hidden"
                 />
               </div>
 

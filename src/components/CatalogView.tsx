@@ -39,6 +39,15 @@ interface CatalogCardProps {
   formatIDR: (value: number) => string;
 }
 
+const stripMarkdown = (text: string) => {
+  if (!text) return '';
+  return text
+    .replace(/^[\*\-\s#]+/gm, '')
+    .replace(/\*\*+/g, '')
+    .replace(/[\n\r]+/g, ' ')
+    .trim();
+};
+
 function CatalogCard({ asset, onSelectAsset, formatIDR }: CatalogCardProps) {
   const { t } = useLanguage();
   const [activeImgIdx, setActiveImgIdx] = useState(0);
@@ -144,7 +153,7 @@ function CatalogCard({ asset, onSelectAsset, formatIDR }: CatalogCardProps) {
           </div>
 
           <p className="text-xs text-slate-500 line-clamp-2 mt-2 leading-relaxed">
-            {asset.description}
+            {stripMarkdown(asset.description)}
           </p>
         </div>
 
@@ -179,6 +188,59 @@ function CatalogCard({ asset, onSelectAsset, formatIDR }: CatalogCardProps) {
   );
 }
 
+const parseInlineMarkdown = (text: string) => {
+  const parts = text.split(/(\*\*[^*]+\*\*)/g);
+  return parts.map((part, idx) => {
+    if (part.startsWith('**') && part.endsWith('**')) {
+      return <strong key={idx} className="font-bold text-slate-800">{part.slice(2, -2)}</strong>;
+    }
+    return part;
+  });
+};
+
+const renderDescription = (text: string) => {
+  if (!text) return null;
+  const lines = text.split('\n');
+  return (
+    <div className="space-y-2 text-left not-italic text-slate-600 font-sans">
+      {lines.map((line, idx) => {
+        const trimmed = line.trim();
+        if (!trimmed) {
+          return <div key={idx} className="h-1.5" />;
+        }
+        
+        // Check if it's a heading
+        if (trimmed.startsWith('##') || trimmed.startsWith('*##') || trimmed.startsWith('###') || trimmed.startsWith('*###')) {
+          const cleanHeading = trimmed.replace(/^[\*\-\s#]+/, '').replace(/\*\*+/g, '');
+          return (
+            <h4 key={idx} className="font-bold text-slate-800 text-xs mt-3 mb-1 border-b border-slate-100 pb-1">
+              {cleanHeading}
+            </h4>
+          );
+        }
+
+        // Check if it's a bullet point
+        if (trimmed.startsWith('*') || trimmed.startsWith('-')) {
+          const content = trimmed.replace(/^[\*\-\s]+/, '');
+          return (
+            <div key={idx} className="flex items-start gap-1.5 ml-2 text-[11px] leading-relaxed">
+              <span className="text-blue-500 font-bold select-none">•</span>
+              <span className="flex-1">{parseInlineMarkdown(content)}</span>
+            </div>
+          );
+        }
+
+        // Regular paragraph
+        return (
+          <p key={idx} className="text-[11px] leading-relaxed">
+            {parseInlineMarkdown(trimmed)}
+          </p>
+        );
+      })}
+    </div>
+  );
+};
+
 export default function CatalogView({ assets, onPlaceBid }: CatalogViewProps) {
   const { t } = useLanguage();
   const [selectedAssetId, setSelectedAssetId] = useState<string | null>(null);
@@ -188,19 +250,60 @@ export default function CatalogView({ assets, onPlaceBid }: CatalogViewProps) {
   
   const nameInputRef = useRef<HTMLInputElement>(null);
 
+  // Helper to scroll smoothly to the form card
+  const scrollToForm = () => {
+    const formElement = document.getElementById('bid-form-card');
+    if (formElement) {
+      formElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  };
+
   useEffect(() => {
     if (selectedAssetId) {
       setTimeout(() => {
-        const element = document.getElementById('bidding-survey-panel');
-        if (element) {
-          element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        // Scroll the form card itself into view for a perfect mobile typing focus
+        const formElement = document.getElementById('bid-form-card');
+        if (formElement) {
+          formElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        } else {
+          const element = document.getElementById('bidding-survey-panel');
+          if (element) {
+            element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
         }
         // Focus the input field
         if (nameInputRef.current) {
           nameInputRef.current.focus();
         }
-      }, 150);
+      }, 350); // Generous delay to let modal transition complete
     }
+  }, [selectedAssetId]);
+
+  // "Type to Focus" / "Ketik Langsung" feature
+  useEffect(() => {
+    if (!selectedAssetId) return;
+
+    const handleTypeToFocus = (e: KeyboardEvent) => {
+      // Ignore if user is already typing in an input, select, or textarea
+      const target = e.target as HTMLElement;
+      if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT')) {
+        return;
+      }
+
+      // Ignore standard modifier keys
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+
+      // Only handle printable single-character keys
+      if (e.key.length === 1 && /[a-zA-Z0-9 ]/.test(e.key)) {
+        scrollToForm();
+        if (nameInputRef.current) {
+          nameInputRef.current.focus();
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleTypeToFocus);
+    return () => window.removeEventListener('keydown', handleTypeToFocus);
   }, [selectedAssetId]);
 
   // Bid form state
@@ -224,12 +327,15 @@ export default function CatalogView({ assets, onPlaceBid }: CatalogViewProps) {
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const [isZoomed, setIsZoomed] = useState(false);
 
+  const [showFullDesc, setShowFullDesc] = useState(false);
+
   useEffect(() => {
     setIsZoomed(false);
   }, [lightboxIndex]);
 
   useEffect(() => {
     setModalImageIdx(0);
+    setShowFullDesc(false);
   }, [selectedAssetId]);
 
   useEffect(() => {
@@ -494,59 +600,56 @@ export default function CatalogView({ assets, onPlaceBid }: CatalogViewProps) {
             )}
           </div>
         </div>
+      </div>
 
-      {/* Right Side Overlay: Bid Input and Survey Scheduler ("input bid price" and "input time survey") */}
+      {/* Right Side Overlay: OLX-inspired Beautiful Detail Page View */}
       {selectedAsset && (
-        <div 
-          className={`fixed inset-0 transition-all duration-300 z-50 flex items-center justify-center p-4 md:p-6 overflow-y-auto ${
-            isFormFocused ? 'bg-slate-950/92 backdrop-blur-md' : 'bg-slate-950/70 backdrop-blur-xs'
-          }`}
+        <>
+          <div 
+          className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-2 md:p-4 overflow-y-auto"
           id="bidding-modal-overlay"
           onClick={() => setSelectedAssetId(null)}
         >
           <div 
-            className={`bg-white rounded-3xl border border-slate-200 shadow-2xl space-y-6 w-full max-w-xl overflow-y-auto relative animate-zoom-in my-auto max-h-[95vh] focus:outline-none transition-all duration-300 ${
-              isFormFocused ? 'ring-4 ring-blue-500/10' : ''
-            }`} 
+            className="bg-slate-50 rounded-3xl border border-slate-200/80 shadow-2xl w-full max-w-5xl overflow-hidden relative animate-zoom-in my-auto max-h-[92vh] flex flex-col focus:outline-none transition-all duration-300"
             id="bidding-survey-panel"
             onClick={(e) => e.stopPropagation()}
           >
             
-            {/* Panel Header */}
-            <div className={`flex justify-between items-start border-b border-slate-100 p-6 pb-4 sticky top-0 bg-white z-20 transition-all duration-300 ${
-              isFormFocused ? 'opacity-30 blur-[0.5px] scale-[0.98] pointer-events-none' : ''
-            }`}>
-              <div>
-                <span className="text-[9px] font-mono font-bold bg-blue-50 text-blue-700 px-2.5 py-1 rounded-md border border-blue-100 uppercase">
-                  {t('AJUKAN TAWAran')}
-                </span>
-                <h2 className="text-base font-bold text-slate-800 mt-2 line-clamp-1">{selectedAsset.name}</h2>
-              </div>
-              <button 
-                onClick={() => setSelectedAssetId(null)}
-                className="p-1.5 hover:bg-slate-100 rounded-xl text-slate-400 hover:text-slate-700 transition-colors"
-                title={t('Tutup Panel')}
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
- 
-            <div className="px-6 pb-6 space-y-6">
+            {/* Scrollable Container */}
+            <div className="overflow-y-auto flex-1 custom-scrollbar">
               
-              {/* Image Carousel / Gallery */}
-              {selectedAsset && (() => {
+              {/* Top Section: Immersive Dark Image Carousel */}
+              {(() => {
                 const detailImages = selectedAsset.imageUrls && selectedAsset.imageUrls.length > 0 
                   ? selectedAsset.imageUrls 
                   : (selectedAsset.imageUrl ? [selectedAsset.imageUrl] : []);
-                return detailImages.length > 0 ? (
-                  <div className={`space-y-2 transition-all duration-300 ${
-                    isFormFocused ? 'opacity-30 blur-[0.5px] scale-[0.98] pointer-events-none' : ''
-                  }`}>
-                    <div className="aspect-video w-full rounded-2xl overflow-hidden bg-slate-50 relative group/modal-img border border-slate-200 shadow-xs">
+                
+                return (
+                  <div className="relative bg-slate-950 h-[300px] md:h-[400px] flex items-center justify-center group/modal-img border-b border-slate-800">
+                    {/* Absolute Back & Close Buttons */}
+                    <button 
+                      onClick={() => setSelectedAssetId(null)}
+                      className="absolute top-4 left-4 z-20 flex items-center gap-1.5 bg-white/95 backdrop-blur-sm hover:bg-white text-slate-800 px-4 py-2 rounded-full text-xs font-bold shadow-md transition-all cursor-pointer border border-slate-200/50"
+                      title={t('Kembali ke Katalog')}
+                    >
+                      <ChevronLeft className="w-4 h-4" />
+                      <span>{t('Kembali')}</span>
+                    </button>
+
+                    <button 
+                      onClick={() => setSelectedAssetId(null)}
+                      className="absolute top-4 right-4 z-20 flex items-center justify-center bg-white/95 backdrop-blur-sm hover:bg-white text-slate-600 hover:text-slate-900 w-10 h-10 rounded-full shadow-md transition-all cursor-pointer border border-slate-200/50"
+                      title={t('Tutup')}
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+
+                    {detailImages.length > 0 ? (
                       <img 
                         src={detailImages[modalImageIdx] || "https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?auto=format&fit=crop&w=800&q=80"} 
                         alt={`${selectedAsset.name} - ${modalImageIdx + 1}`} 
-                        className="w-full h-full object-cover cursor-zoom-in hover:scale-102 transition-transform duration-300" 
+                        className="h-full w-auto max-w-full object-contain cursor-zoom-in hover:scale-[1.01] transition-transform duration-300" 
                         referrerPolicy="no-referrer"
                         onClick={() => {
                           setLightboxImages(detailImages);
@@ -556,378 +659,584 @@ export default function CatalogView({ assets, onPlaceBid }: CatalogViewProps) {
                           e.currentTarget.src = "https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?auto=format&fit=crop&w=800&q=80";
                         }}
                       />
-                      
-                      {/* Prev/Next Overlay buttons */}
-                      {detailImages.length > 1 && (
-                        <>
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setModalImageIdx(prev => (prev === 0 ? detailImages.length - 1 : prev - 1));
-                            }}
-                            className="absolute left-2.5 top-1/2 -translate-y-1/2 bg-black/60 hover:bg-black/80 text-white p-1.5 rounded-full transition-all opacity-0 group-hover/modal-img:opacity-100 flex items-center justify-center w-7 h-7 text-xs font-bold animate-fade-in"
-                            title={t('Sebelumnya')}
-                          >
-                            <ChevronLeft className="w-4 h-4" />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setModalImageIdx(prev => (prev === detailImages.length - 1 ? 0 : prev + 1));
-                            }}
-                            className="absolute right-2.5 top-1/2 -translate-y-1/2 bg-black/60 hover:bg-black/80 text-white p-1.5 rounded-full transition-all opacity-0 group-hover/modal-img:opacity-100 flex items-center justify-center w-7 h-7 text-xs font-bold animate-fade-in"
-                            title={t('Berikutnya')}
-                          >
-                            <ChevronRight className="w-4 h-4" />
-                          </button>
-                          
-                          {/* Image position label */}
-                          <span className="absolute bottom-2.5 right-2.5 bg-black/65 backdrop-blur-xs text-white text-[10px] px-2 py-1 rounded-md font-mono font-semibold">
-                            {modalImageIdx + 1} / {detailImages.length}
-                          </span>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                ) : null;
-              })()}
-              
-              {/* Price Alert Rules */}
-              <div className={`bg-blue-50/50 p-4 rounded-2xl border border-blue-100/50 space-y-2 text-xs transition-all duration-300 ${
-                isFormFocused ? 'opacity-30 blur-[0.5px] scale-[0.98] pointer-events-none' : ''
-              }`}>
-                <div className="flex justify-between items-center">
-                  <span className="text-slate-500">{t('Harga Awal:')}</span>
-                  <span className="font-semibold text-slate-700">{formatIDR(selectedAsset.startingPrice)}</span>
-                </div>
-                <div className="flex justify-between items-center text-blue-900 bg-blue-100/40 p-2 rounded-xl border border-blue-100 font-bold">
-                  <span className="flex items-center gap-1">
-                    <TrendingUp className="w-3.5 h-3.5 text-blue-600" /> {t('Bid Tertinggi:')}
-                  </span>
-                  <span>{formatIDR(currentHighestBid)}</span>
-                </div>
-              </div>
- 
-              {/* Detail & Spesifikasi Aset */}
-              <div className={`p-4 bg-slate-50 rounded-2xl border border-slate-200 text-xs space-y-3 transition-all duration-300 ${
-                isFormFocused ? 'opacity-30 blur-[0.5px] scale-[0.98] pointer-events-none' : ''
-              }`}>
-                <h3 className="font-bold text-slate-700 flex items-center gap-1.5 border-b border-slate-200/60 pb-2">
-                  <Info className="w-4 h-4 text-blue-600" /> {t('Spesifikasi & Deskripsi Aset')}
-                </h3>
-                <p className="text-slate-600 leading-relaxed italic bg-white p-2.5 rounded-xl border border-slate-100">
-                  "{selectedAsset.description}"
-                </p>
-                <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-slate-600 pt-1">
-                  <div><span className="text-slate-400">{t('Brand:')}</span> <strong className="text-slate-700">{selectedAsset.brand}</strong></div>
-                  <div><span className="text-slate-400">{t('Kategori:')}</span> <strong className="text-slate-700">{selectedAsset.category}</strong></div>
-                  <div><span className="text-slate-400">{t('Tahun:')}</span> <strong className="text-slate-700">{selectedAsset.modelYear}</strong></div>
-                  <div><span className="text-slate-400">{t('No. Polisi:')}</span> <strong className="text-slate-700 font-mono">{selectedAsset.plateNumber}</strong></div>
-                  <div><span className="text-slate-400">{t('Kondisi:')}</span> <span className="px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 font-bold text-[10px]">{t(selectedAsset.condition)}</span></div>
-                  <div><span className="text-slate-400">{t('Lokasi:')}</span> <strong className="text-slate-700">{selectedAsset.location.split(',')[0]}</strong></div>
-                </div>
-              </div>
- 
-              {/* Bidding & Survey Form */}
-              {!formSuccess ? (
-                <form 
-                  onSubmit={handleBidSubmit}
-                  onFocusCapture={() => setIsFormFocused(true)}
-                  onBlurCapture={(e) => {
-                    if (!e.currentTarget.contains(e.relatedTarget as Node)) {
-                      setIsFormFocused(false);
-                    }
-                  }}
-                  className={`space-y-4 p-4 rounded-2xl transition-all duration-300 ${
-                    isFormFocused 
-                      ? 'bg-blue-50/20 ring-2 ring-blue-500/20 shadow-md border border-blue-500/10' 
-                      : 'border border-transparent'
-                  }`}
-                >
-                  
-                  {formError && (
-                    <div className="p-3.5 bg-rose-50 border border-rose-100 text-rose-600 rounded-2xl text-xs font-semibold flex items-start gap-2 animate-shake">
-                      <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-                      <span>{formError}</span>
-                    </div>
-                  )}
-
-                  {/* Name */}
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-600 uppercase">{t('Nama Lengkap Anda *')}</label>
-                    <div className="relative">
-                      <User className="w-4 h-4 text-slate-400 absolute left-3 top-3.5" />
-                      <input
-                        type="text"
-                        ref={nameInputRef}
-                        required
-                        placeholder={t('Contoh: PT Samudera Transport')}
-                        value={bidForm.name}
-                        onChange={(e) => setBidForm(prev => ({ ...prev, name: e.target.value }))}
-                        className="w-full pl-9 pr-4 py-2.5 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Email */}
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-600 uppercase">{t('Alamat Email Kontak *')}</label>
-                    <div className="relative">
-                      <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-3.5" />
-                      <input
-                        type="email"
-                        required
-                        placeholder="name@company.co.id"
-                        value={bidForm.email}
-                        onChange={(e) => setBidForm(prev => ({ ...prev, email: e.target.value }))}
-                        className="w-full pl-9 pr-4 py-2.5 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 font-mono"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Contact (Phone) */}
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-600 uppercase">{t('No. Handphone / WhatsApp *')}</label>
-                    <div className="relative">
-                      <Phone className="w-4 h-4 text-slate-400 absolute left-3 top-3.5" />
-                      <input
-                        type="tel"
-                        required
-                        placeholder={t('Contoh: 0812XXXXXXXX')}
-                        value={bidForm.contact}
-                        onChange={(e) => setBidForm(prev => ({ ...prev, contact: e.target.value }))}
-                        className="w-full pl-9 pr-4 py-2.5 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Bid Price ("input bid price" from flowchart) */}
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-600 uppercase">{t('Harga Bid Anda (IDR) *')}</label>
-                    <div className="relative">
-                      <span className="absolute left-3 top-2.5 font-bold text-xs text-slate-400">Rp</span>
-                      <input
-                        type="text"
-                        inputMode="numeric"
-                        required
-                        placeholder={formatNumberWithDots(String(currentHighestBid + 5000000))}
-                        value={formatNumberWithDots(bidForm.price)}
-                        onChange={(e) => {
-                          let raw = e.target.value.replace(/\D/g, '');
-                          if (raw.length > 1 && raw.startsWith('0')) {
-                            raw = raw.replace(/^0+/, '');
-                          }
-                          setBidForm(prev => ({ ...prev, price: raw }));
-                        }}
-                        className="w-full pl-8 pr-4 py-2.5 border border-slate-200 rounded-xl text-sm font-bold text-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-                      />
-                    </div>
-                    <p className="text-[10px] text-slate-400">{t('Minimal harga bid:')} <strong className="text-slate-600">{formatIDR(currentHighestBid + 1000000)}</strong></p>
-                  </div>
-
-                  {/* Request Survey Toggle ("input time survey" from flowchart) */}
-                  <div className="pt-2 border-t border-slate-200">
-                    <label className="flex items-center gap-2.5 cursor-pointer select-none">
-                      <input
-                        type="checkbox"
-                        checked={bidForm.requestSurvey}
-                        onChange={(e) => {
-                          const isChecked = e.target.checked;
-                          const todayStr = new Date().toISOString().split('T')[0];
-                          setBidForm(prev => ({
-                            ...prev,
-                            requestSurvey: isChecked,
-                            surveyDate: isChecked && !prev.surveyDate ? todayStr : prev.surveyDate
-                          }));
-                        }}
-                        className="w-4.5 h-4.5 text-blue-600 border-slate-300 rounded focus:ring-blue-500"
-                      />
-                      <div className="text-xs">
-                        <p className="font-bold text-slate-800">{t('Booking Jadwal Survei Fisik')}</p>
-                        <p className="text-slate-400 text-[10px]">{t('Ingin cek kondisi mesin langsung di Pool?')}</p>
-                      </div>
-                    </label>
-                  </div>
-
-                  {/* Survey Scheduler Details (Visible ONLY if requestSurvey is checked) */}
-                  {bidForm.requestSurvey && (
-                    <div className="p-4.5 bg-gradient-to-br from-blue-50/60 to-indigo-50/20 rounded-2xl border border-blue-100/80 space-y-3.5 animate-slide-in relative overflow-hidden shadow-sm shadow-blue-50/50">
-                      <div className="absolute -right-6 -bottom-6 w-20 h-20 bg-blue-100/20 rounded-full blur-xl pointer-events-none"></div>
-                      <div className="absolute -left-6 -top-6 w-16 h-16 bg-sky-100/20 rounded-full blur-xl pointer-events-none"></div>
-
-                      <p className="text-[11px] font-bold text-slate-600 flex items-center gap-1.5 relative z-10">
-                        <CalendarCheck className="w-4 h-4 text-blue-600" /> {t('Tentukan Waktu Kunjungan Pool')}
-                      </p>
-                      
-                      <div className="space-y-3 relative z-10">
-                        {/* Select Date field */}
-                        <div className="space-y-1">
-                          <label className="text-[10px] font-bold text-slate-400 uppercase">{t('Pilih Tanggal Kunjungan')}</label>
-                          <input
-                            type="date"
-                            min={new Date().toISOString().split('T')[0]}
-                            value={bidForm.surveyDate}
-                            onChange={(e) => {
-                              const newDate = e.target.value;
-                              setBidForm(prev => {
-                                let nextTime = prev.surveyTime;
-                                if (isTimeBooked(nextTime, newDate)) {
-                                  const slots = ["09:00", "11:00", "13:30", "15:30"];
-                                  const available = slots.find(slot => !isTimeBooked(slot, newDate));
-                                  if (available) {
-                                    nextTime = available;
-                                  }
-                                }
-                                return { ...prev, surveyDate: newDate, surveyTime: nextTime };
-                              });
-                            }}
-                            className="w-full p-2.5 border border-slate-200 rounded-xl text-xs bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 font-semibold text-slate-700"
-                            required={bidForm.requestSurvey}
-                          />
-                        </div>
-
-                        {/* Sesi Jam visual list */}
-                        <div className="space-y-1.5">
-                          <div className="flex justify-between items-center">
-                            <label className="text-[10px] font-bold text-slate-400 uppercase">{t('Pilih Sesi Jam Kunjungan')}</label>
-                            {/* Legend / Indicators */}
-                            <div className="flex items-center gap-2 text-[9px] font-semibold">
-                              <span className="flex items-center gap-1 text-slate-500">
-                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                                {t('Ready')}
-                              </span>
-                              <span className="flex items-center gap-1 text-slate-400">
-                                <span className="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
-                                {t('Sudah Dibooking')}
-                              </span>
-                            </div>
-                          </div>
-
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2" id="visit-sessions-grid">
-                            {[
-                              { id: "09:00", label: t('Pagi Sesi 1 (09:00 WIB)'), time: "09:00 WIB", desc: t('Sesi Pagi I') },
-                              { id: "11:00", label: t('Pagi Sesi 2 (11:00 WIB)'), time: "11:00 WIB", desc: t('Sesi Pagi II') },
-                              { id: "13:30", label: t('Siang Sesi 1 (13:30 WIB)'), time: "13:30 WIB", desc: t('Sesi Siang I') },
-                              { id: "15:30", label: t('Sore Sesi 2 (15:30 WIB)'), time: "15:30 WIB", desc: t('Sesi Sore II') }
-                            ].map((session) => {
-                              const booked = isTimeBooked(session.id, bidForm.surveyDate);
-                              const selected = bidForm.surveyTime === session.id;
-
-                              return (
-                                <button
-                                  key={session.id}
-                                  type="button"
-                                  disabled={booked}
-                                  onClick={() => setBidForm(prev => ({ ...prev, surveyTime: session.id }))}
-                                  className={`p-3 rounded-xl border text-left flex flex-col justify-between transition-all relative ${
-                                    booked
-                                      ? 'bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed opacity-60'
-                                      : selected
-                                      ? 'bg-blue-50 border-blue-600 ring-2 ring-blue-500/10 text-blue-950'
-                                      : 'bg-white border-slate-200 text-slate-800 hover:border-slate-300 hover:bg-slate-50'
-                                  }`}
-                                >
-                                  <div className="flex justify-between items-start w-full gap-1">
-                                    <span className={`text-[11px] font-bold ${booked ? 'text-slate-400' : selected ? 'text-blue-800' : 'text-slate-700'}`}>
-                                      {session.time}
-                                    </span>
-                                    {booked ? (
-                                      <span className="bg-red-50 text-red-500 border border-red-100 text-[8px] font-extrabold px-1 py-0.5 rounded tracking-wide uppercase shrink-0">
-                                        {t('Booked')}
-                                      </span>
-                                    ) : (
-                                      <span className={`text-[8px] font-extrabold px-1 py-0.5 rounded tracking-wide uppercase shrink-0 ${
-                                        selected 
-                                          ? 'bg-blue-600 text-white' 
-                                          : 'bg-emerald-50 text-emerald-600 border border-emerald-100'
-                                      }`}>
-                                        {selected ? t('Selected') : t('Ready')}
-                                      </span>
-                                    )}
-                                  </div>
-                                  <span className="text-[10px] font-medium text-slate-400 mt-1">
-                                    {booked ? t('Sudah Dibooking') : session.desc}
-                                  </span>
-                                </button>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Beautiful light blue informative banner below selection to avoid rigid look */}
-                      <div className="p-3 bg-gradient-to-r from-blue-100/60 to-sky-100/30 border border-blue-200/50 rounded-xl flex items-start gap-2.5 relative z-10 shadow-sm shadow-blue-100/20 mt-1">
-                        <div className="p-1.5 bg-blue-500/10 text-blue-600 rounded-lg shrink-0 mt-0.5">
-                          <MapPin className="w-3.5 h-3.5" />
-                        </div>
-                        <div className="space-y-0.5">
-                          <p className="text-[10px] font-bold text-blue-900 uppercase tracking-wider">{t('Informasi Lokasi & Pendampingan')}</p>
-                          <p className="text-[10.5px] text-blue-800 leading-normal font-medium">
-                            {t('Lokasi inspeksi:')} <strong className="font-extrabold text-blue-950">{selectedAsset.location}</strong>. {t('Tim teknis Pancaran Group akan mendampingi Anda di lokasi.')}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Submit Bid Button */}
-                  <button
-                    type="submit"
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-2xl text-xs font-bold shadow-md shadow-blue-500/15 hover:shadow-blue-500/30 transition-all flex items-center justify-center gap-1.5"
-                  >
-                    <ArrowUpRight className="w-4 h-4" />
-                    <span>{t('Kirim Penawaran & Booking')}</span>
-                  </button>
-
-                </form>
-              ) : (
-                // Success feedback panel
-                <div className="py-8 text-center space-y-4 animate-fade-in" id="bid-success-panel">
-                  <div className="w-16 h-16 bg-emerald-50 text-emerald-500 rounded-full flex items-center justify-center mx-auto border border-emerald-100 shadow-sm">
-                    <CheckCircle className="w-10 h-10" />
-                  </div>
-                  <div className="space-y-1">
-                    <h3 className="font-bold text-slate-800 text-base">{t('Penawaran Berhasil Dikirim!')}</h3>
-                    <p className="text-xs text-slate-500">{t('Harga penawaran Anda telah dicatat ke dalam sistem Pancaran.')}</p>
-                  </div>
-                  <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 text-xs text-left space-y-1.5 font-medium">
-                    <div className="flex justify-between">
-                      <span className="text-slate-400">{t('Armada:')}</span>
-                      <span className="text-slate-800 font-bold">{selectedAsset.name}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-slate-400">{t('Harga Bid Anda:')}</span>
-                      <span className="text-blue-700 font-bold">{formatIDR(Number(bidForm.price))}</span>
-                    </div>
-                    {bidForm.requestSurvey && (
-                      <div className="flex justify-between border-t border-dashed border-slate-200 pt-1.5 mt-1.5 text-blue-700">
-                        <span className="flex items-center gap-1 font-bold">
-                          <Calendar className="w-3.5 h-3.5" /> {t('Jadwal Survei Fisik:')}
+                    ) : (
+                      <div className="text-slate-500 text-xs font-mono">{t('Tidak ada foto')}</div>
+                    )}
+                    
+                    {/* Prev/Next Overlay buttons */}
+                    {detailImages.length > 1 && (
+                      <>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setModalImageIdx(prev => (prev === 0 ? detailImages.length - 1 : prev - 1));
+                          }}
+                          className="absolute left-4 top-1/2 -translate-y-1/2 bg-black/60 hover:bg-black/85 text-white p-2.5 rounded-full transition-all group-hover/modal-img:scale-105 flex items-center justify-center w-10 h-10"
+                          title={t('Sebelumnya')}
+                        >
+                          <ChevronLeft className="w-5 h-5" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setModalImageIdx(prev => (prev === detailImages.length - 1 ? 0 : prev + 1));
+                          }}
+                          className="absolute right-4 top-1/2 -translate-y-1/2 bg-black/60 hover:bg-black/85 text-white p-2.5 rounded-full transition-all group-hover/modal-img:scale-105 flex items-center justify-center w-10 h-10"
+                          title={t('Berikutnya')}
+                        >
+                          <ChevronRight className="w-5 h-5" />
+                        </button>
+                        
+                        {/* Image position label */}
+                        <span className="absolute bottom-4 right-4 bg-black/75 backdrop-blur-xs text-white text-[11px] px-3 py-1.5 rounded-lg font-mono font-bold border border-white/10">
+                          {modalImageIdx + 1} / {detailImages.length}
                         </span>
-                        <span className="font-bold">{bidForm.surveyDate} @ {bidForm.surveyTime} WIB</span>
-                      </div>
+                      </>
                     )}
                   </div>
-                  <p className="text-[10px] text-slate-400">{t('Halaman ini akan kembali ke katalog dalam beberapa detik...')}</p>
-                </div>
-              )}
+                );
+              })()}
 
-              {/* General T&C notice */}
-              <div className="pt-4 border-t border-slate-100 flex items-start gap-2 text-[10px] text-slate-400 leading-normal">
-                <ShieldAlert className="w-4 h-4 text-slate-400 shrink-0" />
-                <span>
-                  {t('Dengan mengirimkan penawaran, Anda menyatakan tunduk pada Syarat & Ketentuan Umum Lelang Pancaran Logistics. Penawaran bersifat mengikat.')}
-                </span>
+              {/* Bottom Layout: Two-Column Responsive Grid */}
+              <div className="p-4 md:p-8 grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8 items-start">
+                
+                {/* Left Side Content (lg:col-span-2) */}
+                <div className="lg:col-span-2 space-y-6">
+                  
+                  {/* Title & Badge card */}
+                  <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs space-y-4">
+                    <div className="flex flex-wrap gap-2">
+                      <span className="bg-amber-500 text-white text-[10px] font-extrabold px-3 py-1 rounded-md shadow-xs tracking-wider uppercase">
+                        ⭐ {t('UNIT PILIHAN')}
+                      </span>
+                      <span className="bg-emerald-500 text-white text-[10px] font-extrabold px-3 py-1 rounded-md shadow-xs tracking-wider uppercase">
+                        {t('BOOKING AMAN')}
+                      </span>
+                      <span className="bg-blue-600 text-white text-[10px] font-extrabold px-3 py-1 rounded-md shadow-xs tracking-wider uppercase">
+                        {t('VERIFIED SELLER')}
+                      </span>
+                    </div>
+
+                    <div className="space-y-1">
+                      <h1 className="text-2xl font-bold text-slate-800 tracking-tight leading-snug">
+                        {selectedAsset.name}
+                      </h1>
+                      <p className="text-xs text-slate-400 font-bold uppercase tracking-wider">
+                        {selectedAsset.brand} • {selectedAsset.category} • {t('Tahun')} {selectedAsset.modelYear}
+                      </p>
+                    </div>
+
+                    <div className="border-t border-slate-100 pt-4 grid grid-cols-1 md:grid-cols-3 gap-3.5">
+                      <div className="flex items-center gap-2.5 text-slate-600">
+                        <div className="p-2 bg-slate-50 border border-slate-100 rounded-xl">
+                          <Tag className="w-4 h-4 text-blue-600" />
+                        </div>
+                        <div className="text-xs font-semibold">
+                          <p className="text-slate-400 text-[9px] uppercase tracking-wide">{t('Bahan Bakar')}</p>
+                          <p className="text-slate-700">SOLAR / DIESEL</p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2.5 text-slate-600">
+                        <div className="p-2 bg-slate-50 border border-slate-100 rounded-xl">
+                          <Truck className="w-4 h-4 text-blue-600" />
+                        </div>
+                        <div className="text-xs font-semibold">
+                          <p className="text-slate-400 text-[9px] uppercase tracking-wide">{t('No. Polisi')}</p>
+                          <p className="text-slate-700 font-mono uppercase">{selectedAsset.plateNumber}</p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2.5 text-slate-600">
+                        <div className="p-2 bg-slate-50 border border-slate-100 rounded-xl">
+                          <MapPin className="w-4 h-4 text-blue-600" />
+                        </div>
+                        <div className="text-xs font-semibold">
+                          <p className="text-slate-400 text-[9px] uppercase tracking-wide">{t('Lokasi Pool')}</p>
+                          <p className="text-slate-700 line-clamp-1">{selectedAsset.location.split(',')[0]}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Ikhtisar Card */}
+                  <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs space-y-4">
+                    <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2 border-b border-slate-100 pb-2.5">
+                      <Info className="w-4 h-4 text-blue-600" />
+                      <span>{t('Ikhtisar Spesifikasi')}</span>
+                    </h3>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-xs font-semibold">
+                      <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                        <span className="text-slate-400 text-[9px] block uppercase mb-0.5">{t('Merek / Brand')}</span>
+                        <strong className="text-slate-700 text-sm">{selectedAsset.brand}</strong>
+                      </div>
+                      <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                        <span className="text-slate-400 text-[9px] block uppercase mb-0.5">{t('Kategori')}</span>
+                        <strong className="text-slate-700 text-sm">{selectedAsset.category}</strong>
+                      </div>
+                      <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                        <span className="text-slate-400 text-[9px] block uppercase mb-0.5">{t('Tahun Registrasi')}</span>
+                        <strong className="text-slate-700 text-sm">{selectedAsset.modelYear}</strong>
+                      </div>
+                      <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                        <span className="text-slate-400 text-[9px] block uppercase mb-0.5">{t('No Polisi')}</span>
+                        <strong className="text-slate-700 text-sm font-mono uppercase">{selectedAsset.plateNumber}</strong>
+                      </div>
+                      <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                        <span className="text-slate-400 text-[9px] block uppercase mb-0.5">{t('Kondisi Fisik')}</span>
+                        <strong className="text-blue-700 text-sm">{t(selectedAsset.condition)}</strong>
+                      </div>
+                      <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                        <span className="text-slate-400 text-[9px] block uppercase mb-0.5">{t('Lokasi Detail')}</span>
+                        <strong className="text-slate-700 text-sm line-clamp-1">{selectedAsset.location}</strong>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Deskripsi (OLX-style Truncated preview + "Selengkapnya" modal link) */}
+                  <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs space-y-4">
+                    <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2 border-b border-slate-100 pb-2.5">
+                      <Info className="w-4 h-4 text-blue-600" />
+                      <span>{t('Deskripsi Lengkap')}</span>
+                    </h3>
+                    <div className="text-xs leading-relaxed text-slate-600 space-y-2 relative">
+                      <div className="line-clamp-3 overflow-hidden text-slate-600 font-sans">
+                        {stripMarkdown(selectedAsset.description)}
+                      </div>
+                      
+                      <div className="pt-2">
+                        <button 
+                          type="button" 
+                          onClick={() => setShowFullDesc(true)}
+                          className="text-blue-600 hover:text-blue-800 text-xs font-bold hover:underline inline-flex items-center gap-1.5 transition-all cursor-pointer"
+                        >
+                          <span>{t('Selengkapnya')}</span>
+                          <ChevronRight className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                </div>
+
+                {/* Right Side Content (sticky info + pricing + buttons + interactive booking form) */}
+                <div className="space-y-6">
+                  
+                  {/* Price & CTA Trigger Card */}
+                  <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs space-y-4">
+                    <div>
+                      <p className="text-slate-400 text-[10px] font-bold uppercase tracking-wider">{t('Penawaran Tertinggi')}</p>
+                      <h2 className="text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight mt-1">
+                        {formatIDR(currentHighestBid)}
+                      </h2>
+                      <p className="text-[10px] text-slate-400 mt-1">
+                        {t('Harga Awal:')} <strong className="font-semibold text-slate-600">{formatIDR(selectedAsset.startingPrice)}</strong>
+                      </p>
+                    </div>
+
+                    <button 
+                      type="button" 
+                      onClick={() => {
+                        const formElement = document.getElementById('bid-form-card');
+                        if (formElement) {
+                          formElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        }
+                        if (nameInputRef.current) {
+                          nameInputRef.current.focus();
+                        }
+                      }}
+                      className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all shadow-md shadow-blue-500/10 hover:shadow-blue-500/25 flex items-center justify-center gap-1.5 cursor-pointer"
+                    >
+                      <span>Booking / Kirim Penawaran</span>
+                    </button>
+                  </div>
+
+                  {/* Interactive Bidding & Survey Scheduler Form */}
+                  <div 
+                    id="bid-form-card"
+                    className={`bg-white p-6 rounded-2xl border transition-all duration-300 space-y-4 ${
+                      isFormFocused 
+                        ? 'border-blue-500 shadow-lg shadow-blue-500/5 ring-1 ring-blue-500/10 scale-[1.01]' 
+                        : 'border-slate-200/80 shadow-xs'
+                    }`}
+                  >
+                    <div className="border-b border-slate-100 pb-3">
+                      <span className="text-[9px] font-mono font-bold bg-blue-50 text-blue-700 px-2.5 py-1 rounded-md border border-blue-100 uppercase">
+                        {t('FORM PENAWARAN')}
+                      </span>
+                      <h3 className="font-bold text-slate-800 text-sm mt-1.5">{t('Ajukan Tawaran & Survei')}</h3>
+                    </div>
+
+                    {!formSuccess ? (
+                      <form 
+                        onSubmit={handleBidSubmit}
+                        onFocusCapture={() => setIsFormFocused(true)}
+                        onBlurCapture={(e) => {
+                          if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+                            setIsFormFocused(false);
+                          }
+                        }}
+                        className="space-y-4"
+                      >
+                        {formError && (
+                          <div className="p-3.5 bg-rose-50 border border-rose-100 text-rose-600 rounded-2xl text-xs font-semibold flex items-start gap-2 animate-shake">
+                            <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                            <span>{formError}</span>
+                          </div>
+                        )}
+
+                        {/* Name */}
+                        <div className="space-y-1.5">
+                          <label className="text-[10px] font-bold text-slate-600 uppercase">{t('Nama Lengkap Anda *')}</label>
+                          <div className="relative">
+                            <User className="w-4 h-4 text-slate-400 absolute left-3 top-3.5" />
+                            <input
+                              type="text"
+                              ref={nameInputRef}
+                              required
+                              placeholder={t('Contoh: PT Samudera Transport')}
+                              value={bidForm.name}
+                              onChange={(e) => setBidForm(prev => ({ ...prev, name: e.target.value }))}
+                              onFocus={(e) => {
+                                setIsFormFocused(true);
+                                e.target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                              }}
+                              className="w-full pl-9 pr-4 py-2.5 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 font-medium"
+                            />
+                          </div>
+                        </div>
+
+                        {/* Email */}
+                        <div className="space-y-1.5">
+                          <label className="text-[10px] font-bold text-slate-600 uppercase">{t('Alamat Email Kontak *')}</label>
+                          <div className="relative">
+                            <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-3.5" />
+                            <input
+                              type="email"
+                              required
+                              placeholder="name@company.co.id"
+                              value={bidForm.email}
+                              onChange={(e) => setBidForm(prev => ({ ...prev, email: e.target.value }))}
+                              onFocus={(e) => {
+                                setIsFormFocused(true);
+                                e.target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                              }}
+                              className="w-full pl-9 pr-4 py-2.5 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 font-mono font-medium"
+                            />
+                          </div>
+                        </div>
+
+                        {/* Contact (Phone) */}
+                        <div className="space-y-1.5">
+                          <label className="text-[10px] font-bold text-slate-600 uppercase">{t('No. Handphone / WhatsApp *')}</label>
+                          <div className="relative">
+                            <Phone className="w-4 h-4 text-slate-400 absolute left-3 top-3.5" />
+                            <input
+                              type="tel"
+                              required
+                              placeholder={t('Contoh: 0812XXXXXXXX')}
+                              value={bidForm.contact}
+                              onChange={(e) => setBidForm(prev => ({ ...prev, contact: e.target.value }))}
+                              onFocus={(e) => {
+                                setIsFormFocused(true);
+                                e.target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                              }}
+                              className="w-full pl-9 pr-4 py-2.5 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 font-medium"
+                            />
+                          </div>
+                        </div>
+
+                        {/* Bid Price */}
+                        <div className="space-y-1.5">
+                          <label className="text-[10px] font-bold text-slate-600 uppercase">{t('Harga Bid Anda (IDR) *')}</label>
+                          <div className="relative">
+                            <span className="absolute left-3 top-2.5 font-bold text-xs text-slate-400">Rp</span>
+                            <input
+                              type="text"
+                              inputMode="numeric"
+                              required
+                              placeholder={formatNumberWithDots(String(currentHighestBid + 5000000))}
+                              value={formatNumberWithDots(bidForm.price)}
+                              onChange={(e) => {
+                                let raw = e.target.value.replace(/\D/g, '');
+                                if (raw.length > 1 && raw.startsWith('0')) {
+                                  raw = raw.replace(/^0+/, '');
+                                }
+                                setBidForm(prev => ({ ...prev, price: raw }));
+                              }}
+                              onFocus={(e) => {
+                                setIsFormFocused(true);
+                                e.target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                              }}
+                              className="w-full pl-8 pr-4 py-2.5 border border-slate-200 rounded-xl text-sm font-bold text-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                            />
+                          </div>
+                          <p className="text-[10px] text-slate-400">{t('Minimal harga bid:')} <strong className="text-slate-600">{formatIDR(currentHighestBid + 1000000)}</strong></p>
+                        </div>
+
+                        {/* Request Survey Toggle */}
+                        <div className="pt-2 border-t border-slate-100">
+                          <label className="flex items-center gap-2.5 cursor-pointer select-none">
+                            <input
+                              type="checkbox"
+                              checked={bidForm.requestSurvey}
+                              onChange={(e) => {
+                                const isChecked = e.target.checked;
+                                const todayStr = new Date().toISOString().split('T')[0];
+                                setBidForm(prev => ({
+                                  ...prev,
+                                  requestSurvey: isChecked,
+                                  surveyDate: isChecked && !prev.surveyDate ? todayStr : prev.surveyDate
+                                }));
+                                if (isChecked) {
+                                  setTimeout(() => {
+                                    const grid = document.getElementById('visit-sessions-grid');
+                                    if (grid) {
+                                      grid.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                                    }
+                                  }, 150);
+                                }
+                              }}
+                              className="w-4.5 h-4.5 text-blue-600 border-slate-300 rounded focus:ring-blue-500"
+                            />
+                            <div className="text-xs">
+                              <p className="font-bold text-slate-800">{t('Booking Jadwal Survei Fisik')}</p>
+                              <p className="text-slate-400 text-[10px]">{t('Ingin cek kondisi mesin langsung di Pool?')}</p>
+                            </div>
+                          </label>
+                        </div>
+
+                        {/* Survey Scheduler Details */}
+                        {bidForm.requestSurvey && (
+                          <div className="p-4 bg-gradient-to-br from-blue-50/60 to-indigo-50/20 rounded-2xl border border-blue-100/80 space-y-3.5 relative overflow-hidden shadow-xs">
+                            <p className="text-[11px] font-bold text-slate-600 flex items-center gap-1.5 relative z-10">
+                              <CalendarCheck className="w-4 h-4 text-blue-600" /> {t('Tentukan Waktu Kunjungan Pool')}
+                            </p>
+                            
+                            <div className="space-y-3 relative z-10">
+                              {/* Select Date */}
+                              <div className="space-y-1">
+                                <label className="text-[10px] font-bold text-slate-400 uppercase">{t('Pilih Tanggal Kunjungan')}</label>
+                                <input
+                                  type="date"
+                                  min={new Date().toISOString().split('T')[0]}
+                                  value={bidForm.surveyDate}
+                                  onChange={(e) => {
+                                    const newDate = e.target.value;
+                                    setBidForm(prev => {
+                                      let nextTime = prev.surveyTime;
+                                      if (isTimeBooked(nextTime, newDate)) {
+                                        const slots = ["09:00", "11:00", "13:30", "15:30"];
+                                        const available = slots.find(slot => !isTimeBooked(slot, newDate));
+                                        if (available) {
+                                          nextTime = available;
+                                        }
+                                      }
+                                      return { ...prev, surveyDate: newDate, surveyTime: nextTime };
+                                    });
+                                  }}
+                                  className="w-full p-2.5 border border-slate-200 rounded-xl text-xs bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 font-semibold text-slate-700"
+                                  required={bidForm.requestSurvey}
+                                />
+                              </div>
+
+                              {/* Sesi Jam list */}
+                              <div className="space-y-1.5">
+                                <div className="flex justify-between items-center">
+                                  <label className="text-[10px] font-bold text-slate-400 uppercase">{t('Pilih Sesi Jam Kunjungan')}</label>
+                                </div>
+
+                                <div className="grid grid-cols-1 gap-2" id="visit-sessions-grid">
+                                  {[
+                                    { id: "09:00", label: t('Pagi Sesi 1 (09:00 WIB)'), time: "09:00 WIB", desc: t('Sesi Pagi I') },
+                                    { id: "11:00", label: t('Pagi Sesi 2 (11:00 WIB)'), time: "11:00 WIB", desc: t('Sesi Pagi II') },
+                                    { id: "13:30", label: t('Siang Sesi 1 (13:30 WIB)'), time: "13:30 WIB", desc: t('Sesi Siang I') },
+                                    { id: "15:30", label: t('Sore Sesi 2 (15:30 WIB)'), time: "15:30 WIB", desc: t('Sesi Sore II') }
+                                  ].map((session) => {
+                                    const booked = isTimeBooked(session.id, bidForm.surveyDate);
+                                    const selected = bidForm.surveyTime === session.id;
+
+                                    return (
+                                      <button
+                                        key={session.id}
+                                        type="button"
+                                        disabled={booked}
+                                        onClick={() => setBidForm(prev => ({ ...prev, surveyTime: session.id }))}
+                                        className={`p-2.5 rounded-xl border text-left flex flex-col justify-between transition-all relative ${
+                                          booked
+                                            ? 'bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed opacity-60'
+                                            : selected
+                                            ? 'bg-blue-50 border-blue-600 ring-2 ring-blue-500/10 text-blue-950'
+                                            : 'bg-white border-slate-200 text-slate-800 hover:border-slate-300 hover:bg-slate-50'
+                                        }`}
+                                      >
+                                        <div className="flex justify-between items-center w-full">
+                                          <span className="text-[11px] font-bold">
+                                            {session.time}
+                                          </span>
+                                          {booked ? (
+                                            <span className="bg-red-50 text-red-500 border border-red-100 text-[8px] font-extrabold px-1 py-0.5 rounded tracking-wide uppercase">
+                                              {t('Booked')}
+                                            </span>
+                                          ) : (
+                                            <span className={`text-[8px] font-extrabold px-1 py-0.5 rounded tracking-wide uppercase ${
+                                              selected ? 'bg-blue-600 text-white' : 'bg-emerald-50 text-emerald-600 border border-emerald-100'
+                                            }`}>
+                                              {selected ? t('Selected') : t('Ready')}
+                                            </span>
+                                          )}
+                                        </div>
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Submit Bid Button */}
+                        <button
+                          type="submit"
+                          className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl text-xs font-bold shadow-md shadow-blue-500/15 hover:shadow-blue-500/30 transition-all flex items-center justify-center gap-1.5 cursor-pointer uppercase tracking-wider"
+                        >
+                          <ArrowUpRight className="w-4 h-4" />
+                          <span>{t('Kirim Penawaran & Booking')}</span>
+                        </button>
+                      </form>
+                    ) : (
+                      // Success feedback panel
+                      <div className="py-6 text-center space-y-4 animate-fade-in" id="bid-success-panel">
+                        <div className="w-14 h-14 bg-emerald-50 text-emerald-500 rounded-full flex items-center justify-center mx-auto border border-emerald-100 shadow-xs">
+                          <CheckCircle className="w-8 h-8" />
+                        </div>
+                        <div className="space-y-1">
+                          <h3 className="font-bold text-slate-800 text-sm">{t('Penawaran Berhasil!')}</h3>
+                          <p className="text-[10px] text-slate-400">{t('Harga penawaran Anda telah dicatat.')}</p>
+                        </div>
+                        <div className="p-4 bg-slate-50 rounded-xl border border-slate-100 text-xs text-left space-y-1.5 font-medium font-sans">
+                          <div className="flex justify-between">
+                            <span className="text-slate-400">{t('Armada:')}</span>
+                            <span className="text-slate-800 font-bold text-[11px] line-clamp-1">{selectedAsset.name}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-slate-400">{t('Harga Bid:')}</span>
+                            <span className="text-blue-700 font-bold">{formatIDR(Number(bidForm.price))}</span>
+                          </div>
+                          {bidForm.requestSurvey && (
+                            <div className="flex justify-between border-t border-dashed border-slate-200 pt-1.5 mt-1.5 text-blue-700">
+                              <span className="flex items-center gap-1 font-bold">
+                                <Calendar className="w-3.5 h-3.5" /> {t('Survei:')}
+                              </span>
+                              <span className="font-bold">{bidForm.surveyDate} @ {bidForm.surveyTime} WIB</span>
+                            </div>
+                          )}
+                        </div>
+                        <p className="text-[10px] text-slate-400 italic">{t('Menutup halaman...')}</p>
+                      </div>
+                    )}
+
+                    {/* Shield / Safety warning */}
+                    <div className="pt-3 border-t border-slate-100 flex items-start gap-2 text-[10px] text-slate-400 leading-normal">
+                      <ShieldAlert className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" />
+                      <span>
+                        {t('Setiap pengiriman penawaran dijamin aman & tunduk pada Syarat Ketentuan Lelang Pancaran.')}
+                      </span>
+                    </div>
+
+                    {/* Extra mobile focus bottom spacer inside form card to prevent virtual keyboard occlusion */}
+                    {isFormFocused && (
+                      <div className="h-[20vh] md:hidden" />
+                    )}
+                  </div>
+
+                  {/* Extra mobile padding inside the scrollable container layout */}
+                  {isFormFocused && (
+                    <div className="h-[25vh] md:hidden" />
+                  )}
+
+                </div>
+
               </div>
 
             </div>
+
+            {/* Mobile Floating Action Button to jump directly to form when scrolled away */}
+            {!formSuccess && !isFormFocused && (
+              <div className="md:hidden fixed bottom-6 left-1/2 -translate-x-1/2 z-[55] animate-bounce">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const formElement = document.getElementById('bid-form-card');
+                    if (formElement) {
+                      formElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                    if (nameInputRef.current) {
+                      nameInputRef.current.focus();
+                    }
+                  }}
+                  className="bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs px-5 py-3.5 rounded-full shadow-2xl border border-blue-500/20 flex items-center gap-2 uppercase tracking-wider whitespace-nowrap cursor-pointer"
+                >
+                  <ArrowUpRight className="w-4 h-4" />
+                  <span>{t('Tulis Penawaran')}</span>
+                </button>
+              </div>
+            )}
+
           </div>
         </div>
-      )}
 
-      </div>
+        {/* Focused Description Overlay Modal - Dark dimmed background */}
+        {showFullDesc && (
+          <div 
+            className="fixed inset-0 bg-slate-950/90 backdrop-blur-md z-[60] flex items-center justify-center p-4 animate-fade-in"
+            id="full-description-overlay"
+            onClick={() => setShowFullDesc(false)}
+          >
+            <div 
+              className="bg-white rounded-3xl border border-slate-200/80 shadow-2xl w-full max-w-2xl overflow-hidden relative animate-zoom-in my-auto max-h-[85vh] flex flex-col focus:outline-none"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Modal Header */}
+              <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+                <div>
+                  <span className="text-[10px] font-bold text-blue-600 uppercase tracking-wider bg-blue-50 px-2.5 py-1 rounded-md border border-blue-100">
+                    {t('Detail Deskripsi')}
+                  </span>
+                  <h3 className="font-bold text-slate-800 text-base mt-2">{selectedAsset.name}</h3>
+                </div>
+                <button 
+                  onClick={() => setShowFullDesc(false)}
+                  className="bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 p-2 rounded-full transition-all cursor-pointer flex items-center justify-center"
+                  title={t('Tutup')}
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Scrollable Description Container */}
+              <div className="p-6 md:p-8 overflow-y-auto flex-1 custom-scrollbar space-y-4">
+                <div className="text-sm leading-relaxed text-slate-600 font-sans">
+                  {renderDescription(selectedAsset.description)}
+                </div>
+              </div>
+
+              {/* Modal Footer */}
+              <div className="p-6 border-t border-slate-100 bg-slate-50/50 flex justify-end">
+                <button
+                  onClick={() => setShowFullDesc(false)}
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-xl text-xs font-bold transition-all shadow-md shadow-blue-500/10 hover:shadow-blue-500/25 cursor-pointer uppercase tracking-wider"
+                >
+                  {t('Selesai')}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </>
+    )}
 
       {/* Immersive Fullscreen Lightbox Zoom Overlay */}
       {lightboxIndex !== null && lightboxImages.length > 0 && (
