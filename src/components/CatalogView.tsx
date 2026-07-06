@@ -617,7 +617,20 @@ export default function CatalogView({ assets, onPlaceBid }: CatalogViewProps) {
           >
             
             {/* Scrollable Container */}
-            <div className="overflow-y-auto flex-1 custom-scrollbar">
+            <div className="overflow-y-auto flex-1 custom-scrollbar relative">
+              
+              {/* Focus mode background dim overlay */}
+              {isFormFocused && (
+                <div 
+                  className="absolute inset-0 bg-slate-950/70 backdrop-blur-[2px] z-30 transition-all duration-300 cursor-pointer"
+                  onClick={() => {
+                    if (document.activeElement instanceof HTMLElement) {
+                      document.activeElement.blur();
+                    }
+                    setIsFormFocused(false);
+                  }}
+                />
+              )}
               
               {/* Top Section: Immersive Dark Image Carousel */}
               {(() => {
@@ -858,8 +871,8 @@ export default function CatalogView({ assets, onPlaceBid }: CatalogViewProps) {
                     id="bid-form-card"
                     className={`bg-white p-6 rounded-2xl border transition-all duration-300 space-y-4 ${
                       isFormFocused 
-                        ? 'border-blue-500 shadow-lg shadow-blue-500/5 ring-1 ring-blue-500/10 scale-[1.01]' 
-                        : 'border-slate-200/80 shadow-xs'
+                        ? 'relative z-40 border-blue-500 shadow-2xl ring-2 ring-blue-500/20 scale-[1.02] bg-white' 
+                        : 'relative z-10 border-slate-200/80 shadow-xs'
                     }`}
                   >
                     <div className="border-b border-slate-100 pb-3">

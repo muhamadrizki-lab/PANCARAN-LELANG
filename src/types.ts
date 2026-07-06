@@ -36,3 +36,11 @@ export interface AdminUser {
   createdAt: string;
   password?: string;
 }
+
+export interface ToastNotification {
+  id: string;
+  type: 'info' | 'success' | 'warning' | 'bid' | 'sync';
+  title: string;
+  message: string;
+  timestamp: Date;
+}

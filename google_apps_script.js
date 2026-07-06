@@ -7,6 +7,39 @@
  * DATABASE ID: ai-studio-remixremixpancar-e5d36007-18cd-4f4e-8eec-a93a35f15981
  * PROJECT ID: gen-lang-client-0387361643
  *
+ * CARA MENGATASI ERROR 403 (REQUEST HAD INSUFFICIENT AUTHENTICATION SCOPES):
+ * ------------------------------------------------------------------------------
+ * Karena kita memanggil Firestore API secara manual menggunakan `UrlFetchApp`, Google Apps Script
+ * tidak tahu secara otomatis bahwa dia memerlukan izin akses Firestore/Cloud Platform.
+ * Kita harus menambahkan izin ini secara manual di file manifes `appsscript.json`:
+ * 
+ * 1. Di menu sebelah kiri editor Google Apps Script, klik ikon Roda Gigi ⚙️ (Setelan Proyek / Project Settings).
+ * 2. Centang pilihan "Tampilkan file manifes 'appsscript.json' di editor" (Show "appsscript.json" manifest file in editor).
+ * 3. Kembali ke editor kode dengan mengklik ikon Kode < > di sebelah kiri.
+ * 4. Anda sekarang akan melihat file baru bernama "appsscript.json" di daftar file.
+ * 5. Buka file "appsscript.json" tersebut, hapus isinya, dan PASTE kode JSON berikut:
+ * 
+ * {
+ *   "timeZone": "Asia/Jakarta",
+ *   "dependencies": {},
+ *   "exceptionLogging": "STACKDRIVER",
+ *   "runtimeVersion": "V8",
+ *   "oauthScopes": [
+ *     "https://www.googleapis.com/auth/spreadsheets",
+ *     "https://www.googleapis.com/auth/script.external_request",
+ *     "https://www.googleapis.com/auth/cloud-platform",
+ *     "https://www.googleapis.com/auth/datastore"
+ *   ]
+ * }
+ * 
+ * 6. Simpan file tersebut (Klik ikon simpan/disket).
+ * 7. Lakukan "Terapkan" (Deploy) ulang:
+ *    - Klik Terapkan (Deploy) > Kelola penerapan (Manage deployments).
+ *    - Klik ikon Pensil (Edit) pada penerapan aktif Anda.
+ *    - Di bagian Versi (Version), pilih "Versi baru" (New version).
+ *    - Klik Terapkan (Deploy).
+ *    - Google mungkin akan meminta Anda memberikan otorisasi ulang (Authorize) karena ada cakupan izin baru. Klik "Berikan Akses" dan setujui izinnya.
+ * 
  * CARA INSTALASI & UPDATE KODE DI SPREADSHEET (BAHASA INDONESIA):
  * ------------------------------------------------------------------------------
  * 1. Buka Google Spreadsheet Anda:

@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Asset, AssetStatus, Bid, AdminUser } from './types';
+import React, { useState, useEffect, useRef } from 'react';
+import { Asset, AssetStatus, Bid, AdminUser, ToastNotification } from './types';
 import { INITIAL_ASSETS, INITIAL_ADMINS } from './data/mockData';
 import AdminDashboard from './components/AdminDashboard';
 import AdminAssets from './components/AdminAssets';
@@ -7,6 +7,7 @@ import AdminUsers from './components/AdminUsers';
 import CatalogView from './components/CatalogView';
 import LoginModal from './components/LoginModal';
 import { useLanguage } from './components/LanguageContext';
+import { AnimatePresence, motion } from 'motion/react';
 import { 
   seedDatabaseIfEmpty, 
   subscribeToAssets, 
@@ -35,7 +36,10 @@ import {
   X,
   Globe,
   Mail,
-  RefreshCw
+  RefreshCw,
+  Bell,
+  CheckCircle,
+  AlertCircle
 } from 'lucide-react';
 
 export default function App() {
@@ -63,6 +67,34 @@ export default function App() {
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncMessage, setSyncMessage] = useState('');
 
+  // Toast notifications state
+  const [notifications, setNotifications] = useState<ToastNotification[]>([]);
+
+  // Tracking refs to identify real-time changes
+  const assetsLoadedRef = useRef(false);
+  const prevAssetsRef = useRef<Asset[]>([]);
+  const adminsLoadedRef = useRef(false);
+  const prevAdminsRef = useRef<AdminUser[]>([]);
+
+  const formatIDR = (value: number) => {
+    return new Intl.NumberFormat('id-ID', {
+      style: 'currency',
+      currency: 'IDR',
+      maximumFractionDigits: 0
+    }).format(value);
+  };
+
+  const addNotification = (type: 'info' | 'success' | 'warning' | 'bid' | 'sync', title: string, message: string) => {
+    const id = Math.random().toString(36).substring(2, 9);
+    const newNotif: ToastNotification = { id, type, title, message, timestamp: new Date() };
+    setNotifications(prev => [newNotif, ...prev].slice(0, 5));
+    
+    // Auto remove after 6 seconds
+    setTimeout(() => {
+      setNotifications(prev => prev.filter(n => n.id !== id));
+    }, 6000);
+  };
+
   const handleManualSync = async () => {
     if (isSyncing) return;
     setIsSyncing(true);
@@ -70,9 +102,11 @@ export default function App() {
     try {
       await triggerAppsScriptSync();
       setSyncMessage(t('Berhasil disinkronkan!'));
+      addNotification('sync', t('Spreadsheet Sync'), t('Sinkronisasi Google Spreadsheet berhasil diselesaikan.'));
       setTimeout(() => setSyncMessage(''), 3000);
     } catch (error) {
       setSyncMessage(t('Gagal sinkronisasi.'));
+      addNotification('warning', t('Spreadsheet Sync'), t('Gagal sinkronisasi dengan Google Spreadsheet.'));
       setTimeout(() => setSyncMessage(''), 4000);
     } finally {
       setIsSyncing(false);
@@ -88,14 +122,118 @@ export default function App() {
     seedDatabaseIfEmpty().then(() => {
       unsubscribeAssets = subscribeToAssets((updatedAssets) => {
         if (updatedAssets) {
-          // Keep descending ID order or keep order stable
-          setAssets([...updatedAssets].sort((a, b) => b.id.localeCompare(a.id)));
+          const sortedAssets = [...updatedAssets].sort((a, b) => b.id.localeCompare(a.id));
+          setAssets(sortedAssets);
+
+          // Real-time comparison for notifications
+          if (!assetsLoadedRef.current) {
+            prevAssetsRef.current = sortedAssets;
+            assetsLoadedRef.current = true;
+          } else {
+            const prevAssets = prevAssetsRef.current;
+            
+            // 1. Detect additions or changes
+            sortedAssets.forEach(asset => {
+              const prevAsset = prevAssets.find(a => a.id === asset.id);
+              
+              if (!prevAsset) {
+                // New Asset
+                addNotification(
+                  'success',
+                  t('Armada Baru Terdaftar'),
+                  `${asset.brand} ${asset.name} (${asset.id}) ${t('telah terdaftar di katalog.')}`
+                );
+              } else {
+                // Check if bids increased
+                if (asset.bids.length > prevAsset.bids.length) {
+                  // Find new bids
+                  const newBids = asset.bids.filter(b => !prevAsset.bids.some(pb => pb.id === b.id || pb.timestamp === b.timestamp));
+                  newBids.forEach(bid => {
+                    addNotification(
+                      'bid',
+                      t('Penawaran Baru Masuk'),
+                      `${bid.name} ${t('menawar')} ${formatIDR(bid.price)} ${t('untuk')} ${asset.brand} ${asset.name}`
+                    );
+                  });
+                }
+                
+                // Check if status changed
+                if (asset.status !== prevAsset.status) {
+                  addNotification(
+                    'info',
+                    t('Status Unit Diperbarui'),
+                    `Unit ${asset.brand} ${asset.name} (${asset.id}) ${t('sekarang berstatus')} ${asset.status === 'Open' ? t('Buka / Aktif') : t('Sold / Terjual')}`
+                  );
+                }
+                
+                // Check if price or other main details changed (excluding bids and status)
+                const priceChanged = asset.startingPrice !== prevAsset.startingPrice;
+                const condChanged = asset.condition !== prevAsset.condition;
+                if (priceChanged || condChanged) {
+                  addNotification(
+                    'info',
+                    t('Spesifikasi Diperbarui'),
+                    `${t('Informasi unit')} ${asset.id} (${asset.brand} ${asset.name}) ${t('telah diperbarui.')}`
+                  );
+                }
+              }
+            });
+
+            // 2. Detect deletions
+            prevAssets.forEach(prevAsset => {
+              const stillExists = sortedAssets.some(a => a.id === prevAsset.id);
+              if (!stillExists) {
+                addNotification(
+                  'warning',
+                  t('Unit Dihapus'),
+                  `${t('Unit')} ${prevAsset.brand} ${prevAsset.name} (${prevAsset.id}) ${t('telah dihapus dari sistem.')}`
+                );
+              }
+            });
+
+            // Keep the previous reference updated
+            prevAssetsRef.current = sortedAssets;
+          }
         }
       });
 
       unsubscribeAdmins = subscribeToAdmins((updatedAdmins) => {
         if (updatedAdmins && updatedAdmins.length > 0) {
           setAdmins(updatedAdmins);
+
+          // Real-time comparison for admin changes
+          if (!adminsLoadedRef.current) {
+            prevAdminsRef.current = updatedAdmins;
+            adminsLoadedRef.current = true;
+          } else {
+            const prevAdmins = prevAdminsRef.current;
+
+            // Detect new admin
+            updatedAdmins.forEach(adm => {
+              const exists = prevAdmins.some(pa => pa.email === adm.email);
+              if (!exists) {
+                addNotification(
+                  'success',
+                  t('Admin Baru Terdaftar'),
+                  `${adm.name} (${adm.email}) ${t('sekarang memiliki hak akses.')}`
+                );
+              }
+            });
+
+            // Detect deleted admin
+            prevAdmins.forEach(pa => {
+              const exists = updatedAdmins.some(adm => adm.email === pa.email);
+              if (!exists) {
+                addNotification(
+                  'warning',
+                  t('Akses Admin Dicabut'),
+                  `${t('Akses untuk')} ${pa.email} ${t('telah dihapus.')}`
+                );
+              }
+            });
+
+            prevAdminsRef.current = updatedAdmins;
+          }
         }
       });
     }).catch((err) => {
@@ -516,22 +654,7 @@ export default function App() {
                   {t('Manajemen Akses')}
                 </button>
 
-                <div className="mt-3 p-3 bg-blue-50/50 rounded-xl border border-blue-100/50 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-blue-800">{t('Spreadsheet Sync')}</span>
-                    {syncMessage && (
-                      <span className={`text-[9px] font-semibold ${syncMessage.includes('Gagal') || syncMessage.includes('Error') ? 'text-rose-500' : 'text-emerald-600'}`}>{syncMessage}</span>
-                    )}
-                  </div>
-                  <button
-                    onClick={handleManualSync}
-                    disabled={isSyncing}
-                    className="w-full py-1.5 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
-                  >
-                    <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin' : ''}`} />
-                    <span>{isSyncing ? t('Menyinkronkan...') : t('Sync Spreadsheet')}</span>
-                  </button>
-                </div>
+
               </div>
             )}
 
@@ -643,27 +766,7 @@ export default function App() {
                 </div>
               </div>
 
-              <div className="p-4 bg-blue-50/50 rounded-xl border border-blue-100 space-y-2.5">
-                <div>
-                  <p className="text-[10px] text-blue-800 font-bold uppercase tracking-wide">{t('Google Spreadsheet')}</p>
-                  <p className="text-[10px] text-slate-500 leading-relaxed mt-1">
-                    {t('Sinkronisasi otomatis aktif per detik. Klik tombol di bawah untuk paksa sinkronisasi sekarang.')}
-                  </p>
-                </div>
-                <button
-                  onClick={handleManualSync}
-                  disabled={isSyncing}
-                  className="w-full py-2 px-3 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-colors shadow-sm cursor-pointer"
-                >
-                  <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin' : ''}`} />
-                  <span>{isSyncing ? t('Menyinkronkan...') : t('Sinkronisasi Manual')}</span>
-                </button>
-                {syncMessage && (
-                  <p className={`text-[9px] text-center font-semibold ${syncMessage.includes('Gagal') || syncMessage.includes('Error') ? 'text-rose-500' : 'text-emerald-600'}`}>
-                    {syncMessage}
-                  </p>
-                )}
-              </div>
+
             </div>
           </aside>
 
@@ -883,6 +986,57 @@ export default function App() {
         onLoginSuccess={handleLoginSuccess} 
         admins={admins}
       />
+
+      {/* Real-time Toast Notifications in Top Right */}
+      <div className="fixed top-6 right-6 z-[9999] pointer-events-none flex flex-col gap-3 max-w-sm w-full">
+        <AnimatePresence>
+          {notifications.map(notif => (
+            <motion.div
+              key={notif.id}
+              initial={{ opacity: 0, y: -20, scale: 0.9, x: 50 }}
+              animate={{ opacity: 1, y: 0, scale: 1, x: 0 }}
+              exit={{ opacity: 0, scale: 0.85, x: 100, transition: { duration: 0.2 } }}
+              layout
+              className="pointer-events-auto bg-slate-950/95 backdrop-blur-md text-white p-4 rounded-2xl shadow-2xl border border-slate-800/80 flex gap-3 items-start overflow-hidden relative group"
+            >
+              {/* Left Indicator Strip */}
+              <div className={`absolute top-0 bottom-0 left-0 w-1 ${
+                notif.type === 'success' ? 'bg-emerald-500' :
+                notif.type === 'bid' ? 'bg-amber-500' :
+                notif.type === 'warning' ? 'bg-rose-500' :
+                notif.type === 'sync' ? 'bg-blue-500' :
+                'bg-slate-400'
+              }`} />
+
+              <div className="pl-1 shrink-0">
+                {notif.type === 'success' && <CheckCircle className="w-5 h-5 text-emerald-400 mt-0.5" />}
+                {notif.type === 'bid' && <TrendingUp className="w-5 h-5 text-amber-400 mt-0.5" />}
+                {notif.type === 'warning' && <AlertCircle className="w-5 h-5 text-rose-400 mt-0.5" />}
+                {notif.type === 'sync' && <RefreshCw className="w-5 h-5 text-blue-400 mt-0.5 animate-spin" />}
+                {notif.type === 'info' && <Shield className="w-5 h-5 text-indigo-400 mt-0.5" />}
+              </div>
+
+              <div className="flex-1 min-w-0 space-y-1">
+                <div className="flex items-center justify-between gap-2">
+                  <h4 className="text-[10px] font-bold text-slate-200 uppercase tracking-wider truncate">{notif.title}</h4>
+                  <span className="text-[9px] text-slate-500 font-mono shrink-0">
+                    {notif.timestamp.toLocaleTimeString(language === 'en' ? 'en-US' : 'id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })}
+                  </span>
+                </div>
+                <p className="text-xs text-slate-300 leading-normal font-sans">{notif.message}</p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setNotifications(prev => prev.filter(n => n.id !== notif.id))}
+                className="text-slate-400 hover:text-white transition-colors cursor-pointer shrink-0 mt-0.5"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </motion.div>
+          ))}
+        </AnimatePresence>
+      </div>
 
     </div>
   );

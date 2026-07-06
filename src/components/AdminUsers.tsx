@@ -36,6 +36,7 @@ export default function AdminUsers({
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
   const [deleteConfirmEmail, setDeleteConfirmEmail] = useState<string | null>(null);
+  const [isFormFocused, setIsFormFocused] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -87,8 +88,21 @@ export default function AdminUsers({
   };
 
   return (
-    <div className="space-y-8 animate-fade-in" id="admin-users-view">
+    <div className="space-y-8 animate-fade-in relative" id="admin-users-view">
       
+      {/* Focus mode background dim overlay */}
+      {isFormFocused && (
+        <div 
+          className="fixed inset-0 bg-slate-950/70 backdrop-blur-[2px] z-30 transition-all duration-300 cursor-pointer"
+          onClick={() => {
+            if (document.activeElement instanceof HTMLElement) {
+              document.activeElement.blur();
+            }
+            setIsFormFocused(false);
+          }}
+        />
+      )}
+
       {/* View Header */}
       <div>
         <h1 className="text-2xl font-bold text-slate-800 tracking-tight">{t('Manajemen Akses Admin')}</h1>
@@ -98,7 +112,14 @@ export default function AdminUsers({
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         
         {/* Left Side: Create Access Form ("create access" from flowchart) */}
-        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-6 lg:col-span-1" id="create-access-form-container">
+        <div 
+          className={`bg-white p-6 rounded-2xl border transition-all duration-300 space-y-6 lg:col-span-1 ${
+            isFormFocused 
+              ? 'relative z-40 border-blue-500 shadow-2xl ring-2 ring-blue-500/20 scale-[1.02] bg-white' 
+              : 'relative z-10 border-slate-200 shadow-sm'
+          }`} 
+          id="create-access-form-container"
+        >
           <div className="space-y-1">
             <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
               <UserPlus className="w-5 h-5 text-blue-600" /> {t('Buat Akses Baru')}
@@ -106,7 +127,16 @@ export default function AdminUsers({
             <p className="text-xs text-slate-500">{t('Daftarkan akun email karyawan baru untuk memberikan akses masuk ke dashboard internal.')}</p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form 
+            onSubmit={handleSubmit} 
+            onFocusCapture={() => setIsFormFocused(true)}
+            onBlurCapture={(e) => {
+              if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+                setIsFormFocused(false);
+              }
+            }}
+            className="space-y-4"
+          >
             {errorMsg && (
               <div className="p-3.5 bg-rose-50 border border-rose-100 text-rose-600 rounded-xl text-xs font-semibold flex items-start gap-2 animate-shake">
                 <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
