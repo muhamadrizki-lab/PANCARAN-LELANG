@@ -78,6 +78,34 @@ function handleFirestoreError(error: unknown, operationType: OperationType, path
 }
 
 /**
+ * Triggers the Google Apps Script Web App sync in the background.
+ * Uses mode: 'no-cors' to bypass GAS Web App redirect CORS restrictions
+ * while ensuring the script successfully runs on the server side.
+ */
+export async function triggerAppsScriptSync() {
+  const appsScriptUrl = (import.meta as any).env.VITE_APPS_SCRIPT_URL;
+  if (!appsScriptUrl) {
+    console.log('VITE_APPS_SCRIPT_URL is not set. Real-time Google Spreadsheet sync will not be called.');
+    return;
+  }
+
+  try {
+    console.log('Triggering instant Google Spreadsheet sync...');
+    await fetch(appsScriptUrl, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ action: 'sync' }),
+    });
+    console.log('Google Spreadsheet sync triggered successfully.');
+  } catch (error) {
+    console.warn('Failed to trigger Google Spreadsheet sync:', error);
+  }
+}
+
+/**
  * Seeds initial data into Firestore if collections are empty.
  */
 export async function seedDatabaseIfEmpty() {
@@ -159,6 +187,7 @@ export async function addAssetToDb(asset: Omit<Asset, 'id'> & { id?: string }): 
       bids: asset.bids || []
     };
     await setDoc(doc(db, ASSETS_COLLECTION, finalId), assetWithId);
+    triggerAppsScriptSync(); // Trigger background spreadsheet sync
     return finalId;
   } catch (error) {
     handleFirestoreError(error, OperationType.CREATE, path);
@@ -173,6 +202,7 @@ export async function updateAssetInDb(id: string, updates: Partial<Asset>): Prom
   const path = `${ASSETS_COLLECTION}/${id}`;
   try {
     await updateDoc(doc(db, ASSETS_COLLECTION, id), updates);
+    triggerAppsScriptSync(); // Trigger background spreadsheet sync
   } catch (error) {
     handleFirestoreError(error, OperationType.UPDATE, path);
   }
@@ -185,6 +215,7 @@ export async function deleteAssetFromDb(id: string): Promise<void> {
   const path = `${ASSETS_COLLECTION}/${id}`;
   try {
     await deleteDoc(doc(db, ASSETS_COLLECTION, id));
+    triggerAppsScriptSync(); // Trigger background spreadsheet sync
   } catch (error) {
     handleFirestoreError(error, OperationType.DELETE, path);
   }
@@ -209,6 +240,7 @@ export async function addBidToAsset(assetId: string, bid: Bid): Promise<void> {
       bids: updatedBids,
       highestBid: highestBid
     });
+    triggerAppsScriptSync(); // Trigger background spreadsheet sync
   } catch (error) {
     handleFirestoreError(error, OperationType.UPDATE, path);
   }
@@ -221,6 +253,7 @@ export async function addAdminToDb(admin: AdminUser): Promise<void> {
   const path = `${ADMINS_COLLECTION}/${admin.email}`;
   try {
     await setDoc(doc(db, ADMINS_COLLECTION, admin.email), admin);
+    triggerAppsScriptSync(); // Trigger background spreadsheet sync
   } catch (error) {
     handleFirestoreError(error, OperationType.CREATE, path);
   }
@@ -233,6 +266,7 @@ export async function deleteAdminFromDb(email: string): Promise<void> {
   const path = `${ADMINS_COLLECTION}/${email}`;
   try {
     await deleteDoc(doc(db, ADMINS_COLLECTION, email));
+    triggerAppsScriptSync(); // Trigger background spreadsheet sync
   } catch (error) {
     handleFirestoreError(error, OperationType.DELETE, path);
   }

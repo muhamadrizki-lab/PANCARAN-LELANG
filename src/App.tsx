@@ -16,7 +16,8 @@ import {
   deleteAssetFromDb, 
   addBidToAsset, 
   addAdminToDb, 
-  deleteAdminFromDb 
+  deleteAdminFromDb,
+  triggerAppsScriptSync
 } from './firebase';
 import { 
   Shield, 
@@ -33,7 +34,8 @@ import {
   Menu,
   X,
   Globe,
-  Mail
+  Mail,
+  RefreshCw
 } from 'lucide-react';
 
 export default function App() {
@@ -56,6 +58,26 @@ export default function App() {
   
   // Selected asset for highlighting or detailed specs in AdminAssets
   const [selectedAssetId, setSelectedAssetId] = useState<string | null>(null);
+
+  // Spreadsheet Sync States
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [syncMessage, setSyncMessage] = useState('');
+
+  const handleManualSync = async () => {
+    if (isSyncing) return;
+    setIsSyncing(true);
+    setSyncMessage(t('Sedang menyinkronkan...'));
+    try {
+      await triggerAppsScriptSync();
+      setSyncMessage(t('Berhasil disinkronkan!'));
+      setTimeout(() => setSyncMessage(''), 3000);
+    } catch (error) {
+      setSyncMessage(t('Gagal sinkronisasi.'));
+      setTimeout(() => setSyncMessage(''), 4000);
+    } finally {
+      setIsSyncing(false);
+    }
+  };
 
   // Initialize data and hook up Firebase subscription
   useEffect(() => {
@@ -493,6 +515,23 @@ export default function App() {
                 >
                   {t('Manajemen Akses')}
                 </button>
+
+                <div className="mt-3 p-3 bg-blue-50/50 rounded-xl border border-blue-100/50 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-blue-800">{t('Spreadsheet Sync')}</span>
+                    {syncMessage && (
+                      <span className={`text-[9px] font-semibold ${syncMessage.includes('Gagal') || syncMessage.includes('Error') ? 'text-rose-500' : 'text-emerald-600'}`}>{syncMessage}</span>
+                    )}
+                  </div>
+                  <button
+                    onClick={handleManualSync}
+                    disabled={isSyncing}
+                    className="w-full py-1.5 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                  >
+                    <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin' : ''}`} />
+                    <span>{isSyncing ? t('Menyinkronkan...') : t('Sync Spreadsheet')}</span>
+                  </button>
+                </div>
               </div>
             )}
 
@@ -595,11 +634,35 @@ export default function App() {
               </div>
             </div>
 
-            <div className="p-4 bg-slate-50 rounded-xl border border-slate-200">
-              <p className="text-[10px] text-slate-500 mb-1.5 font-bold uppercase tracking-wide">{t('Status Koneksi')}</p>
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></div>
-                <span className="text-[11px] font-semibold text-slate-700">Server: Singapore-01</span>
+            <div className="space-y-3">
+              <div className="p-4 bg-slate-50 rounded-xl border border-slate-200">
+                <p className="text-[10px] text-slate-500 mb-1.5 font-bold uppercase tracking-wide">{t('Status Koneksi')}</p>
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></div>
+                  <span className="text-[11px] font-semibold text-slate-700">Server: Singapore-01</span>
+                </div>
+              </div>
+
+              <div className="p-4 bg-blue-50/50 rounded-xl border border-blue-100 space-y-2.5">
+                <div>
+                  <p className="text-[10px] text-blue-800 font-bold uppercase tracking-wide">{t('Google Spreadsheet')}</p>
+                  <p className="text-[10px] text-slate-500 leading-relaxed mt-1">
+                    {t('Sinkronisasi otomatis aktif per detik. Klik tombol di bawah untuk paksa sinkronisasi sekarang.')}
+                  </p>
+                </div>
+                <button
+                  onClick={handleManualSync}
+                  disabled={isSyncing}
+                  className="w-full py-2 px-3 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-colors shadow-sm cursor-pointer"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin' : ''}`} />
+                  <span>{isSyncing ? t('Menyinkronkan...') : t('Sinkronisasi Manual')}</span>
+                </button>
+                {syncMessage && (
+                  <p className={`text-[9px] text-center font-semibold ${syncMessage.includes('Gagal') || syncMessage.includes('Error') ? 'text-rose-500' : 'text-emerald-600'}`}>
+                    {syncMessage}
+                  </p>
+                )}
               </div>
             </div>
           </aside>
