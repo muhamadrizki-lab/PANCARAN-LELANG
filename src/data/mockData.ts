@@ -109,7 +109,7 @@ export const INITIAL_ASSETS: Asset[] = [
     startingPrice: 280000000,
     highestBid: 280000000,
     status: 'Open',
-    imageUrl: 'https://images.unsplash.com/photo-1578328819058-b69f3a3b0f6b?auto=format&fit=crop&w=800&q=80',
+    imageUrl: 'https://images.unsplash.com/photo-1519003722824-194d4455a60c?auto=format&fit=crop&w=800&q=80',
     bids: []
   },
   {

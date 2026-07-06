@@ -82,13 +82,21 @@ function handleFirestoreError(error: unknown, operationType: OperationType, path
  */
 export async function seedDatabaseIfEmpty() {
   try {
-    const assetsSnapshot = await getDocs(collection(db, ASSETS_COLLECTION));
-    if (assetsSnapshot.empty) {
-      console.log('Seeding initial assets to Firestore...');
-      for (const asset of INITIAL_ASSETS) {
-        await setDoc(doc(db, ASSETS_COLLECTION, asset.id), asset);
+    // Delete any existing default template assets (PL-2026-001 to PL-2026-004)
+    // so that the website only shows custom uploaded/created ones.
+    const defaultTemplateIds = ['PL-2026-001', 'PL-2026-002', 'PL-2026-003', 'PL-2026-004'];
+    for (const templateId of defaultTemplateIds) {
+      try {
+        const docRef = doc(db, ASSETS_COLLECTION, templateId);
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          console.log(`Deleting default template asset ${templateId}...`);
+          await deleteDoc(docRef);
+          console.log(`${templateId} deleted successfully.`);
+        }
+      } catch (err) {
+        console.warn(`Failed to check/delete template asset ${templateId}:`, err);
       }
-      console.log('Assets successfully seeded.');
     }
 
     const adminsSnapshot = await getDocs(collection(db, ADMINS_COLLECTION));

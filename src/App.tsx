@@ -51,7 +51,7 @@ export default function App() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   // Database States (pre-seeded from mockData and stored in localStorage)
-  const [assets, setAssets] = useState<Asset[]>(INITIAL_ASSETS);
+  const [assets, setAssets] = useState<Asset[]>([]);
   const [admins, setAdmins] = useState<AdminUser[]>(INITIAL_ADMINS);
   
   // Selected asset for highlighting or detailed specs in AdminAssets
@@ -65,9 +65,9 @@ export default function App() {
     // Seed default records if empty, then subscribe to collections in real-time
     seedDatabaseIfEmpty().then(() => {
       unsubscribeAssets = subscribeToAssets((updatedAssets) => {
-        if (updatedAssets && updatedAssets.length > 0) {
+        if (updatedAssets) {
           // Keep descending ID order or keep order stable
-          setAssets(updatedAssets.sort((a, b) => b.id.localeCompare(a.id)));
+          setAssets([...updatedAssets].sort((a, b) => b.id.localeCompare(a.id)));
         }
       });
 
@@ -344,9 +344,6 @@ export default function App() {
                     <div className="text-right">
                       <p className="text-white text-xs font-semibold">Admin Digital Solution</p>
                       <p className="text-slate-400 text-[10px] truncate max-w-[150px] font-mono">{loggedInAdminEmail}</p>
-                    </div>
-                    <div className="w-10 h-10 rounded-full bg-blue-950/50 flex items-center justify-center text-blue-300 border border-blue-800/50 font-bold uppercase text-xs shadow-md shadow-blue-500/10">
-                      {loggedInAdminEmail.slice(0, 2).toUpperCase()}
                     </div>
                     <button
                       onClick={handleLogout}
