@@ -117,7 +117,14 @@ export default function AdminAssets({
   const [isDragging, setIsDragging] = useState(false);
   const [editAssetId, setEditAssetId] = useState<string | null>(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [bidDeleteConfirmId, setBidDeleteConfirmId] = useState<string | null>(null);
+  const [surveyCancelConfirmId, setSurveyCancelConfirmId] = useState<string | null>(null);
   const [detailImageIdx, setDetailImageIdx] = useState(0);
+
+  // Bid rescheduling state
+  const [editingBidId, setEditingBidId] = useState<string | null>(null);
+  const [newSurveyDate, setNewSurveyDate] = useState('');
+  const [newSurveyTime, setNewSurveyTime] = useState('');
 
   // States for fullscreen image lightbox
   const [lightboxImages, setLightboxImages] = useState<string[]>([]);
@@ -762,23 +769,187 @@ export default function AdminAssets({
                 {selectedAsset.bids
                   .sort((a, b) => b.price - a.price)
                   .map((bid, i) => (
-                    <div key={bid.id} className="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-1.5 text-xs">
-                      <div className="flex justify-between items-center">
-                        <span className="font-bold text-slate-700">{bid.name}</span>
-                        <span className="font-mono font-bold text-blue-600">{formatIDR(bid.price)}</span>
+                    <div key={bid.id} className="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-1.5 text-xs relative group">
+                      <div className="flex justify-between items-start gap-2">
+                        <div className="flex-1 min-w-0">
+                          <span className="font-bold text-slate-700 block truncate">{bid.name}</span>
+                          <span className="font-mono font-bold text-blue-600 mt-0.5 block">{formatIDR(bid.price)}</span>
+                        </div>
+                        {bidDeleteConfirmId === bid.id ? (
+                          <div className="flex items-center gap-1 bg-rose-50 p-1 rounded-lg border border-rose-100 shrink-0">
+                            <span className="text-[9px] font-bold text-rose-700 shrink-0">{t('Hapus?')}</span>
+                            <button
+                              type="button"
+                              onClick={() => setBidDeleteConfirmId(null)}
+                              className="px-1.5 py-0.5 bg-white text-slate-600 border border-slate-200 rounded text-[9px] font-bold hover:bg-slate-50 cursor-pointer"
+                            >
+                              {t('Batal')}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const updatedBids = selectedAsset.bids.filter(b => b.id !== bid.id);
+                                const highestBid = updatedBids.length > 0
+                                  ? Math.max(...updatedBids.map(b => b.price), selectedAsset.startingPrice)
+                                  : selectedAsset.startingPrice;
+                                onUpdateAsset(selectedAsset.id, { 
+                                  bids: updatedBids,
+                                  highestBid: highestBid
+                                });
+                                setBidDeleteConfirmId(null);
+                              }}
+                              className="px-1.5 py-0.5 bg-rose-600 hover:bg-rose-700 text-white rounded text-[9px] font-bold cursor-pointer"
+                            >
+                              {t('Ya')}
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => setBidDeleteConfirmId(bid.id)}
+                            className="p-1 text-slate-400 hover:text-rose-500 rounded transition-colors cursor-pointer shrink-0"
+                            title={t('Hapus Penawaran')}
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
                       </div>
                       <div className="text-slate-500 flex flex-col gap-0.5">
                         <span>{t('Hubungi')}: {bid.contact}</span>
                         <span>Email: {bid.email}</span>
                       </div>
                       
-                      {/* Survey date if requested */}
-                      {bid.scheduleSurveyDate && (
-                        <div className="mt-1.5 pt-1.5 border-t border-dashed border-slate-200 flex items-center justify-between text-[10px] font-semibold text-blue-600 bg-blue-50/50 px-2 py-1 rounded">
-                          <span className="flex items-center gap-1">
-                            <Calendar className="w-3 h-3" /> {t('Jadwal Survei')}:
-                          </span>
-                          <span>{bid.scheduleSurveyDate} @ {bid.scheduleSurveyTime || 'N/A'} WIB</span>
+                      {/* Survey date if requested, or inline rescheduling */}
+                      {editingBidId === bid.id ? (
+                        <div className="mt-2.5 pt-2 border-t border-dashed border-slate-200 space-y-2.5 bg-blue-50/40 p-2.5 rounded-xl border border-blue-100">
+                          <p className="font-bold text-blue-800 text-[10px] uppercase tracking-wide">{t('Atur Jadwal Baru')}</p>
+                          <div className="grid grid-cols-2 gap-2">
+                            <div className="space-y-0.5">
+                              <label className="text-[9px] text-slate-400 font-bold uppercase">{t('Tanggal')}</label>
+                              <input
+                                type="date"
+                                min={new Date().toISOString().split('T')[0]}
+                                value={newSurveyDate}
+                                onChange={(e) => setNewSurveyDate(e.target.value)}
+                                className="w-full p-1.5 border border-slate-200 rounded-lg text-[10px] font-medium bg-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+                              />
+                            </div>
+                            <div className="space-y-0.5">
+                              <label className="text-[9px] text-slate-400 font-bold uppercase">{t('Sesi Jam')}</label>
+                              <select
+                                value={newSurveyTime}
+                                onChange={(e) => setNewSurveyTime(e.target.value)}
+                                className="w-full p-1.5 border border-slate-200 rounded-lg text-[10px] font-medium bg-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+                              >
+                                <option value="09:00">09:00 WIB</option>
+                                <option value="11:00">11:00 WIB</option>
+                                <option value="13:30">13:30 WIB</option>
+                                <option value="15:30">15:30 WIB</option>
+                              </select>
+                            </div>
+                          </div>
+                          <div className="flex gap-1.5 pt-0.5">
+                            <button
+                              type="button"
+                              onClick={() => setEditingBidId(null)}
+                              className="flex-1 py-1 bg-white hover:bg-slate-100 text-slate-600 border border-slate-200 rounded-md text-[10px] font-bold transition-colors cursor-pointer"
+                            >
+                              {t('Batal')}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                // Find bid and update it
+                                const updatedBids = selectedAsset.bids.map(b => {
+                                  if (b.id === bid.id) {
+                                    return {
+                                      ...b,
+                                      scheduleSurveyDate: newSurveyDate,
+                                      scheduleSurveyTime: newSurveyTime
+                                    };
+                                  }
+                                  return b;
+                                });
+                                onUpdateAsset(selectedAsset.id, { bids: updatedBids });
+                                setEditingBidId(null);
+                              }}
+                              className="flex-1 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-[10px] font-bold transition-colors shadow-xs cursor-pointer"
+                            >
+                              {t('Simpan')}
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="mt-1.5 pt-1.5 border-t border-dashed border-slate-200 flex flex-col gap-1.5">
+                          {bid.scheduleSurveyDate ? (
+                            surveyCancelConfirmId === bid.id ? (
+                              <div className="flex items-center justify-between text-[10px] font-semibold text-rose-700 bg-rose-50 px-2 py-1 rounded gap-1.5 border border-rose-100 animate-fade-in">
+                                <span className="font-bold truncate flex-1">{t('Batalkan survei ini?')}</span>
+                                <div className="flex gap-1 shrink-0">
+                                  <button
+                                    type="button"
+                                    onClick={() => setSurveyCancelConfirmId(null)}
+                                    className="px-1.5 py-0.5 bg-white text-slate-600 border border-slate-200 rounded text-[9px] font-bold hover:bg-slate-50 cursor-pointer"
+                                  >
+                                    {t('Batal')}
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const updatedBids = selectedAsset.bids.map(b => {
+                                        if (b.id === bid.id) {
+                                          const updatedBid = { ...b };
+                                          delete updatedBid.scheduleSurveyDate;
+                                          delete updatedBid.scheduleSurveyTime;
+                                          return updatedBid;
+                                        }
+                                        return b;
+                                      });
+                                      onUpdateAsset(selectedAsset.id, { bids: updatedBids });
+                                      setSurveyCancelConfirmId(null);
+                                    }}
+                                    className="px-1.5 py-0.5 bg-rose-600 hover:bg-rose-700 text-white rounded text-[9px] font-bold cursor-pointer"
+                                  >
+                                    {t('Ya')}
+                                  </button>
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="flex items-center justify-between text-[10px] font-semibold text-blue-600 bg-blue-50/50 px-2 py-1 rounded gap-1.5">
+                                <span className="flex items-center gap-1 min-w-0 flex-1">
+                                  <Calendar className="w-3.5 h-3.5 shrink-0" />
+                                  <span className="truncate">{bid.scheduleSurveyDate} @ {bid.scheduleSurveyTime || 'N/A'} WIB</span>
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => setSurveyCancelConfirmId(bid.id)}
+                                  className="p-0.5 text-blue-400 hover:text-rose-500 rounded transition-colors cursor-pointer shrink-0"
+                                  title={t('Batalkan Booking')}
+                                >
+                                  <X className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            )
+                          ) : (
+                            <div className="text-[9px] text-slate-400 font-medium italic">
+                              {t('Belum ada jadwal survei.')}
+                            </div>
+                          )}
+                          
+                          {selectedAsset.status !== 'Sold' && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setEditingBidId(bid.id);
+                                setNewSurveyDate(bid.scheduleSurveyDate || new Date().toISOString().split('T')[0]);
+                                setNewSurveyTime(bid.scheduleSurveyTime || '09:00');
+                              }}
+                              className="text-left text-[10px] font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1 mt-0.5 cursor-pointer"
+                            >
+                              <Calendar className="w-3 h-3" />
+                              <span>{bid.scheduleSurveyDate ? t('Ubah Jadwal') : t('Atur Jadwal Kunjungan')}</span>
+                            </button>
+                          )}
                         </div>
                       )}
                     </div>

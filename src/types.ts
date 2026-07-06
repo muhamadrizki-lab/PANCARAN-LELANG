@@ -43,4 +43,5 @@ export interface ToastNotification {
   title: string;
   message: string;
   timestamp: Date;
+  assetId?: string;
 }

@@ -30,6 +30,8 @@ import {
 interface CatalogViewProps {
   assets: Asset[];
   onPlaceBid: (assetId: string, bidData: Omit<Bid, 'id' | 'timestamp'>) => void;
+  selectedAssetId?: string | null;
+  onSelectAsset?: (assetId: string | null) => void;
 }
 
 interface CatalogCardProps {
@@ -241,9 +243,12 @@ const renderDescription = (text: string) => {
   );
 };
 
-export default function CatalogView({ assets, onPlaceBid }: CatalogViewProps) {
+export default function CatalogView({ assets, onPlaceBid, selectedAssetId: propSelectedAssetId, onSelectAsset: propOnSelectAsset }: CatalogViewProps) {
   const { t } = useLanguage();
-  const [selectedAssetId, setSelectedAssetId] = useState<string | null>(null);
+  const [internalSelectedAssetId, setInternalSelectedAssetId] = useState<string | null>(null);
+
+  const selectedAssetId = propSelectedAssetId !== undefined ? propSelectedAssetId : internalSelectedAssetId;
+  const setSelectedAssetId = propOnSelectAsset !== undefined ? propOnSelectAsset : setInternalSelectedAssetId;
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedBrand, setSelectedBrand] = useState('all');
   const [selectedCategory, setSelectedCategory] = useState('all');

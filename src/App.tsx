@@ -39,7 +39,8 @@ import {
   RefreshCw,
   Bell,
   CheckCircle,
-  AlertCircle
+  AlertCircle,
+  Trash2
 } from 'lucide-react';
 
 export default function App() {
@@ -70,6 +71,44 @@ export default function App() {
   // Toast notifications state
   const [notifications, setNotifications] = useState<ToastNotification[]>([]);
 
+  // Persistent notification history list
+  const [notificationHistory, setNotificationHistory] = useState<ToastNotification[]>(() => {
+    try {
+      const stored = localStorage.getItem('pancaran_notification_history');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        return parsed.map((item: any) => ({
+          ...item,
+          timestamp: new Date(item.timestamp)
+        }));
+      }
+    } catch (e) {
+      console.error("Failed to load notifications history", e);
+    }
+    return [];
+  });
+
+  const [unreadCount, setUnreadCount] = useState<number>(() => {
+    const stored = localStorage.getItem('pancaran_unread_notif_count');
+    return stored ? parseInt(stored, 10) : 0;
+  });
+
+  const [isNotifOpen, setIsNotifOpen] = useState(false);
+  const [bookingCancelConfirmId, setBookingCancelConfirmId] = useState<string | null>(null);
+  const notifRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (notifRef.current && !notifRef.current.contains(event.target as Node)) {
+        setIsNotifOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
   // Tracking refs to identify real-time changes
   const assetsLoadedRef = useRef(false);
   const prevAssetsRef = useRef<Asset[]>([]);
@@ -84,15 +123,147 @@ export default function App() {
     }).format(value);
   };
 
-  const addNotification = (type: 'info' | 'success' | 'warning' | 'bid' | 'sync', title: string, message: string) => {
+  const addNotification = (type: 'info' | 'success' | 'warning' | 'bid' | 'sync', title: string, message: string, assetId?: string) => {
     const id = Math.random().toString(36).substring(2, 9);
-    const newNotif: ToastNotification = { id, type, title, message, timestamp: new Date() };
+    const newNotif: ToastNotification = { id, type, title, message, timestamp: new Date(), assetId };
     setNotifications(prev => [newNotif, ...prev].slice(0, 5));
     
+    // Save to persistent notification history
+    setNotificationHistory(prev => {
+      const updated = [newNotif, ...prev].slice(0, 50); // Keep last 50
+      localStorage.setItem('pancaran_notification_history', JSON.stringify(updated));
+      return updated;
+    });
+
+    setUnreadCount(prev => {
+      const next = prev + 1;
+      localStorage.setItem('pancaran_unread_notif_count', String(next));
+      return next;
+    });
+
     // Auto remove after 6 seconds
     setTimeout(() => {
       setNotifications(prev => prev.filter(n => n.id !== id));
     }, 6000);
+  };
+
+  const handleOpenNotifications = () => {
+    setIsNotifOpen(!isNotifOpen);
+    setUnreadCount(0);
+    localStorage.setItem('pancaran_unread_notif_count', '0');
+  };
+
+  const handleClearNotifications = () => {
+    setNotificationHistory([]);
+    setUnreadCount(0);
+    localStorage.removeItem('pancaran_notification_history');
+    localStorage.setItem('pancaran_unread_notif_count', '0');
+  };
+
+  const handleDeleteNotification = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setNotificationHistory(prev => {
+      const updated = prev.filter(n => n.id !== id);
+      localStorage.setItem('pancaran_notification_history', JSON.stringify(updated));
+      return updated;
+    });
+  };
+
+  const handleCancelBookingSchedule = async (assetId: string, bidId: string, bypassConfirm: boolean = false) => {
+    if (!bypassConfirm && !window.confirm(t('Apakah Anda yakin ingin membatalkan jadwal booking survei ini?'))) {
+      return;
+    }
+
+    const targetAsset = assets.find(a => a.id === assetId);
+    if (!targetAsset) return;
+
+    const updatedBids = (targetAsset.bids || []).map(b => {
+      if (b.id === bidId) {
+        // Clear schedule survey info
+        const updatedBid = { ...b };
+        delete updatedBid.scheduleSurveyDate;
+        delete updatedBid.scheduleSurveyTime;
+        return updatedBid;
+      }
+      return b;
+    });
+
+    // Optimistic local state update
+    setAssets(prev => prev.map(a => {
+      if (a.id === assetId) {
+        return {
+          ...a,
+          bids: updatedBids
+        };
+      }
+      return a;
+    }));
+
+    try {
+      await updateAssetInDb(assetId, { bids: updatedBids });
+      addNotification(
+        'info',
+        t('Jadwal Survei Dibatalkan'),
+        `${t('Jadwal kunjungan telah dibatalkan.')}`,
+        assetId
+      );
+    } catch (error) {
+      console.warn("Firebase offline or error, saved locally:", error);
+    }
+  };
+
+  const [notifTab, setNotifTab] = useState<'logs' | 'bookings'>('logs');
+
+  const handleNotificationClick = (notif: ToastNotification) => {
+    if (notif.assetId) {
+      if (isAdminLoggedIn) {
+        setRole('internal');
+        setAdminTab('assets');
+        setSelectedAssetId(notif.assetId);
+      } else {
+        setRole('external');
+        setSelectedAssetId(notif.assetId);
+      }
+      setIsNotifOpen(false);
+    }
+  };
+
+  const getBookingsList = () => {
+    const list: Array<{
+      assetId: string;
+      assetName: string;
+      assetBrand: string;
+      bidId: string;
+      name: string;
+      email: string;
+      contact: string;
+      price: number;
+      date: string;
+      time: string;
+      timestamp: string;
+    }> = [];
+    assets.forEach(asset => {
+      if (asset.bids) {
+        asset.bids.forEach(bid => {
+          if (bid.scheduleSurveyDate) {
+            list.push({
+              assetId: asset.id,
+              assetName: asset.name,
+              assetBrand: asset.brand,
+              bidId: bid.id,
+              name: bid.name,
+              email: bid.email,
+              contact: bid.contact,
+              price: bid.price,
+              date: bid.scheduleSurveyDate,
+              time: bid.scheduleSurveyTime || '09:00',
+              timestamp: bid.timestamp
+            });
+          }
+        });
+      }
+    });
+    return list.sort((a, b) => new Date(`${b.date}T${b.time}`).getTime() - new Date(`${a.date}T${a.time}`).getTime());
   };
 
   const handleManualSync = async () => {
@@ -141,7 +312,8 @@ export default function App() {
                 addNotification(
                   'success',
                   t('Armada Baru Terdaftar'),
-                  `${asset.brand} ${asset.name} (${asset.id}) ${t('telah terdaftar di katalog.')}`
+                  `${asset.brand} ${asset.name} (${asset.id}) ${t('telah terdaftar di katalog.')}`,
+                  asset.id
                 );
               } else {
                 // Check if bids increased
@@ -149,20 +321,52 @@ export default function App() {
                   // Find new bids
                   const newBids = asset.bids.filter(b => !prevAsset.bids.some(pb => pb.id === b.id || pb.timestamp === b.timestamp));
                   newBids.forEach(bid => {
+                    let surveyDetail = '';
+                    if (bid.scheduleSurveyDate) {
+                      surveyDetail = ` & ${t('booking jadwal survei')} ${bid.scheduleSurveyDate} @ ${bid.scheduleSurveyTime || '09:00'} WIB`;
+                    }
                     addNotification(
                       'bid',
                       t('Penawaran Baru Masuk'),
-                      `${bid.name} ${t('menawar')} ${formatIDR(bid.price)} ${t('untuk')} ${asset.brand} ${asset.name}`
+                      `${bid.name} ${t('menawar')} ${formatIDR(bid.price)} ${t('untuk')} ${asset.brand} ${asset.name}${surveyDetail}`,
+                      asset.id
                     );
                   });
                 }
+
+                // Check if any bid's schedule survey date or time changed (booking schedule updates!)
+                asset.bids.forEach(bid => {
+                  const prevBid = prevAsset.bids.find(pb => pb.id === bid.id);
+                  if (prevBid) {
+                    const dateChanged = bid.scheduleSurveyDate !== prevBid.scheduleSurveyDate;
+                    const timeChanged = bid.scheduleSurveyTime !== prevBid.scheduleSurveyTime;
+                    if (dateChanged || timeChanged) {
+                      if (bid.scheduleSurveyDate) {
+                        addNotification(
+                          'success',
+                          t('Jadwal Survei Diperbarui'),
+                          `${t('Jadwal kunjungan')} ${bid.name} ${t('diperbarui menjadi')} ${bid.scheduleSurveyDate} @ ${bid.scheduleSurveyTime || '09:00'} WIB (${asset.brand} ${asset.name})`,
+                          asset.id
+                        );
+                      } else {
+                        addNotification(
+                          'warning',
+                          t('Jadwal Survei Dibatalkan'),
+                          `${t('Jadwal kunjungan')} ${bid.name} ${t('telah dibatalkan.')}`,
+                          asset.id
+                        );
+                      }
+                    }
+                  }
+                });
                 
                 // Check if status changed
                 if (asset.status !== prevAsset.status) {
                   addNotification(
                     'info',
                     t('Status Unit Diperbarui'),
-                    `Unit ${asset.brand} ${asset.name} (${asset.id}) ${t('sekarang berstatus')} ${asset.status === 'Open' ? t('Buka / Aktif') : t('Sold / Terjual')}`
+                    `Unit ${asset.brand} ${asset.name} (${asset.id}) ${t('sekarang berstatus')} ${asset.status === 'Open' ? t('Buka / Aktif') : t('Sold / Terjual')}`,
+                    asset.id
                   );
                 }
                 
@@ -173,7 +377,8 @@ export default function App() {
                   addNotification(
                     'info',
                     t('Spesifikasi Diperbarui'),
-                    `${t('Informasi unit')} ${asset.id} (${asset.brand} ${asset.name}) ${t('telah diperbarui.')}`
+                    `${t('Informasi unit')} ${asset.id} (${asset.brand} ${asset.name}) ${t('telah diperbarui.')}`,
+                    asset.id
                   );
                 }
               }
@@ -186,7 +391,8 @@ export default function App() {
                 addNotification(
                   'warning',
                   t('Unit Dihapus'),
-                  `${t('Unit')} ${prevAsset.brand} ${prevAsset.name} (${prevAsset.id}) ${t('telah dihapus dari sistem.')}`
+                  `${t('Unit')} ${prevAsset.brand} ${prevAsset.name} (${prevAsset.id}) ${t('telah dihapus dari sistem.')}`,
+                  prevAsset.id
                 );
               }
             });
@@ -395,12 +601,15 @@ export default function App() {
       
       {/* Sleek, Sticky Header / Navigation with a premium dark blue and light blue color harmony */}
       <header 
-        className="sticky top-0 z-40 shadow-lg text-white border-b border-blue-500/20 overflow-hidden bg-gradient-to-r from-slate-950 via-blue-950 to-slate-950"
+        className="sticky top-0 z-40 shadow-lg text-white border-b border-blue-500/20 bg-gradient-to-r from-slate-950 via-blue-950 to-slate-950"
         id="main-navigation-header"
       >
-        {/* Soft, multi-layered light blue and cyan ambient glows */}
-        <div className="absolute -top-10 left-1/4 w-96 h-20 bg-blue-500/15 rounded-full blur-3xl pointer-events-none animate-pulse" style={{ animationDuration: '6s' }}></div>
-        <div className="absolute -bottom-10 right-1/4 w-80 h-16 bg-cyan-400/15 rounded-full blur-3xl pointer-events-none animate-pulse" style={{ animationDuration: '4s' }}></div>
+        {/* Glow Container to prevent overflow issues of absolute elements */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none rounded-b-xl" id="header-glows-container">
+          {/* Soft, multi-layered light blue and cyan ambient glows */}
+          <div className="absolute -top-10 left-1/4 w-96 h-20 bg-blue-500/15 rounded-full blur-3xl pointer-events-none animate-pulse" style={{ animationDuration: '6s' }}></div>
+          <div className="absolute -bottom-10 right-1/4 w-80 h-16 bg-cyan-400/15 rounded-full blur-3xl pointer-events-none animate-pulse" style={{ animationDuration: '4s' }}></div>
+        </div>
         
         {/* Glowing light blue bottom accent line */}
         <div className="absolute bottom-0 left-0 right-0 h-[1.5px] bg-gradient-to-r from-transparent via-blue-400/80 to-transparent"></div>
@@ -497,6 +706,223 @@ export default function App() {
                 </button>
               </div>
 
+              {/* Notification Popover */}
+              <div ref={notifRef} className="relative">
+                <button
+                  onClick={handleOpenNotifications}
+                  className="p-1.5 hover:bg-slate-800/80 text-slate-300 hover:text-white rounded-lg transition-colors border border-transparent hover:border-slate-700/50 relative cursor-pointer flex items-center justify-center"
+                  title={t('Notifikasi Terkini')}
+                >
+                  <Bell className={`w-4.5 h-4.5 ${unreadCount > 0 ? 'text-amber-400 animate-pulse' : ''}`} />
+                  {unreadCount > 0 && (
+                    <span className="absolute -top-0.5 -right-0.5 bg-rose-500 text-white text-[8px] font-extrabold px-1 py-0.5 rounded-full min-w-4 text-center leading-none">
+                      {unreadCount}
+                    </span>
+                  )}
+                </button>
+
+                {/* Notifications Dropdown Panel */}
+                <AnimatePresence>
+                  {isNotifOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                      transition={{ duration: 0.15 }}
+                      className="absolute right-0 mt-2.5 w-80 bg-white rounded-2xl border border-slate-200/80 shadow-2xl z-50 overflow-hidden font-sans text-slate-800"
+                    >
+                      <div className="p-3.5 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
+                        <div className="flex items-center gap-1.5">
+                          <Bell className="w-4 h-4 text-blue-600" />
+                          <span className="font-bold text-xs text-slate-800 uppercase tracking-wide">{t('Notifikasi Terkini')}</span>
+                        </div>
+                        {notifTab === 'logs' && notificationHistory.length > 0 && (
+                          <button
+                            onClick={handleClearNotifications}
+                            className="text-[10px] text-slate-400 hover:text-rose-500 font-bold transition-colors uppercase cursor-pointer"
+                          >
+                            {t('Bersihkan')}
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Tab Switcher */}
+                      <div className="flex border-b border-slate-100 bg-slate-50 p-1">
+                        <button
+                          onClick={() => setNotifTab('logs')}
+                          className={`flex-1 py-1.5 text-[10px] font-bold rounded-lg transition-all flex items-center justify-center gap-1 cursor-pointer ${
+                            notifTab === 'logs'
+                              ? 'bg-white text-blue-600 shadow-sm'
+                              : 'text-slate-500 hover:text-slate-800'
+                          }`}
+                        >
+                          <span>🔔</span> {t('Log Notifikasi')}
+                        </button>
+                        <button
+                          onClick={() => setNotifTab('bookings')}
+                          className={`flex-1 py-1.5 text-[10px] font-bold rounded-lg transition-all flex items-center justify-center gap-1 cursor-pointer ${
+                            notifTab === 'bookings'
+                              ? 'bg-white text-blue-600 shadow-sm'
+                              : 'text-slate-500 hover:text-slate-800'
+                          }`}
+                        >
+                          <span>📅</span> {t('Daftar Booking')} ({getBookingsList().length})
+                        </button>
+                      </div>
+
+                      <div className="max-h-72 overflow-y-auto divide-y divide-slate-100">
+                        {notifTab === 'logs' ? (
+                          notificationHistory.length > 0 ? (
+                            notificationHistory.map((notif) => (
+                              <div 
+                                key={notif.id} 
+                                onClick={() => handleNotificationClick(notif)}
+                                className={`p-3 hover:bg-slate-50/75 transition-colors flex items-start gap-2.5 text-left relative group ${notif.assetId ? 'cursor-pointer border-l-2 border-l-blue-500/30' : ''}`}
+                              >
+                                <div className="mt-0.5 shrink-0">
+                                  {notif.type === 'bid' && <span className="text-blue-500 text-sm">💰</span>}
+                                  {notif.type === 'success' && <span className="text-emerald-500 text-sm">📅</span>}
+                                  {notif.type === 'info' && <span className="text-indigo-500 text-sm">ℹ️</span>}
+                                  {notif.type === 'warning' && <span className="text-amber-500 text-sm">⚠️</span>}
+                                  {notif.type === 'sync' && <span className="text-sky-500 text-sm">🔄</span>}
+                                </div>
+                                <div className="space-y-0.5 flex-1 min-w-0 pr-5">
+                                  <p className="font-bold text-slate-800 text-[11px] leading-tight truncate">{notif.title}</p>
+                                  <p className="text-[10px] text-slate-500 leading-normal font-medium whitespace-normal break-words">{notif.message}</p>
+                                  {notif.assetId && (
+                                    <span className="inline-flex items-center gap-0.5 text-[9px] text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded font-bold mt-1">
+                                      {t('Lihat Unit')} &rarr;
+                                    </span>
+                                  )}
+                                  <p className="text-[9px] text-slate-400 font-mono mt-1">
+                                    {notif.timestamp ? new Date(notif.timestamp).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) : ''}
+                                  </p>
+                                </div>
+                                <button
+                                  onClick={(e) => handleDeleteNotification(notif.id, e)}
+                                  className="p-1 text-slate-300 hover:text-rose-500 rounded transition-colors cursor-pointer"
+                                  title={t('Hapus')}
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            ))
+                          ) : (
+                            <div className="py-8 px-4 text-center text-slate-400 text-xs flex flex-col items-center justify-center gap-1.5 font-medium">
+                              <span className="text-xl">🔔</span>
+                              <span>{t('Tidak ada notifikasi baru')}</span>
+                            </div>
+                          )
+                        ) : (
+                          /* Bookings Tab */
+                          getBookingsList().length > 0 ? (
+                            getBookingsList().map((booking) => (
+                              <div 
+                                key={booking.bidId}
+                                className="p-3 hover:bg-slate-50/75 transition-colors flex flex-col gap-1.5 text-left border-l-2 border-l-emerald-500/30"
+                              >
+                                <div className="flex items-center justify-between">
+                                  <span className="text-[9px] font-mono font-bold bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded truncate max-w-[80px]">
+                                    {booking.assetId}
+                                  </span>
+                                  <span className="text-[10px] font-extrabold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded-full">
+                                    📅 {booking.date} @ {booking.time}
+                                  </span>
+                                </div>
+
+                                <div className="space-y-0.5">
+                                  <h4 className="font-bold text-slate-800 text-xs truncate leading-tight">
+                                    {booking.assetBrand} {booking.assetName}
+                                  </h4>
+                                  <p className="text-[10px] text-slate-600 font-semibold truncate">
+                                    👤 {booking.name} ({booking.contact})
+                                  </p>
+                                  <p className="text-[9px] text-slate-400 font-medium truncate">
+                                    ✉️ {booking.email}
+                                  </p>
+                                  <p className="text-[10px] text-emerald-600 font-bold font-mono">
+                                    💰 {formatIDR(booking.price)}
+                                  </p>
+                                </div>
+
+                                <div className="flex items-center gap-1.5 pt-1">
+                                  <button
+                                    onClick={() => {
+                                      const mockNotif: ToastNotification = {
+                                        id: booking.bidId,
+                                        type: 'success',
+                                        title: 'View',
+                                        message: '',
+                                        timestamp: new Date(),
+                                        assetId: booking.assetId
+                                      };
+                                      handleNotificationClick(mockNotif);
+                                    }}
+                                    className="flex-1 py-1 text-center bg-blue-600 hover:bg-blue-700 text-white font-bold text-[9px] rounded-lg transition-all cursor-pointer"
+                                  >
+                                    {t('Lihat Unit')}
+                                  </button>
+                                  <a
+                                    href={`https://wa.me/${booking.contact.replace(/\D/g, '') || '#'}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="px-2 py-1 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 font-bold text-[9px] rounded-lg transition-all border border-emerald-200/50 flex items-center justify-center gap-0.5"
+                                  >
+                                    📱 {t('Hubungi')}
+                                  </a>
+                                  {bookingCancelConfirmId === booking.bidId ? (
+                                    <div className="flex items-center gap-1 bg-rose-50 p-1 rounded-lg border border-rose-200/50">
+                                      <button
+                                        type="button"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setBookingCancelConfirmId(null);
+                                        }}
+                                        className="px-1.5 py-0.5 bg-white text-slate-600 rounded text-[8px] font-bold hover:bg-slate-50 border border-slate-200 cursor-pointer animate-fade-in"
+                                      >
+                                        {t('Batal')}
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleCancelBookingSchedule(booking.assetId, booking.bidId, true);
+                                          setBookingCancelConfirmId(null);
+                                        }}
+                                        className="px-1.5 py-0.5 bg-rose-600 hover:bg-rose-700 text-white rounded text-[8px] font-bold cursor-pointer animate-fade-in"
+                                      >
+                                        {t('Ya')}
+                                      </button>
+                                    </div>
+                                  ) : (
+                                    <button
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setBookingCancelConfirmId(booking.bidId);
+                                      }}
+                                      className="px-2 py-1 bg-rose-50 text-rose-500 hover:bg-rose-100 border border-rose-200/50 hover:border-rose-300 font-bold text-[9px] rounded-lg transition-all flex items-center justify-center cursor-pointer"
+                                      title={t('Batalkan Booking')}
+                                    >
+                                      <Trash2 className="w-3.5 h-3.5" />
+                                    </button>
+                                  )}
+                                </div>
+                              </div>
+                            ))
+                          ) : (
+                            <div className="py-8 px-4 text-center text-slate-400 text-xs flex flex-col items-center justify-center gap-1.5 font-medium">
+                              <span className="text-xl">📅</span>
+                              <span>{t('Belum ada jadwal booking survei.')}</span>
+                            </div>
+                          )
+                        )}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+
               {/* Logged In Info */}
               <div className="flex items-center gap-4">
                 {isAdminLoggedIn ? (
@@ -549,6 +975,223 @@ export default function App() {
                 >
                   EN
                 </button>
+              </div>
+
+              {/* Mobile Notification Popover */}
+              <div className="relative">
+                <button
+                  onClick={handleOpenNotifications}
+                  className="p-1 text-slate-300 hover:text-white rounded-lg transition-colors relative cursor-pointer flex items-center justify-center"
+                  title={t('Notifikasi Terkini')}
+                >
+                  <Bell className={`w-4 h-5 ${unreadCount > 0 ? 'text-amber-400 animate-pulse' : ''}`} />
+                  {unreadCount > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-rose-500 text-white text-[7px] font-extrabold px-1 rounded-full min-w-3 text-center leading-none">
+                      {unreadCount}
+                    </span>
+                  )}
+                </button>
+
+                {/* Mobile Dropdown Panel */}
+                <AnimatePresence>
+                  {isNotifOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                      transition={{ duration: 0.15 }}
+                      className="absolute right-0 mt-2.5 w-80 bg-white rounded-2xl border border-slate-200/80 shadow-2xl z-50 overflow-hidden font-sans text-slate-800"
+                    >
+                      <div className="p-3 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
+                        <div className="flex items-center gap-1.5">
+                          <Bell className="w-4 h-4 text-blue-600" />
+                          <span className="font-bold text-xs text-slate-800 uppercase tracking-wide">{t('Notifikasi Terkini')}</span>
+                        </div>
+                        {notifTab === 'logs' && notificationHistory.length > 0 && (
+                          <button
+                            onClick={handleClearNotifications}
+                            className="text-[10px] text-slate-400 hover:text-rose-500 font-bold transition-colors uppercase cursor-pointer"
+                          >
+                            {t('Bersihkan')}
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Mobile Tab Switcher */}
+                      <div className="flex border-b border-slate-100 bg-slate-50 p-1">
+                        <button
+                          onClick={() => setNotifTab('logs')}
+                          className={`flex-1 py-1.5 text-[10px] font-bold rounded-lg transition-all flex items-center justify-center gap-1 cursor-pointer ${
+                            notifTab === 'logs'
+                              ? 'bg-white text-blue-600 shadow-sm'
+                              : 'text-slate-500 hover:text-slate-800'
+                          }`}
+                        >
+                          <span>🔔</span> {t('Log Notifikasi')}
+                        </button>
+                        <button
+                          onClick={() => setNotifTab('bookings')}
+                          className={`flex-1 py-1.5 text-[10px] font-bold rounded-lg transition-all flex items-center justify-center gap-1 cursor-pointer ${
+                            notifTab === 'bookings'
+                              ? 'bg-white text-blue-600 shadow-sm'
+                              : 'text-slate-500 hover:text-slate-800'
+                          }`}
+                        >
+                          <span>📅</span> {t('Daftar Booking')} ({getBookingsList().length})
+                        </button>
+                      </div>
+
+                      <div className="max-h-64 overflow-y-auto divide-y divide-slate-100">
+                        {notifTab === 'logs' ? (
+                          notificationHistory.length > 0 ? (
+                            notificationHistory.map((notif) => (
+                              <div 
+                                key={notif.id} 
+                                onClick={() => handleNotificationClick(notif)}
+                                className={`p-3 hover:bg-slate-50/75 transition-colors flex items-start gap-2 text-left relative group ${notif.assetId ? 'cursor-pointer border-l-2 border-l-blue-500/30' : ''}`}
+                              >
+                                <div className="mt-0.5 shrink-0">
+                                  {notif.type === 'bid' && <span className="text-blue-500 text-sm">💰</span>}
+                                  {notif.type === 'success' && <span className="text-emerald-500 text-sm">📅</span>}
+                                  {notif.type === 'info' && <span className="text-indigo-500 text-sm">ℹ️</span>}
+                                  {notif.type === 'warning' && <span className="text-amber-500 text-sm">⚠️</span>}
+                                  {notif.type === 'sync' && <span className="text-sky-500 text-sm">🔄</span>}
+                                </div>
+                                <div className="space-y-0.5 flex-1 min-w-0 pr-5">
+                                  <p className="font-bold text-slate-800 text-[11px] leading-tight truncate">{notif.title}</p>
+                                  <p className="text-[10px] text-slate-500 leading-normal font-medium whitespace-normal break-words">{notif.message}</p>
+                                  {notif.assetId && (
+                                    <span className="inline-flex items-center gap-0.5 text-[9px] text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded font-bold mt-1">
+                                      {t('Lihat Unit')} &rarr;
+                                    </span>
+                                  )}
+                                  <p className="text-[9px] text-slate-400 font-mono mt-1">
+                                    {notif.timestamp ? new Date(notif.timestamp).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) : ''}
+                                  </p>
+                                </div>
+                                <button
+                                  onClick={(e) => handleDeleteNotification(notif.id, e)}
+                                  className="p-1 text-slate-300 hover:text-rose-500 rounded transition-colors cursor-pointer"
+                                  title={t('Hapus')}
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            ))
+                          ) : (
+                            <div className="py-6 px-4 text-center text-slate-400 text-xs flex flex-col items-center justify-center gap-1.5 font-medium">
+                              <span className="text-xl">🔔</span>
+                              <span>{t('Tidak ada notifikasi baru')}</span>
+                            </div>
+                          )
+                        ) : (
+                          /* Bookings Tab */
+                          getBookingsList().length > 0 ? (
+                            getBookingsList().map((booking) => (
+                              <div 
+                                key={booking.bidId}
+                                className="p-3 hover:bg-slate-50/75 transition-colors flex flex-col gap-1.5 text-left border-l-2 border-l-emerald-500/30"
+                              >
+                                <div className="flex items-center justify-between">
+                                  <span className="text-[9px] font-mono font-bold bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded truncate max-w-[80px]">
+                                    {booking.assetId}
+                                  </span>
+                                  <span className="text-[10px] font-extrabold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded-full">
+                                    📅 {booking.date} @ {booking.time}
+                                  </span>
+                                </div>
+
+                                <div className="space-y-0.5">
+                                  <h4 className="font-bold text-slate-800 text-xs truncate leading-tight">
+                                    {booking.assetBrand} {booking.assetName}
+                                  </h4>
+                                  <p className="text-[10px] text-slate-600 font-semibold truncate">
+                                    👤 {booking.name} ({booking.contact})
+                                  </p>
+                                  <p className="text-[9px] text-slate-400 font-medium truncate">
+                                    ✉️ {booking.email}
+                                  </p>
+                                  <p className="text-[10px] text-emerald-600 font-bold font-mono">
+                                    💰 {formatIDR(booking.price)}
+                                  </p>
+                                </div>
+
+                                <div className="flex items-center gap-1.5 pt-1">
+                                  <button
+                                    onClick={() => {
+                                      const mockNotif: ToastNotification = {
+                                        id: booking.bidId,
+                                        type: 'success',
+                                        title: 'View',
+                                        message: '',
+                                        timestamp: new Date(),
+                                        assetId: booking.assetId
+                                      };
+                                      handleNotificationClick(mockNotif);
+                                    }}
+                                    className="flex-1 py-1 text-center bg-blue-600 hover:bg-blue-700 text-white font-bold text-[9px] rounded-lg transition-all cursor-pointer"
+                                  >
+                                    {t('Lihat Unit')}
+                                  </button>
+                                  <a
+                                    href={`https://wa.me/${booking.contact.replace(/\D/g, '') || '#'}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="px-2 py-1 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 font-bold text-[9px] rounded-lg transition-all border border-emerald-200/50 flex items-center justify-center gap-0.5"
+                                  >
+                                    📱 {t('Hubungi')}
+                                  </a>
+                                  {bookingCancelConfirmId === booking.bidId ? (
+                                    <div className="flex items-center gap-1 bg-rose-50 p-1 rounded-lg border border-rose-200/50">
+                                      <button
+                                        type="button"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setBookingCancelConfirmId(null);
+                                        }}
+                                        className="px-1.5 py-0.5 bg-white text-slate-600 rounded text-[8px] font-bold hover:bg-slate-50 border border-slate-200 cursor-pointer animate-fade-in"
+                                      >
+                                        {t('Batal')}
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleCancelBookingSchedule(booking.assetId, booking.bidId, true);
+                                          setBookingCancelConfirmId(null);
+                                        }}
+                                        className="px-1.5 py-0.5 bg-rose-600 hover:bg-rose-700 text-white rounded text-[8px] font-bold cursor-pointer animate-fade-in"
+                                      >
+                                        {t('Ya')}
+                                      </button>
+                                    </div>
+                                  ) : (
+                                    <button
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setBookingCancelConfirmId(booking.bidId);
+                                      }}
+                                      className="px-2 py-1 bg-rose-50 text-rose-500 hover:bg-rose-100 border border-rose-200/50 hover:border-rose-300 font-bold text-[9px] rounded-lg transition-all flex items-center justify-center cursor-pointer"
+                                      title={t('Batalkan Booking')}
+                                    >
+                                      <Trash2 className="w-3.5 h-3.5" />
+                                    </button>
+                                  )}
+                                </div>
+                              </div>
+                            ))
+                          ) : (
+                            <div className="py-6 px-4 text-center text-slate-400 text-xs flex flex-col items-center justify-center gap-1.5 font-medium">
+                              <span className="text-xl">📅</span>
+                              <span>{t('Belum ada jadwal booking survei.')}</span>
+                            </div>
+                          )
+                        )}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
 
               {isAdminLoggedIn && (
@@ -808,6 +1451,8 @@ export default function App() {
             <CatalogView 
               assets={assets} 
               onPlaceBid={handlePlaceBid} 
+              selectedAssetId={selectedAssetId}
+              onSelectAsset={setSelectedAssetId}
             />
           ) : (
             <div className="py-24 text-center max-w-md mx-auto space-y-4">
