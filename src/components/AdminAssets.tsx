@@ -385,7 +385,7 @@ export default function AdminAssets({
         <div className={`space-y-6 transition-all duration-300 ${selectedAssetId ? 'lg:col-span-2' : 'lg:col-span-3'}`} id="assets-list-container">
           
           {/* Filters & Search Row */}
-          <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+          <div className="bg-white p-4 rounded-2xl border border-slate-200 border-l-[6px] border-l-slate-300 shadow-sm space-y-4">
             
             {/* Search and Brand Filter */}
             <div className="flex flex-col md:flex-row gap-3">
@@ -464,10 +464,12 @@ export default function AdminAssets({
                 <div
                   key={asset.id}
                   onClick={() => onSelectAsset(isSelected ? null : asset.id)}
-                  className={`cursor-pointer group relative bg-white rounded-2xl overflow-hidden border transition-all duration-300 flex flex-col justify-between ${
+                  className={`cursor-pointer group relative bg-white rounded-2xl overflow-hidden border border-l-[6px] border-l-slate-300 transition-all duration-300 flex flex-col justify-between ${
                     isSelected 
-                      ? 'border-blue-500 ring-2 ring-blue-500/10 shadow-lg' 
-                      : 'border-slate-200 hover:border-blue-200 hover:shadow-md'
+                      ? 'border-blue-500 ring-2 ring-blue-500/10 shadow-lg scale-[1.01] z-10' 
+                      : selectedAssetId 
+                        ? 'border-slate-200 opacity-30 brightness-[0.75] saturate-50 hover:opacity-95 hover:brightness-100 hover:saturate-100'
+                        : 'border-slate-200 hover:border-blue-200 hover:shadow-md'
                   }`}
                 >
                   {/* Visual Status Tag on Image */}
@@ -475,8 +477,16 @@ export default function AdminAssets({
                     <img 
                       src={asset.imageUrl} 
                       alt={asset.name} 
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 cursor-zoom-in"
                       referrerPolicy="no-referrer"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        const imgs = asset.imageUrls && asset.imageUrls.length > 0 
+                          ? asset.imageUrls 
+                          : [asset.imageUrl];
+                        setLightboxImages(imgs);
+                        setLightboxIndex(0);
+                      }}
                       onError={(e) => {
                         e.currentTarget.src = "https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?auto=format&fit=crop&w=800&q=80";
                       }}

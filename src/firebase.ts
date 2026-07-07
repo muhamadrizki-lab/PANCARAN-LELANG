@@ -106,6 +106,31 @@ export async function triggerAppsScriptSync() {
 }
 
 /**
+ * Recursively cleans data to remove properties with 'undefined' values before writing to Firestore.
+ */
+function sanitizeData<T>(obj: T): T {
+  if (obj === null || obj === undefined) {
+    return obj;
+  }
+
+  if (Array.isArray(obj)) {
+    return obj.map(item => sanitizeData(item)) as unknown as T;
+  }
+
+  if (typeof obj === 'object' && !(obj instanceof Date)) {
+    const cleaned: Record<string, any> = {};
+    for (const [key, value] of Object.entries(obj)) {
+      if (value !== undefined) {
+        cleaned[key] = sanitizeData(value);
+      }
+    }
+    return cleaned as unknown as T;
+  }
+
+  return obj;
+}
+
+/**
  * Seeds initial data into Firestore if collections are empty.
  */
 export async function seedDatabaseIfEmpty() {
@@ -186,7 +211,7 @@ export async function addAssetToDb(asset: Omit<Asset, 'id'> & { id?: string }): 
       id: finalId,
       bids: asset.bids || []
     };
-    await setDoc(doc(db, ASSETS_COLLECTION, finalId), assetWithId);
+    await setDoc(doc(db, ASSETS_COLLECTION, finalId), sanitizeData(assetWithId));
     triggerAppsScriptSync(); // Trigger background spreadsheet sync
     return finalId;
   } catch (error) {
@@ -201,7 +226,7 @@ export async function addAssetToDb(asset: Omit<Asset, 'id'> & { id?: string }): 
 export async function updateAssetInDb(id: string, updates: Partial<Asset>): Promise<void> {
   const path = `${ASSETS_COLLECTION}/${id}`;
   try {
-    await updateDoc(doc(db, ASSETS_COLLECTION, id), updates);
+    await updateDoc(doc(db, ASSETS_COLLECTION, id), sanitizeData(updates));
     triggerAppsScriptSync(); // Trigger background spreadsheet sync
   } catch (error) {
     handleFirestoreError(error, OperationType.UPDATE, path);
@@ -239,10 +264,10 @@ export async function addBidToAsset(assetId: string, bid: Bid): Promise<void> {
       ? Math.max(...scheduledBids.map(b => b.price), currentAsset.startingPrice)
       : currentAsset.startingPrice;
 
-    await updateDoc(assetRef, {
+    await updateDoc(assetRef, sanitizeData({
       bids: updatedBids,
       highestBid: highestBid
-    });
+    }));
     triggerAppsScriptSync(); // Trigger background spreadsheet sync
   } catch (error) {
     handleFirestoreError(error, OperationType.UPDATE, path);
@@ -255,7 +280,7 @@ export async function addBidToAsset(assetId: string, bid: Bid): Promise<void> {
 export async function addAdminToDb(admin: AdminUser): Promise<void> {
   const path = `${ADMINS_COLLECTION}/${admin.email}`;
   try {
-    await setDoc(doc(db, ADMINS_COLLECTION, admin.email), admin);
+    await setDoc(doc(db, ADMINS_COLLECTION, admin.email), sanitizeData(admin));
     triggerAppsScriptSync(); // Trigger background spreadsheet sync
   } catch (error) {
     handleFirestoreError(error, OperationType.CREATE, path);

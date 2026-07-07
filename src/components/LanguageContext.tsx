@@ -359,7 +359,7 @@ const translations: Record<Language, Record<string, string>> = {
 
     // Public Catalog & Banner Keys
     'Portal Penawaran Umum (External)': 'Portal Penawaran Umum (Eksternal)',
-    'Likuidasi Armada Logistik & Heavy Equipment': 'Likuidasi Armada Logistik & Heavy Equipment',
+    'Truck & Heavy Equipment': 'Truck & Heavy Equipment',
     'Dapatkan truk tangki, wingbox, trailer, cargo van, dan alat berat kualitas terbaik langsung dari ekosistem operasional Pancaran Logistics. Transparan, terpercaya, dan aman dengan jadwal survei fisik mandiri.': 'Dapatkan truk tangki, wingbox, trailer, cargo van, dan alat berat kualitas terbaik langsung dari ekosistem operasional Pancaran Logistics. Transparan, terpercaya, dan aman dengan jadwal survei fisik mandiri.',
     'KIR & STNK Lengkap': 'KIR & STNK Lengkap',
     'Bebas Atur Waktu Inspeksi': 'Bebas Atur Waktu Inspeksi',
@@ -816,7 +816,7 @@ const translations: Record<Language, Record<string, string>> = {
 
     // Public Catalog & Banner Keys
     'Portal Penawaran Umum (External)': 'Public Bidding Portal (External)',
-    'Likuidasi Armada Logistik & Heavy Equipment': 'Liquidation of Logistics Fleet & Heavy Equipment',
+    'Truck & Heavy Equipment': 'Truck & Heavy Equipment',
     'Dapatkan truk tangki, wingbox, trailer, cargo van, dan alat berat kualitas terbaik langsung dari ekosistem operasional Pancaran Logistics. Transparan, terpercaya, dan aman dengan jadwal survei fisik mandiri.': 'Get the best quality tank trucks, wingboxes, trailers, cargo vans, and heavy equipment directly from the operational ecosystem of Pancaran Logistics. Transparent, reliable, and secure with self-scheduled physical surveys.',
     'KIR & STNK Lengkap': 'Complete KIR & STNK Registration',
     'Bebas Atur Waktu Inspeksi': 'Flexible Inspection Scheduling',

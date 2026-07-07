@@ -39,6 +39,7 @@ interface CatalogCardProps {
   asset: Asset;
   onSelectAsset: (assetId: string) => void;
   formatIDR: (value: number) => string;
+  onZoomImage?: (images: string[], index: number) => void;
 }
 
 const stripMarkdown = (text: string) => {
@@ -50,7 +51,7 @@ const stripMarkdown = (text: string) => {
     .trim();
 };
 
-function CatalogCard({ asset, onSelectAsset, formatIDR }: CatalogCardProps) {
+function CatalogCard({ asset, onSelectAsset, formatIDR, onZoomImage }: CatalogCardProps) {
   const { t } = useLanguage();
   const [activeImgIdx, setActiveImgIdx] = useState(0);
   const images = asset.imageUrls && asset.imageUrls.length > 0
@@ -76,9 +77,16 @@ function CatalogCard({ asset, onSelectAsset, formatIDR }: CatalogCardProps) {
         <img 
           src={images[activeImgIdx]} 
           alt={`${asset.name} - ${activeImgIdx + 1}`} 
-          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 cursor-pointer" 
+          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 cursor-zoom-in" 
           referrerPolicy="no-referrer"
-          onClick={() => onSelectAsset(asset.id)}
+          onClick={(e) => {
+            e.stopPropagation();
+            if (onZoomImage) {
+              onZoomImage(images, activeImgIdx);
+            } else {
+              onSelectAsset(asset.id);
+            }
+          }}
           onError={(e) => {
             e.currentTarget.src = "https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?auto=format&fit=crop&w=800&q=80";
           }}
@@ -504,7 +512,7 @@ export default function CatalogView({ assets, onPlaceBid, selectedAssetId: propS
           <h1 className="text-3xl md:text-4xl font-bold tracking-tight leading-tight">
             {t('Pancaran Lelang')} <br/>
             <span className="bg-gradient-to-r from-blue-400 to-blue-200 bg-clip-text text-transparent">
-              {t('Likuidasi Armada Logistik & Heavy Equipment')}
+              {t('Truck & Heavy Equipment')}
             </span>
           </h1>
           <p className="text-slate-400 text-sm md:text-base leading-relaxed">
@@ -589,6 +597,10 @@ export default function CatalogView({ assets, onPlaceBid, selectedAssetId: propS
                 asset={asset}
                 onSelectAsset={handleSelectAsset}
                 formatIDR={formatIDR}
+                onZoomImage={(imgs, idx) => {
+                  setLightboxImages(imgs);
+                  setLightboxIndex(idx);
+                }}
               />
             ))}
 
