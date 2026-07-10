@@ -8,12 +8,6 @@ export const INITIAL_ADMINS: AdminUser[] = [
     createdAt: '2026-01-15'
   },
   {
-    email: 'email@pancaran-logistic.id',
-    name: 'Fallback Admin',
-    role: 'Super Admin',
-    createdAt: '2026-01-15'
-  },
-  {
     email: 'admin.lelang@pancaran-logistic.id',
     name: 'Budi Hartono',
     role: 'Admin Keuangan',

@@ -292,6 +292,10 @@ const translations: Record<Language, Record<string, string>> = {
     'Apakah Anda yakin ingin menghapus {name} secara permanen? Data historis penawaran juga akan ikut terhapus.': 'Apakah Anda yakin ingin menghapus {name} secara permanen? Data historis penawaran juga akan ikut terhapus.',
 
     // Admin Users
+    'Total Akses Internal': 'Total Akses Internal',
+    'Total Akses Eksternal': 'Total Akses Eksternal',
+    'Administrator Aktif': 'Administrator Aktif',
+    'Pengguna Terdaftar': 'Pengguna Terdaftar',
     'Kelola Hak Akses Admin': 'Kelola Hak Akses Admin',
     'Tambahkan, hapus, dan atur peran pengguna internal yang dapat masuk ke dashboard administrasi.': 'Tambahkan, hapus, dan atur peran pengguna internal yang dapat masuk ke dashboard administrasi.',
     'Daftarkan Admin Baru': 'Daftarkan Admin Baru',
@@ -752,6 +756,10 @@ const translations: Record<Language, Record<string, string>> = {
     'Apakah Anda yakin ingin menghapus {name} secara permanen? Data historis penawaran juga akan ikut terhapus.': 'Are you sure you want to permanently delete {name}? Historical bid data will also be deleted.',
 
     // Admin Users
+    'Total Akses Internal': 'Total Internal Access',
+    'Total Akses Eksternal': 'Total External Access',
+    'Administrator Aktif': 'Active Administrators',
+    'Pengguna Terdaftar': 'Registered Users',
     'Kelola Hak Akses Admin': 'Manage Admin Privileges',
     'Tambahkan, hapus, dan atur peran pengguna internal yang dapat masuk ke dashboard administrasi.': 'Add, remove, and manage internal users who can access the administration dashboard.',
     'Daftarkan Admin Baru': 'Register New Admin',

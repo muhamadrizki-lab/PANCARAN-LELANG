@@ -314,7 +314,7 @@ export default function AdminUsers({
                 <tbody className="divide-y divide-slate-50">
                   {admins.map((admin) => {
                     const isCurrent = admin.email === currentAdminEmail;
-                    const isMainSuperAdmin = admin.email === 'digital.solution@pancaran-logistic.id' || admin.email === 'email@pancaran-logistic.id';
+                    const isMainSuperAdmin = admin.email === 'digital.solution@pancaran-logistic.id';
 
                     return (
                       <tr key={admin.email} className="hover:bg-slate-50/50 transition-colors">

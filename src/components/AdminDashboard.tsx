@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Asset, Bid } from '../types';
+import { Asset, Bid, AdminUser, RegisteredUser } from '../types';
 import { 
   Truck, 
   CheckCircle, 
@@ -10,16 +10,25 @@ import {
   TrendingUp, 
   ChevronRight,
   Search,
-  Filter
+  Filter,
+  Shield,
+  Globe
 } from 'lucide-react';
 import { useLanguage } from './LanguageContext';
 
 interface AdminDashboardProps {
   assets: Asset[];
   onSelectAsset: (assetId: string) => void;
+  admins?: AdminUser[];
+  registeredUsers?: RegisteredUser[];
 }
 
-export default function AdminDashboard({ assets, onSelectAsset }: AdminDashboardProps) {
+export default function AdminDashboard({ 
+  assets, 
+  onSelectAsset,
+  admins = [],
+  registeredUsers = []
+}: AdminDashboardProps) {
   const { t, language } = useLanguage();
   const [surveyFilter, setSurveyFilter] = useState<'all' | 'upcoming' | 'past'>('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -151,7 +160,7 @@ export default function AdminDashboard({ assets, onSelectAsset }: AdminDashboard
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4" id="stats-metric-grid">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4" id="stats-metric-grid">
         {/* Total Asset */}
         <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 border-l-[6px] border-l-slate-300 flex items-center justify-between hover:shadow-md transition-all duration-300">
           <div className="space-y-1">
@@ -199,6 +208,30 @@ export default function AdminDashboard({ assets, onSelectAsset }: AdminDashboard
           </div>
           <div className="p-3 bg-purple-50 text-purple-600 rounded-xl">
             <Users className="w-6 h-6" />
+          </div>
+        </div>
+
+        {/* Total Akses Internal */}
+        <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 border-l-[6px] border-l-slate-300 flex items-center justify-between hover:shadow-md transition-all duration-300">
+          <div className="space-y-1">
+            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">{t('Total Akses Internal')}</span>
+            <p className="text-2xl font-bold text-slate-700">{admins.length}</p>
+            <span className="text-xs text-slate-500 font-medium">{t('Administrator Aktif')}</span>
+          </div>
+          <div className="p-3 bg-slate-50 text-slate-500 rounded-xl">
+            <Shield className="w-6 h-6" />
+          </div>
+        </div>
+
+        {/* Total Akses Eksternal */}
+        <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 border-l-[6px] border-l-slate-300 flex items-center justify-between hover:shadow-md transition-all duration-300">
+          <div className="space-y-1">
+            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">{t('Total Akses Eksternal')}</span>
+            <p className="text-2xl font-bold text-slate-700">{registeredUsers.length}</p>
+            <span className="text-xs text-slate-500 font-medium">{t('Pengguna Terdaftar')}</span>
+          </div>
+          <div className="p-3 bg-slate-50 text-slate-500 rounded-xl">
+            <Globe className="w-6 h-6" />
           </div>
         </div>
       </div>

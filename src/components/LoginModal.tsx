@@ -90,7 +90,7 @@ export default function LoginModal({
     try {
       const matchedAdmin = admins.find(a => a.email.toLowerCase() === cleanEmail);
       const isPancaranEmail = cleanEmail.endsWith('@pancaran-logistic.id') || cleanEmail.endsWith('@pancaran-group.id');
-      const isDefaultAdmin = cleanEmail === 'digital.solution@pancaran-logistic.id' || cleanEmail === 'email@pancaran-logistic.id';
+      const isDefaultAdmin = cleanEmail === 'digital.solution@pancaran-logistic.id';
 
       if (matchedAdmin || isPancaranEmail || isDefaultAdmin) {
         // Enforce admin login

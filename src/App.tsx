@@ -1082,7 +1082,7 @@ export default function App() {
                         </span>
                         <p className="text-white text-xs font-semibold">{adminName}</p>
                       </div>
-                      <p className="text-slate-400 text-[10px] truncate max-w-[150px] font-mono mt-0.5">{loggedInAdminEmail}</p>
+                      <p className="text-slate-400 text-[10px] truncate max-w-[280px] font-mono mt-0.5">{loggedInAdminEmail}</p>
                     </div>
                     <button
                       onClick={handleLogout}
@@ -1101,7 +1101,7 @@ export default function App() {
                         </span>
                         <p className="text-white text-xs font-semibold">{loggedInUserName}</p>
                       </div>
-                      <p className="text-slate-400 text-[10px] truncate max-w-[150px] font-mono mt-0.5">{loggedInUserEmail}</p>
+                      <p className="text-slate-400 text-[10px] truncate max-w-[280px] font-mono mt-0.5">{loggedInUserEmail}</p>
                     </div>
                     <button
                       onClick={handleLogout}
@@ -1610,6 +1610,8 @@ export default function App() {
                 <AdminDashboard 
                   assets={assets} 
                   onSelectAsset={handleSelectAssetAndSwitchTab} 
+                  admins={admins}
+                  registeredUsers={registeredUsers}
                 />
               )}
               {adminTab === 'assets' && (
