@@ -639,7 +639,7 @@ export default function AdminAssets({
                   {/* Visual Status Tag on Image */}
                   <div className="relative h-44 bg-slate-100 overflow-hidden">
                     <img 
-                      src={asset.imageUrl} 
+                      src={asset.imageUrl || "https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?auto=format&fit=crop&w=800&q=80"} 
                       alt={asset.name} 
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 cursor-zoom-in"
                       referrerPolicy="no-referrer"
@@ -837,7 +837,7 @@ export default function AdminAssets({
               <div className="space-y-2">
                 <div className="aspect-video w-full rounded-xl overflow-hidden bg-slate-100 relative group/detail">
                   <img 
-                    src={selectedAsset.imageUrls && selectedAsset.imageUrls.length > 0 ? selectedAsset.imageUrls[detailImageIdx] : selectedAsset.imageUrl} 
+                    src={(selectedAsset.imageUrls && selectedAsset.imageUrls.length > 0 ? selectedAsset.imageUrls[detailImageIdx] : selectedAsset.imageUrl) || "https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?auto=format&fit=crop&w=800&q=80"} 
                     alt={`${selectedAsset.name} - ${detailImageIdx + 1}`} 
                     className="w-full h-full object-cover cursor-zoom-in transition-all duration-300 hover:scale-102" 
                     referrerPolicy="no-referrer"
@@ -888,7 +888,7 @@ export default function AdminAssets({
                         onClick={() => setDetailImageIdx(idx)}
                         className={`w-14 h-10 rounded-lg overflow-hidden border shrink-0 transition-all ${idx === detailImageIdx ? 'border-blue-600 ring-2 ring-blue-500/15' : 'border-slate-200 opacity-60 hover:opacity-100'}`}
                       >
-                        <img src={url} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                        <img src={url || "https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?auto=format&fit=crop&w=800&q=80"} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                       </button>
                     ))}
                   </div>
@@ -1458,7 +1458,7 @@ export default function AdminAssets({
                           <div key={idx} className={`relative group/img rounded-xl overflow-hidden border bg-slate-50 flex flex-col justify-between ${isCover ? 'border-blue-500 ring-2 ring-blue-500/15' : 'border-slate-200'}`}>
                             <div className="aspect-video w-full relative overflow-hidden">
                               <img 
-                                src={url} 
+                                src={url || "https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?auto=format&fit=crop&w=800&q=80"} 
                                 alt={`Preview ${idx + 1}`} 
                                 className="w-full h-full object-cover"
                                 referrerPolicy="no-referrer"
@@ -1686,7 +1686,7 @@ export default function AdminAssets({
             }}
           >
             <img
-              src={lightboxImages[lightboxIndex]}
+              src={lightboxImages[lightboxIndex] || "https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?auto=format&fit=crop&w=800&q=80"}
               alt={`Zoomed Asset - ${lightboxIndex + 1}`}
               className={`select-none transition-all duration-300 ${
                 isZoomed 

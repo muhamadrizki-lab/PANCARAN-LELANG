@@ -181,10 +181,10 @@ export default function AdminUsers({
           
           {/* Left Side: Create Access Form */}
           <div 
-            className={`bg-white p-6 rounded-2xl border transition-all duration-300 space-y-6 lg:col-span-1 ${
+            className={`bg-white p-6 rounded-2xl border border-l-[6px] transition-all duration-300 space-y-6 lg:col-span-1 ${
               isFormFocused 
-                ? 'relative z-40 border-blue-500 shadow-2xl ring-2 ring-blue-500/20 scale-[1.02]' 
-                : 'relative z-10 border-slate-200 shadow-sm'
+                ? 'relative z-40 border-blue-500 border-l-blue-600 shadow-2xl ring-2 ring-blue-500/20 scale-[1.02]' 
+                : 'relative z-10 border-slate-200 border-l-slate-300 shadow-sm'
             }`} 
             id="create-access-form-container"
           >
@@ -292,7 +292,7 @@ export default function AdminUsers({
           </div>
 
           {/* Right Side: Admins List table */}
-          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-6 lg:col-span-2" id="admins-list-container">
+          <div className="bg-white p-6 rounded-2xl border border-slate-200 border-l-[6px] border-l-slate-300 shadow-sm space-y-6 lg:col-span-2" id="admins-list-container">
             <div className="space-y-1">
               <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
                 <Users className="w-5 h-5 text-blue-600" /> {t('Daftar Administrator Terdaftar')}
@@ -392,7 +392,7 @@ export default function AdminUsers({
 
       {/* TAB 2: EXTERNAL USER ACCESS RECAP */}
       {activeTab === 'external' && (
-        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-6">
+        <div className="bg-white p-6 rounded-2xl border border-slate-200 border-l-[6px] border-l-slate-300 shadow-sm space-y-6">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="space-y-1">
               <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">

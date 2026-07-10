@@ -82,7 +82,7 @@ function CatalogCard({ asset, onSelectAsset, formatIDR, onZoomImage, isUserLogge
     <div className="bg-white rounded-3xl overflow-hidden border border-slate-200 border-l-[6px] border-l-slate-300 hover:border-blue-200 hover:shadow-xl transition-all duration-300 flex flex-col justify-between group">
       <div className="relative h-48 bg-slate-50 overflow-hidden group/img-container">
         <img 
-          src={images[activeImgIdx]} 
+          src={images[activeImgIdx] || "https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?auto=format&fit=crop&w=800&q=80"} 
           alt={`${asset.name} - ${activeImgIdx + 1}`} 
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 cursor-zoom-in" 
           referrerPolicy="no-referrer"
@@ -1442,7 +1442,7 @@ export default function CatalogView({
             }}
           >
             <img
-              src={lightboxImages[lightboxIndex]}
+              src={lightboxImages[lightboxIndex] || "https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?auto=format&fit=crop&w=800&q=80"}
               alt={`Zoomed Asset - ${lightboxIndex + 1}`}
               className={`select-none transition-all duration-300 ${
                 isZoomed 
