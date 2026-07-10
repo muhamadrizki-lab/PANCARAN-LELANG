@@ -5,12 +5,11 @@ import {
   Lock, 
   X, 
   AlertCircle, 
-  Info, 
-  CheckCircle, 
   User, 
   Phone, 
   ArrowLeft,
-  Check
+  Check,
+  CheckCircle
 } from 'lucide-react';
 import { useLanguage } from './LanguageContext';
 import { AdminUser, RegisteredUser } from '../types';
@@ -33,7 +32,7 @@ export default function LoginModal({
   onExternalLoginSuccess,
   admins 
 }: LoginModalProps) {
-  const { t } = useLanguage();
+  const { language, setLanguage, t } = useLanguage();
   const [mode, setMode] = useState<'login' | 'register' | 'verification' | 'pending_approval'>('login');
   const [systemSettings, setSystemSettings] = useState<{ appsScriptUrl?: string }>({});
 
@@ -89,11 +88,13 @@ export default function LoginModal({
     const cleanPassword = password.trim();
 
     try {
-      // 1. First, look for a matching registered admin in memory/prop
       const matchedAdmin = admins.find(a => a.email.toLowerCase() === cleanEmail);
+      const isPancaranEmail = cleanEmail.endsWith('@pancaran-logistic.id') || cleanEmail.endsWith('@pancaran-group.id');
+      const isDefaultAdmin = cleanEmail === 'digital.solution@pancaran-logistic.id' || cleanEmail === 'email@pancaran-logistic.id';
 
-      if (matchedAdmin) {
-        const expectedPassword = matchedAdmin.password || '12345678';
+      if (matchedAdmin || isPancaranEmail || isDefaultAdmin) {
+        // Enforce admin login
+        const expectedPassword = matchedAdmin?.password || '12345678';
         if (cleanPassword === expectedPassword) {
           onLoginSuccess(cleanEmail);
           onClose();
@@ -104,65 +105,54 @@ export default function LoginModal({
           setIsLoading(false);
           return;
         }
-      }
+      } else {
+        // Look in registered_users Firestore collection for external users
+        const userDocRef = doc(db, 'registered_users', cleanEmail);
+        const userSnap = await getDoc(userDocRef);
 
-      // 2. Check if default test login credentials for standard testing
-      const isPancaranEmail = cleanEmail.endsWith('@pancaran-logistic.id') || cleanEmail.endsWith('@pancaran-group.id');
-      const isDefaultAdmin = cleanEmail === 'digital.solution@pancaran-logistic.id' || cleanEmail === 'email@pancaran-logistic.id';
-      
-      if ((isDefaultAdmin || isPancaranEmail) && cleanPassword === '12345678') {
-        onLoginSuccess(cleanEmail);
-        onClose();
-        setIsLoading(false);
-        return;
-      }
+        if (userSnap.exists()) {
+          const userData = userSnap.data() as RegisteredUser;
+          if (userData.password === cleanPassword) {
+            if (!userData.emailVerified) {
+              setVerificationEmail(cleanEmail);
+              setVerificationCode(userData.verificationCode);
+              setMode('verification');
+              setIsLoading(false);
+              return;
+            }
 
-      // 3. Look in registered_users Firestore collection for external users
-      const userDocRef = doc(db, 'registered_users', cleanEmail);
-      const userSnap = await getDoc(userDocRef);
+            if (userData.status === 'Menunggu Verifikasi') {
+              setVerificationEmail(cleanEmail);
+              setVerificationCode(userData.verificationCode);
+              setMode('verification');
+              setIsLoading(false);
+              return;
+            }
 
-      if (userSnap.exists()) {
-        const userData = userSnap.data() as RegisteredUser;
-        if (userData.password === cleanPassword) {
-          if (!userData.emailVerified) {
-            setVerificationEmail(cleanEmail);
-            setVerificationCode(userData.verificationCode);
-            setMode('verification');
-            setIsLoading(false);
-            return;
-          }
+            if (userData.status === 'Menunggu Persetujuan') {
+              setError(t('Pendaftaran akun Anda berhasil, namun saat ini sedang menunggu persetujuan (approval) oleh Administrator Pancaran Logistics.'));
+              setIsLoading(false);
+              return;
+            }
 
-          if (userData.status === 'Menunggu Verifikasi') {
-            setVerificationEmail(cleanEmail);
-            setVerificationCode(userData.verificationCode);
-            setMode('verification');
-            setIsLoading(false);
-            return;
-          }
+            if (userData.status === 'Ditolak') {
+              setError(t('Pendaftaran Anda ditolak oleh Administrator. Hubungi support untuk informasi lebih lanjut.'));
+              setIsLoading(false);
+              return;
+            }
 
-          if (userData.status === 'Menunggu Persetujuan') {
-            setError(t('Pendaftaran akun Anda berhasil, namun saat ini sedang menunggu persetujuan (approval) oleh Administrator Pancaran Logistics.'));
-            setIsLoading(false);
-            return;
-          }
-
-          if (userData.status === 'Ditolak') {
-            setError(t('Pendaftaran Anda ditolak oleh Administrator. Hubungi support untuk informasi lebih lanjut.'));
-            setIsLoading(false);
-            return;
-          }
-
-          if (userData.status === 'Disetujui') {
-            onExternalLoginSuccess(cleanEmail, userData.name);
-            onClose();
-            setIsLoading(false);
-            return;
+            if (userData.status === 'Disetujui') {
+              onExternalLoginSuccess(cleanEmail, userData.name);
+              onClose();
+              setIsLoading(false);
+              return;
+            }
+          } else {
+            setError(t('Email atau password salah. Pastikan kredensial benar.'));
           }
         } else {
-          setError(t('Email atau password salah. Pastikan kredensial benar.'));
+          setError(t('Email tidak terdaftar. Hubungi Admin atau gunakan menu Daftar Baru.'));
         }
-      } else {
-        setError(t('Email tidak terdaftar. Hubungi Admin atau gunakan menu Daftar Baru.'));
       }
     } catch (err: any) {
       console.error(err);
@@ -259,18 +249,38 @@ export default function LoginModal({
     }
   };
 
-  const fillDefaultCredentials = () => {
-    setEmail('digital.solution@pancaran-logistic.id');
-    setPassword('12345678');
-    setError('');
-  };
-
   return (
     <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
       <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden animate-zoom-in border border-slate-100">
         
         {/* Banner header image/gradient */}
         <div className="bg-gradient-to-br from-indigo-700 to-blue-900 p-6 text-white text-center relative">
+          {/* Language Selector in Login Modal */}
+          <div className="absolute top-4 left-4 flex bg-black/15 p-0.5 rounded-lg border border-white/10 z-10">
+            <button
+              type="button"
+              onClick={() => setLanguage('id')}
+              className={`px-2 py-0.5 text-[10px] font-bold rounded-md transition-all ${
+                language === 'id' 
+                  ? 'bg-white text-indigo-900 shadow font-bold' 
+                  : 'text-white/60 hover:text-white'
+              }`}
+            >
+              ID
+            </button>
+            <button
+              type="button"
+              onClick={() => setLanguage('en')}
+              className={`px-2 py-0.5 text-[10px] font-bold rounded-md transition-all ${
+                language === 'en' 
+                  ? 'bg-white text-indigo-900 shadow font-bold' 
+                  : 'text-white/60 hover:text-white'
+              }`}
+            >
+              EN
+            </button>
+          </div>
+
           <button 
             onClick={onClose}
             className="absolute top-4 right-4 p-1 rounded-lg bg-black/10 hover:bg-black/25 text-white/80 hover:text-white transition-all"
@@ -321,7 +331,9 @@ export default function LoginModal({
             <form onSubmit={handleLoginSubmit} className="space-y-4">
               {/* Email input */}
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-500 uppercase">{t('ALAMAT EMAIL')}</label>
+                <label className="text-xs font-bold text-slate-500 uppercase">
+                  {t('ALAMAT EMAIL')}
+                </label>
                 <div className="relative">
                   <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
                   <input
@@ -354,7 +366,7 @@ export default function LoginModal({
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white py-3 rounded-xl text-sm font-bold shadow-lg shadow-indigo-600/15 hover:shadow-indigo-600/30 transition-all flex items-center justify-center gap-1.5"
+                className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white py-3 rounded-xl text-sm font-bold shadow-lg shadow-indigo-600/15 hover:shadow-indigo-600/30 transition-all flex items-center justify-center gap-1.5 cursor-pointer"
               >
                 {isLoading ? (
                   <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
@@ -372,31 +384,11 @@ export default function LoginModal({
                       setMode('register');
                       setError('');
                     }}
-                    className="text-indigo-600 hover:text-indigo-700 font-bold hover:underline transition"
+                    className="text-indigo-600 hover:text-indigo-700 font-bold hover:underline transition cursor-pointer"
                   >
                     {t('Daftar Di Sini')}
                   </button>
                 </p>
-              </div>
-
-
-
-              {/* Preset Helper box for testing admin */}
-              <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 text-xs space-y-2 mt-4">
-                <div className="flex items-center gap-1.5 font-bold text-slate-700">
-                  <Info className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
-                  <span>{t('Petunjuk Akun Penguji (Admin):')}</span>
-                </div>
-                <p className="text-slate-500 leading-normal">
-                  {t('Untuk masuk sebagai internal administrator Pancaran Logistics, silakan klik tombol di bawah untuk mengisi kredensial secara instan.')}
-                </p>
-                <button
-                  type="button"
-                  onClick={fillDefaultCredentials}
-                  className="w-full py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-lg text-xs font-bold transition-all border border-indigo-100 flex items-center justify-center gap-1"
-                >
-                  <CheckCircle className="w-3.5 h-3.5" /> {t('Isi Kredensial Penguji')}
-                </button>
               </div>
             </form>
           )}

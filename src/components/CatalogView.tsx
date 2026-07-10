@@ -917,7 +917,12 @@ export default function CatalogView({
                   {isUserLoggedIn ? (
                     <div className="bg-white p-6 rounded-2xl border border-slate-200/80 border-l-[6px] border-l-slate-300 shadow-xs space-y-4">
                       <div>
-                        <p className="text-slate-400 text-[10px] font-bold uppercase tracking-wider">{t('Penawaran Tertinggi')}</p>
+                        <div className="flex items-center justify-between">
+                          <p className="text-slate-400 text-[10px] font-bold uppercase tracking-wider">{t('Penawaran Tertinggi')}</p>
+                          <span className="bg-blue-50 text-blue-700 text-[9px] font-extrabold px-2 py-0.5 rounded-md border border-blue-100 uppercase">
+                            {(selectedAsset.bids || []).length} {t('Penawaran Masuk')}
+                          </span>
+                        </div>
                         <h2 className="text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight mt-1">
                           {formatIDR(currentHighestBid)}
                         </h2>

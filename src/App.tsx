@@ -738,6 +738,10 @@ export default function App() {
     setAdminTab('assets');
   };
 
+  const matchedAdmin = admins.find(a => a.email.toLowerCase() === loggedInAdminEmail.toLowerCase());
+  const adminName = matchedAdmin ? matchedAdmin.name : 'Admin Digital Solution';
+  const adminRole = matchedAdmin ? matchedAdmin.role : 'Super Admin';
+
   return (
     <div className="min-h-screen bg-slate-50/50 flex flex-col font-sans" id="app-root-wrapper">
       
@@ -1072,8 +1076,13 @@ export default function App() {
                 {isAdminLoggedIn ? (
                   <div className="flex items-center gap-3">
                     <div className="text-right">
-                      <p className="text-white text-xs font-semibold">Admin Digital Solution</p>
-                      <p className="text-slate-400 text-[10px] truncate max-w-[150px] font-mono">{loggedInAdminEmail}</p>
+                      <div className="flex items-center gap-1.5 justify-end">
+                        <span className="bg-blue-500/20 text-blue-300 text-[8px] font-extrabold px-1.5 py-0.5 rounded-md border border-blue-500/30 uppercase tracking-wider">
+                          {t(adminRole)}
+                        </span>
+                        <p className="text-white text-xs font-semibold">{adminName}</p>
+                      </div>
+                      <p className="text-slate-400 text-[10px] truncate max-w-[150px] font-mono mt-0.5">{loggedInAdminEmail}</p>
                     </div>
                     <button
                       onClick={handleLogout}
@@ -1086,8 +1095,13 @@ export default function App() {
                 ) : isUserLoggedIn ? (
                   <div className="flex items-center gap-3">
                     <div className="text-right">
-                      <p className="text-white text-xs font-semibold">{loggedInUserName}</p>
-                      <p className="text-slate-400 text-[10px] truncate max-w-[150px] font-mono">{loggedInUserEmail}</p>
+                      <div className="flex items-center gap-1.5 justify-end">
+                        <span className="bg-amber-500/20 text-amber-300 text-[8px] font-extrabold px-1.5 py-0.5 rounded-md border border-amber-500/30 uppercase tracking-wider">
+                          {t('Akses Eksternal')}
+                        </span>
+                        <p className="text-white text-xs font-semibold">{loggedInUserName}</p>
+                      </div>
+                      <p className="text-slate-400 text-[10px] truncate max-w-[150px] font-mono mt-0.5">{loggedInUserEmail}</p>
                     </div>
                     <button
                       onClick={handleLogout}
@@ -1644,10 +1658,10 @@ export default function App() {
               onPlaceBid={handlePlaceBid} 
               selectedAssetId={selectedAssetId}
               onSelectAsset={setSelectedAssetId}
-              isUserLoggedIn={isUserLoggedIn}
+              isUserLoggedIn={isUserLoggedIn || isAdminLoggedIn}
               onOpenLoginModal={() => setIsLoginModalOpen(true)}
-              loggedInUserEmail={loggedInUserEmail}
-              loggedInUserName={loggedInUserName}
+              loggedInUserEmail={isUserLoggedIn ? loggedInUserEmail : loggedInAdminEmail}
+              loggedInUserName={isUserLoggedIn ? loggedInUserName : adminName}
             />
           ) : (
             <div className="py-24 text-center max-w-md mx-auto space-y-4">
