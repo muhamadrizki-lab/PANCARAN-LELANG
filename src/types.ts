@@ -18,7 +18,7 @@ export interface Asset {
   category: string;
   modelYear: number;
   plateNumber: string;
-  condition: 'Sangat Baik' | 'Baik' | 'Cukup' | 'Butuh Perbaikan';
+  condition: string;
   location: string;
   description: string;
   startingPrice: number;
@@ -35,6 +35,35 @@ export interface AdminUser {
   role: string;
   createdAt: string;
   password?: string;
+}
+
+export interface Brand {
+  id: string;
+  name: string;
+  createdAt: string;
+}
+
+export interface Category {
+  id: string;
+  name: string;
+  createdAt: string;
+}
+
+export interface Condition {
+  id: string;
+  name: string;
+  createdAt: string;
+}
+
+export interface RegisteredUser {
+  email: string;
+  name: string;
+  phone: string;
+  password?: string;
+  status: 'Menunggu Verifikasi' | 'Menunggu Persetujuan' | 'Disetujui' | 'Ditolak';
+  emailVerified: boolean;
+  verificationCode: string;
+  createdAt: string;
 }
 
 export interface ToastNotification {

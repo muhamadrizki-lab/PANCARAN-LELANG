@@ -85,7 +85,58 @@ var DATABASE_ID = "ai-studio-remixremixpancar-e5d36007-18cd-4f4e-8eec-a93a35f159
  */
 function doPost(e) {
   try {
-    Logger.log("Menerima webhook sinkronisasi...");
+    Logger.log("Menerima webhook...");
+    
+    // Parse data post jika ada
+    var postData = null;
+    if (e && e.postData && e.postData.contents) {
+      try {
+        postData = JSON.parse(e.postData.contents);
+      } catch (parseErr) {
+        Logger.log("Gagal parse postData: " + parseErr.toString());
+      }
+    }
+
+    // Jika aksinya adalah kirim OTP, kirim email verifikasi asli
+    if (postData && postData.action === "send_otp") {
+      var email = postData.email;
+      var code = postData.code;
+      var name = postData.name || "User";
+      
+      MailApp.sendEmail({
+        to: email,
+        subject: "Kode Verifikasi OTP - Pancaran Lelang",
+        htmlBody: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 25px; border: 1px solid #e2e8f0; border-radius: 16px; background-color: #ffffff; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);">
+            <div style="background-color: #1e3a8a; padding: 20px; text-align: center; border-radius: 12px 12px 0 0;">
+              <h2 style="color: #ffffff; margin: 0; font-size: 22px; font-weight: bold;">PANCARAN LELANG</h2>
+              <p style="color: #93c5fd; margin: 5px 0 0 0; font-size: 12px; letter-spacing: 1px; font-weight: bold;">PORTAL LELANG OTOMOTIF & LOGISTIK</p>
+            </div>
+            <div style="padding: 25px; color: #334155; line-height: 1.6;">
+              <p style="font-size: 15px; margin-top: 0;">Halo <strong style="color: #1e3a8a;">${name}</strong>,</p>
+              <p style="font-size: 14px;">Terima kasih telah mendaftar di <strong>Pancaran Lelang</strong>. Untuk mengaktifkan akun Anda dan memverifikasi keaslian kepemilikan email, silakan gunakan kode verifikasi OTP berikut:</p>
+              
+              <div style="text-align: center; margin: 30px 0;">
+                <span style="font-size: 32px; font-weight: bold; letter-spacing: 6px; color: #1e3a8a; background-color: #f1f5f9; padding: 15px 30px; border-radius: 10px; border: 1px solid #cbd5e1; font-family: monospace; display: inline-block;">${code}</span>
+              </div>
+              
+              <p style="font-size: 13px; color: #64748b; margin-bottom: 0;">
+                Masukkan kode di atas pada formulir verifikasi di halaman web. Kode ini berlaku selama 15 menit. Jika Anda tidak melakukan pendaftaran ini, Anda dapat mengabaikan email ini dengan aman.
+              </p>
+            </div>
+            <div style="border-top: 1px solid #e2e8f0; padding-top: 15px; text-align: center; font-size: 11px; color: #94a3b8; margin-top: 20px;">
+              Email ini dikirim secara otomatis oleh sistem keamanan Pancaran Lelang.<br>
+              &copy; 2026 PT Pancaran Darma Herindo (Pancaran Logistics). Hak Cipta Dilindungi.
+            </div>
+          </div>
+        `
+      });
+      
+      return ContentService.createTextOutput(JSON.stringify({ 
+        status: "success", 
+        message: "Kode OTP berhasil dikirim ke email asli Anda!" 
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
     
     // Jalankan fungsi sinkronisasi utama
     syncFirestoreToSpreadsheet();

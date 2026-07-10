@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Asset, AssetStatus, Bid, AdminUser, ToastNotification } from './types';
+import { Asset, AssetStatus, Bid, AdminUser, ToastNotification, Brand, Category, Condition, RegisteredUser } from './types';
 import { INITIAL_ASSETS, INITIAL_ADMINS } from './data/mockData';
 import AdminDashboard from './components/AdminDashboard';
 import AdminAssets from './components/AdminAssets';
 import AdminUsers from './components/AdminUsers';
+import AdminSettings from './components/AdminSettings';
 import CatalogView from './components/CatalogView';
 import LoginModal from './components/LoginModal';
 import { useLanguage } from './components/LanguageContext';
@@ -12,6 +13,18 @@ import {
   seedDatabaseIfEmpty, 
   subscribeToAssets, 
   subscribeToAdmins, 
+  subscribeToBrands,
+  subscribeToCategories,
+  subscribeToConditions,
+  subscribeToRegisteredUsers,
+  updateRegisteredUser,
+  deleteRegisteredUser,
+  addBrandToDb,
+  deleteBrandFromDb,
+  addCategoryToDb,
+  deleteCategoryFromDb,
+  addConditionToDb,
+  deleteConditionFromDb,
   addAssetToDb, 
   updateAssetInDb, 
   deleteAssetFromDb, 
@@ -40,7 +53,8 @@ import {
   Bell,
   CheckCircle,
   AlertCircle,
-  Trash2
+  Trash2,
+  Settings
 } from 'lucide-react';
 
 export default function App() {
@@ -49,10 +63,16 @@ export default function App() {
   const [role, setRole] = useState<'external' | 'internal'>('external');
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
   const [loggedInAdminEmail, setLoggedInAdminEmail] = useState('');
+  
+  // External registered user states
+  const [isUserLoggedIn, setIsUserLoggedIn] = useState(false);
+  const [loggedInUserEmail, setLoggedInUserEmail] = useState('');
+  const [loggedInUserName, setLoggedInUserName] = useState('');
+  
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   
   // Navigation inside Admin area
-  const [adminTab, setAdminTab] = useState<'dashboard' | 'assets' | 'users'>('dashboard');
+  const [adminTab, setAdminTab] = useState<'dashboard' | 'assets' | 'users' | 'settings'>('dashboard');
   
   // Mobile menu toggle
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -60,6 +80,10 @@ export default function App() {
   // Database States (pre-seeded from mockData and stored in localStorage)
   const [assets, setAssets] = useState<Asset[]>([]);
   const [admins, setAdmins] = useState<AdminUser[]>(INITIAL_ADMINS);
+  const [brands, setBrands] = useState<Brand[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [conditions, setConditions] = useState<Condition[]>([]);
+  const [registeredUsers, setRegisteredUsers] = useState<RegisteredUser[]>([]);
   
   // Selected asset for highlighting or detailed specs in AdminAssets
   const [selectedAssetId, setSelectedAssetId] = useState<string | null>(null);
@@ -114,6 +138,8 @@ export default function App() {
   const prevAssetsRef = useRef<Asset[]>([]);
   const adminsLoadedRef = useRef(false);
   const prevAdminsRef = useRef<AdminUser[]>([]);
+  const registeredUsersLoadedRef = useRef(false);
+  const prevRegisteredUsersRef = useRef<RegisteredUser[]>([]);
 
   const formatIDR = (value: number) => {
     return new Intl.NumberFormat('id-ID', {
@@ -294,9 +320,31 @@ export default function App() {
   useEffect(() => {
     let unsubscribeAssets: (() => void) | null = null;
     let unsubscribeAdmins: (() => void) | null = null;
+    let unsubscribeBrands: (() => void) | null = null;
+    let unsubscribeCategories: (() => void) | null = null;
+    let unsubscribeConditions: (() => void) | null = null;
+    let unsubscribeRegisteredUsers: (() => void) | null = null;
 
     // Seed default records if empty, then subscribe to collections in real-time
     seedDatabaseIfEmpty().then(() => {
+      unsubscribeBrands = subscribeToBrands((updatedBrands) => {
+        if (updatedBrands) {
+          setBrands(updatedBrands);
+        }
+      });
+
+      unsubscribeCategories = subscribeToCategories((updatedCategories) => {
+        if (updatedCategories) {
+          setCategories(updatedCategories);
+        }
+      });
+
+      unsubscribeConditions = subscribeToConditions((updatedConditions) => {
+        if (updatedConditions) {
+          setConditions(updatedConditions);
+        }
+      });
+
       unsubscribeAssets = subscribeToAssets((updatedAssets) => {
         if (updatedAssets) {
           const sortedAssets = [...updatedAssets].sort((a, b) => b.id.localeCompare(a.id));
@@ -448,19 +496,58 @@ export default function App() {
           }
         }
       });
+
+      unsubscribeRegisteredUsers = subscribeToRegisteredUsers((updatedUsers) => {
+        if (updatedUsers) {
+          setRegisteredUsers(updatedUsers);
+
+          if (!registeredUsersLoadedRef.current) {
+            prevRegisteredUsersRef.current = updatedUsers;
+            registeredUsersLoadedRef.current = true;
+          } else {
+            const prevUsers = prevRegisteredUsersRef.current;
+
+            updatedUsers.forEach(user => {
+              const prevUser = prevUsers.find(pu => pu.email === user.email);
+              if (user.status === 'Menunggu Persetujuan' && (!prevUser || prevUser.status !== 'Menunggu Persetujuan')) {
+                addNotification(
+                  'info',
+                  t('Persetujuan Registrasi Baru'),
+                  `${user.name} (${user.email}) ${t('menunggu persetujuan akses.')}`
+                );
+              }
+            });
+
+            prevRegisteredUsersRef.current = updatedUsers;
+          }
+        }
+      });
     }).catch((err) => {
       console.warn("Firestore connection is offline or unavailable. Operating with local database.", err);
     });
 
     const storedSession = localStorage.getItem('pancaran_session_email');
+    const storedSessionType = localStorage.getItem('pancaran_session_type');
+    const storedSessionName = localStorage.getItem('pancaran_session_name') || '';
+
     if (storedSession) {
-      setIsAdminLoggedIn(true);
-      setLoggedInAdminEmail(storedSession);
+      if (storedSessionType === 'user') {
+        setIsUserLoggedIn(true);
+        setLoggedInUserEmail(storedSession);
+        setLoggedInUserName(storedSessionName);
+      } else {
+        setIsAdminLoggedIn(true);
+        setLoggedInAdminEmail(storedSession);
+      }
     }
 
     return () => {
       if (unsubscribeAssets) unsubscribeAssets();
       if (unsubscribeAdmins) unsubscribeAdmins();
+      if (unsubscribeBrands) unsubscribeBrands();
+      if (unsubscribeCategories) unsubscribeCategories();
+      if (unsubscribeConditions) unsubscribeConditions();
+      if (unsubscribeRegisteredUsers) unsubscribeRegisteredUsers();
     };
   }, []);
 
@@ -549,6 +636,36 @@ export default function App() {
     }
   };
 
+  const handleApproveUser = async (email: string) => {
+    try {
+      await updateRegisteredUser(email, { status: 'Disetujui' });
+      addNotification('success', t('Pendaftaran Disetujui'), `${t('User')} ${email} ${t('telah disetujui untuk mengakses lelang.')}`);
+    } catch (error) {
+      console.error("Failed to approve user", error);
+      addNotification('warning', t('Gagal Menyetujui'), `${t('Gagal menyetujui user')} ${email}`);
+    }
+  };
+
+  const handleRejectUser = async (email: string) => {
+    try {
+      await updateRegisteredUser(email, { status: 'Ditolak' });
+      addNotification('warning', t('Pendaftaran Ditolak'), `${t('User')} ${email} ${t('telah ditolak.')}`);
+    } catch (error) {
+      console.error("Failed to reject user", error);
+      addNotification('warning', t('Gagal Menolak'), `${t('Gagal menolak user')} ${email}`);
+    }
+  };
+
+  const handleDeleteRegisteredUser = async (email: string) => {
+    try {
+      await deleteRegisteredUser(email);
+      addNotification('info', t('User Dihapus'), `${t('User')} ${email} ${t('telah dihapus dari sistem.')}`);
+    } catch (error) {
+      console.error("Failed to delete user", error);
+      addNotification('warning', t('Gagal Menghapus'), `${t('Gagal menghapus user')} ${email}`);
+    }
+  };
+
   // 3. Business Actions (External Operations)
 
   // Input Bid Price & Input Time Survey
@@ -589,14 +706,30 @@ export default function App() {
     setIsAdminLoggedIn(true);
     setLoggedInAdminEmail(email);
     localStorage.setItem('pancaran_session_email', email);
+    localStorage.setItem('pancaran_session_type', 'admin');
     setRole('internal'); // Switch to internal dashboard on login
     setAdminTab('dashboard');
+  };
+
+  const handleExternalLoginSuccess = (email: string, name: string) => {
+    setIsUserLoggedIn(true);
+    setLoggedInUserEmail(email);
+    setLoggedInUserName(name);
+    localStorage.setItem('pancaran_session_email', email);
+    localStorage.setItem('pancaran_session_type', 'user');
+    localStorage.setItem('pancaran_session_name', name);
+    setRole('external');
   };
 
   const handleLogout = () => {
     setIsAdminLoggedIn(false);
     setLoggedInAdminEmail('');
+    setIsUserLoggedIn(false);
+    setLoggedInUserEmail('');
+    setLoggedInUserName('');
     localStorage.removeItem('pancaran_session_email');
+    localStorage.removeItem('pancaran_session_type');
+    localStorage.removeItem('pancaran_session_name');
     setRole('external'); // Redirect back to external catalog on logout
   };
 
@@ -944,7 +1077,21 @@ export default function App() {
                     </div>
                     <button
                       onClick={handleLogout}
-                      className="p-1.5 hover:bg-slate-800/80 text-slate-400 hover:text-rose-400 rounded-lg transition-colors border border-transparent hover:border-slate-700/50"
+                      className="p-1.5 hover:bg-slate-800/80 text-slate-400 hover:text-rose-400 rounded-lg transition-colors border border-transparent hover:border-slate-700/50 cursor-pointer"
+                      title={t('Keluar')}
+                    >
+                      <LogOut className="w-4 h-4" />
+                    </button>
+                  </div>
+                ) : isUserLoggedIn ? (
+                  <div className="flex items-center gap-3">
+                    <div className="text-right">
+                      <p className="text-white text-xs font-semibold">{loggedInUserName}</p>
+                      <p className="text-slate-400 text-[10px] truncate max-w-[150px] font-mono">{loggedInUserEmail}</p>
+                    </div>
+                    <button
+                      onClick={handleLogout}
+                      className="p-1.5 hover:bg-slate-800/80 text-slate-400 hover:text-rose-400 rounded-lg transition-colors border border-transparent hover:border-slate-700/50 cursor-pointer"
                       title={t('Keluar')}
                     >
                       <LogOut className="w-4 h-4" />
@@ -953,9 +1100,9 @@ export default function App() {
                 ) : (
                   <button
                     onClick={() => setIsLoginModalOpen(true)}
-                    className="bg-gradient-to-r from-blue-600 to-sky-500 hover:from-blue-700 hover:to-sky-600 text-white px-4 py-2 rounded-lg text-xs font-bold shadow-md shadow-blue-500/15 transition-all flex items-center gap-1.5"
+                    className="bg-gradient-to-r from-blue-600 to-sky-500 hover:from-blue-700 hover:to-sky-600 text-white px-4 py-2 rounded-lg text-xs font-bold shadow-md shadow-blue-500/15 transition-all flex items-center gap-1.5 cursor-pointer"
                   >
-                    <LogIn className="w-4 h-4" /> {t('Login Admin')}
+                    <LogIn className="w-4 h-4" /> {t('Masuk / Daftar')}
                   </button>
                 )}
               </div>
@@ -1303,11 +1450,16 @@ export default function App() {
                 </button>
                 <button
                   onClick={() => { setAdminTab('users'); setIsMobileMenuOpen(false); }}
-                  className={`w-full text-left px-3 py-2 rounded-xl text-sm font-semibold ${
+                  className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm font-semibold ${
                     adminTab === 'users' ? 'bg-blue-50 text-blue-700 font-bold' : 'text-slate-600'
                   }`}
                 >
-                  {t('Manajemen Akses')}
+                  <span>{t('Manajemen Akses')}</span>
+                  {registeredUsers.filter(u => u.status === 'Menunggu Persetujuan').length > 0 && (
+                    <span className="bg-amber-500 text-white text-[10px] px-2 py-0.5 rounded-full font-bold">
+                      {registeredUsers.filter(u => u.status === 'Menunggu Persetujuan').length}
+                    </span>
+                  )}
                 </button>
 
 
@@ -1323,17 +1475,31 @@ export default function App() {
                   </div>
                   <button
                     onClick={() => { handleLogout(); setIsMobileMenuOpen(false); }}
-                    className="w-full py-2 bg-rose-50 text-rose-600 hover:bg-rose-100 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-colors"
+                    className="w-full py-2 bg-rose-50 text-rose-600 hover:bg-rose-100 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
                   >
                     <LogOut className="w-4 h-4" /> {t('Logout Admin')}
+                  </button>
+                </div>
+              ) : isUserLoggedIn ? (
+                <div className="p-3 bg-slate-50 rounded-xl space-y-2">
+                  <div className="text-xs">
+                    <p className="text-[9px] text-slate-400 font-bold">{t('AKUN MASUK:')}</p>
+                    <p className="font-bold text-slate-700 truncate">{loggedInUserName}</p>
+                    <p className="font-mono text-slate-500 truncate text-[10px]">{loggedInUserEmail}</p>
+                  </div>
+                  <button
+                    onClick={() => { handleLogout(); setIsMobileMenuOpen(false); }}
+                    className="w-full py-2 bg-rose-50 text-rose-600 hover:bg-rose-100 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                  >
+                    <LogOut className="w-4 h-4" /> {t('Logout Akun')}
                   </button>
                 </div>
               ) : (
                 <button
                   onClick={() => { setIsLoginModalOpen(true); setIsMobileMenuOpen(false); }}
-                  className="w-full py-2.5 bg-blue-600 text-white rounded-xl text-xs font-bold text-center flex items-center justify-center gap-1.5"
+                  className="w-full py-2.5 bg-blue-600 text-white rounded-xl text-xs font-bold text-center flex items-center justify-center gap-1.5 cursor-pointer"
                 >
-                  <LogIn className="w-4 h-4" /> {t('Login Admin')}
+                  <LogIn className="w-4 h-4" /> {t('Masuk / Daftar')}
                 </button>
               )}
             </div>
@@ -1380,14 +1546,21 @@ export default function App() {
 
                   <button
                     onClick={() => setAdminTab('users')}
-                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-bold text-left transition-all ${
+                    className={`w-full flex items-center justify-between px-4 py-3 rounded-xl text-xs font-bold transition-all ${
                       adminTab === 'users'
                         ? 'bg-blue-50 text-blue-600 font-bold shadow-sm'
                         : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
                     }`}
                   >
-                    <Users className="w-4 h-4 shrink-0" />
-                    <span>{t('Manajemen Akses')}</span>
+                    <div className="flex items-center gap-3">
+                      <Users className="w-4 h-4 shrink-0" />
+                      <span>{t('Manajemen Akses')}</span>
+                    </div>
+                    {registeredUsers.filter(u => u.status === 'Menunggu Persetujuan').length > 0 && (
+                      <span className="bg-amber-500 text-white text-[10px] px-2 py-0.5 rounded-full font-bold">
+                        {registeredUsers.filter(u => u.status === 'Menunggu Persetujuan').length}
+                      </span>
+                    )}
                   </button>
                 </nav>
               </div>
@@ -1428,6 +1601,9 @@ export default function App() {
               {adminTab === 'assets' && (
                 <AdminAssets 
                   assets={assets}
+                  brands={brands}
+                  categories={categories}
+                  conditions={conditions}
                   selectedAssetId={selectedAssetId}
                   onSelectAsset={setSelectedAssetId}
                   onAddAsset={handleAddAsset}
@@ -1442,6 +1618,18 @@ export default function App() {
                   onAddAdmin={handleAddAdmin}
                   onDeleteAdmin={handleDeleteAdmin}
                   currentAdminEmail={loggedInAdminEmail}
+                  registeredUsers={registeredUsers}
+                  onApproveUser={handleApproveUser}
+                  onRejectUser={handleRejectUser}
+                  onDeleteRegisteredUser={handleDeleteRegisteredUser}
+                />
+              )}
+              {adminTab === 'settings' && (
+                <AdminSettings 
+                  onShowNotification={(msg, type) => {
+                    const mappedType = type === 'error' ? 'warning' : type;
+                    addNotification(mappedType, type === 'success' ? t('Berhasil') : t('Info'), msg);
+                  }}
                 />
               )}
             </div>
@@ -1456,6 +1644,10 @@ export default function App() {
               onPlaceBid={handlePlaceBid} 
               selectedAssetId={selectedAssetId}
               onSelectAsset={setSelectedAssetId}
+              isUserLoggedIn={isUserLoggedIn}
+              onOpenLoginModal={() => setIsLoginModalOpen(true)}
+              loggedInUserEmail={loggedInUserEmail}
+              loggedInUserName={loggedInUserName}
             />
           ) : (
             <div className="py-24 text-center max-w-md mx-auto space-y-4">
@@ -1632,6 +1824,7 @@ export default function App() {
         isOpen={isLoginModalOpen} 
         onClose={() => setIsLoginModalOpen(false)} 
         onLoginSuccess={handleLoginSuccess} 
+        onExternalLoginSuccess={handleExternalLoginSuccess}
         admins={admins}
       />
 

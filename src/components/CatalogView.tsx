@@ -24,7 +24,8 @@ import {
   DollarSign,
   X,
   ZoomIn,
-  ZoomOut
+  ZoomOut,
+  Lock
 } from 'lucide-react';
 
 interface CatalogViewProps {
@@ -32,6 +33,10 @@ interface CatalogViewProps {
   onPlaceBid: (assetId: string, bidData: Omit<Bid, 'id' | 'timestamp'>) => void;
   selectedAssetId?: string | null;
   onSelectAsset?: (assetId: string | null) => void;
+  isUserLoggedIn?: boolean;
+  onOpenLoginModal?: () => void;
+  loggedInUserEmail?: string;
+  loggedInUserName?: string;
 }
 
 interface CatalogCardProps {
@@ -40,6 +45,8 @@ interface CatalogCardProps {
   onSelectAsset: (assetId: string) => void;
   formatIDR: (value: number) => string;
   onZoomImage?: (images: string[], index: number) => void;
+  isUserLoggedIn?: boolean;
+  onOpenLoginModal?: () => void;
 }
 
 const stripMarkdown = (text: string) => {
@@ -51,7 +58,7 @@ const stripMarkdown = (text: string) => {
     .trim();
 };
 
-function CatalogCard({ asset, onSelectAsset, formatIDR, onZoomImage }: CatalogCardProps) {
+function CatalogCard({ asset, onSelectAsset, formatIDR, onZoomImage, isUserLoggedIn, onOpenLoginModal }: CatalogCardProps) {
   const { t } = useLanguage();
   const [activeImgIdx, setActiveImgIdx] = useState(0);
   const images = asset.imageUrls && asset.imageUrls.length > 0
@@ -84,7 +91,11 @@ function CatalogCard({ asset, onSelectAsset, formatIDR, onZoomImage }: CatalogCa
             if (onZoomImage) {
               onZoomImage(images, activeImgIdx);
             } else {
-              onSelectAsset(asset.id);
+              if (isUserLoggedIn) {
+                onSelectAsset(asset.id);
+              } else {
+                if (onOpenLoginModal) onOpenLoginModal();
+              }
             }
           }}
           onError={(e) => {
@@ -168,26 +179,51 @@ function CatalogCard({ asset, onSelectAsset, formatIDR, onZoomImage }: CatalogCa
         </div>
 
         {/* Price Status */}
-        <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 flex items-center justify-between">
-          <div>
-            <span className="text-[10px] text-slate-400 font-bold uppercase">{t('Harga Pembuka')}</span>
-            <p className="text-xs font-semibold text-slate-500">{formatIDR(asset.startingPrice)}</p>
+        {isUserLoggedIn ? (
+          <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 flex items-center justify-between">
+            <div>
+              <span className="text-[10px] text-slate-400 font-bold uppercase">{t('Harga Pembuka')}</span>
+              <p className="text-xs font-semibold text-slate-500">{formatIDR(asset.startingPrice)}</p>
+            </div>
+            <div className="text-right">
+              <span className="text-[10px] text-blue-600 font-bold uppercase flex items-center justify-end gap-1">
+                <TrendingUp className="w-3.5 h-3.5" /> {t('Penawaran Tertinggi')}
+              </span>
+              <p className="text-base font-bold text-slate-900">{formatIDR(highestOffer)}</p>
+            </div>
           </div>
-          <div className="text-right">
-            <span className="text-[10px] text-blue-600 font-bold uppercase flex items-center justify-end gap-1">
-              <TrendingUp className="w-3.5 h-3.5" /> {t('Penawaran Tertinggi')}
-            </span>
-            <p className="text-base font-bold text-slate-900">{formatIDR(highestOffer)}</p>
+        ) : (
+          <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 flex items-center justify-between text-xs font-medium text-slate-500">
+            <div className="flex items-center gap-1.5 text-slate-500">
+              <Lock className="w-3.5 h-3.5 text-amber-500" />
+              <span>{t('Harga lelang dikunci')}</span>
+            </div>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                if (onOpenLoginModal) onOpenLoginModal();
+              }}
+              className="text-blue-600 hover:text-blue-700 font-bold text-xs"
+            >
+              {t('Masuk / Daftar')}
+            </button>
           </div>
-        </div>
+        )}
 
         {/* CTA Actions */}
         <div className="flex items-center justify-between text-xs font-semibold pt-1">
           <span className="text-slate-500 font-medium">
-            {asset.bids.length} {t('Penawaran Masuk')}
+            {isUserLoggedIn ? `${asset.bids.length} ${t('Penawaran Masuk')}` : `🔒 ${t('Gabung untuk menawar')}`}
           </span>
           <button
-            onClick={() => onSelectAsset(asset.id)}
+            onClick={(e) => {
+              e.stopPropagation();
+              if (isUserLoggedIn) {
+                onSelectAsset(asset.id);
+              } else {
+                if (onOpenLoginModal) onOpenLoginModal();
+              }
+            }}
             className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1 group-hover:shadow-md shadow-blue-500/10"
           >
             {t('Tawar Aset')} <ArrowUpRight className="w-4 h-4" />
@@ -251,7 +287,16 @@ const renderDescription = (text: string) => {
   );
 };
 
-export default function CatalogView({ assets, onPlaceBid, selectedAssetId: propSelectedAssetId, onSelectAsset: propOnSelectAsset }: CatalogViewProps) {
+export default function CatalogView({ 
+  assets, 
+  onPlaceBid, 
+  selectedAssetId: propSelectedAssetId, 
+  onSelectAsset: propOnSelectAsset,
+  isUserLoggedIn = false,
+  onOpenLoginModal,
+  loggedInUserEmail = '',
+  loggedInUserName = ''
+}: CatalogViewProps) {
   const { t } = useLanguage();
   const [internalSelectedAssetId, setInternalSelectedAssetId] = useState<string | null>(null);
 
@@ -329,6 +374,17 @@ export default function CatalogView({ assets, onPlaceBid, selectedAssetId: propS
     surveyDate: '',
     surveyTime: '09:00'
   });
+
+  // Auto-populate bid form fields for logged-in external users
+  useEffect(() => {
+    if (isUserLoggedIn && loggedInUserEmail) {
+      setBidForm(prev => ({
+        ...prev,
+        email: loggedInUserEmail,
+        name: loggedInUserName || prev.name,
+      }));
+    }
+  }, [isUserLoggedIn, loggedInUserEmail, loggedInUserName]);
 
   const [formError, setFormError] = useState('');
   const [formSuccess, setFormSuccess] = useState(false);
@@ -601,6 +657,8 @@ export default function CatalogView({ assets, onPlaceBid, selectedAssetId: propS
                   setLightboxImages(imgs);
                   setLightboxIndex(idx);
                 }}
+                isUserLoggedIn={isUserLoggedIn}
+                onOpenLoginModal={onOpenLoginModal}
               />
             ))}
 
@@ -856,33 +914,52 @@ export default function CatalogView({ assets, onPlaceBid, selectedAssetId: propS
                 <div className="space-y-6">
                   
                   {/* Price & CTA Trigger Card */}
-                  <div className="bg-white p-6 rounded-2xl border border-slate-200/80 border-l-[6px] border-l-slate-300 shadow-xs space-y-4">
-                    <div>
-                      <p className="text-slate-400 text-[10px] font-bold uppercase tracking-wider">{t('Penawaran Tertinggi')}</p>
-                      <h2 className="text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight mt-1">
-                        {formatIDR(currentHighestBid)}
-                      </h2>
-                      <p className="text-[10px] text-slate-400 mt-1">
-                        {t('Harga Awal:')} <strong className="font-semibold text-slate-600">{formatIDR(selectedAsset.startingPrice)}</strong>
-                      </p>
-                    </div>
+                  {isUserLoggedIn ? (
+                    <div className="bg-white p-6 rounded-2xl border border-slate-200/80 border-l-[6px] border-l-slate-300 shadow-xs space-y-4">
+                      <div>
+                        <p className="text-slate-400 text-[10px] font-bold uppercase tracking-wider">{t('Penawaran Tertinggi')}</p>
+                        <h2 className="text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight mt-1">
+                          {formatIDR(currentHighestBid)}
+                        </h2>
+                        <p className="text-[10px] text-slate-400 mt-1">
+                          {t('Harga Awal:')} <strong className="font-semibold text-slate-600">{formatIDR(selectedAsset.startingPrice)}</strong>
+                        </p>
+                      </div>
 
-                    <button 
-                      type="button" 
-                      onClick={() => {
-                        const formElement = document.getElementById('bid-form-card');
-                        if (formElement) {
-                          formElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                        }
-                        if (nameInputRef.current) {
-                          nameInputRef.current.focus();
-                        }
-                      }}
-                      className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all shadow-md shadow-blue-500/10 hover:shadow-blue-500/25 flex items-center justify-center gap-1.5 cursor-pointer"
-                    >
-                      <span>{t('Booking / Kirim Penawaran')}</span>
-                    </button>
-                  </div>
+                      <button 
+                        type="button" 
+                        onClick={() => {
+                          const formElement = document.getElementById('bid-form-card');
+                          if (formElement) {
+                            formElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                          }
+                          if (nameInputRef.current) {
+                            nameInputRef.current.focus();
+                          }
+                        }}
+                        className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all shadow-md shadow-blue-500/10 hover:shadow-blue-500/25 flex items-center justify-center gap-1.5 cursor-pointer"
+                      >
+                        <span>{t('Booking / Kirim Penawaran')}</span>
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="bg-white p-6 rounded-2xl border border-slate-200/80 border-l-[6px] border-l-slate-300 shadow-xs space-y-4">
+                      <div className="flex flex-col items-center py-2 text-center space-y-2">
+                        <Lock className="w-8 h-8 text-amber-500 animate-pulse" />
+                        <h4 className="font-bold text-slate-800 text-sm">{t('Harga dikunci')}</h4>
+                        <p className="text-xs text-slate-500 max-w-[240px] leading-relaxed">
+                          {t('Silakan masuk atau daftar akun baru untuk melihat harga lelang dan melakukan penawaran.')}
+                        </p>
+                      </div>
+                      <button 
+                        type="button" 
+                        onClick={() => { if (onOpenLoginModal) onOpenLoginModal(); }}
+                        className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-3 rounded-xl text-xs font-bold uppercase tracking-wider transition-all shadow-md shadow-indigo-500/10 hover:shadow-indigo-500/25 flex items-center justify-center gap-1.5 cursor-pointer"
+                      >
+                        <span>{t('Masuk / Daftar Sekarang')}</span>
+                      </button>
+                    </div>
+                  )}
 
                   {/* Interactive Bidding & Survey Scheduler Form */}
                   <div 
@@ -893,12 +970,29 @@ export default function CatalogView({ assets, onPlaceBid, selectedAssetId: propS
                         : 'relative z-10 border-slate-200/80 shadow-xs'
                     }`}
                   >
-                    <div className="border-b border-slate-100 pb-3">
-                      <span className="text-[9px] font-mono font-bold bg-blue-50 text-blue-700 px-2.5 py-1 rounded-md border border-blue-100 uppercase">
-                        {t('FORM PENAWARAN')}
-                      </span>
-                      <h3 className="font-bold text-slate-800 text-sm mt-1.5">{t('Ajukan Tawaran & Survei')}</h3>
-                    </div>
+                    {!isUserLoggedIn ? (
+                      <div className="py-6 text-center space-y-3.5">
+                        <Lock className="w-8 h-8 text-amber-500 mx-auto animate-bounce" />
+                        <h4 className="font-bold text-slate-800 text-sm">{t('Formulir Penawaran Terkunci')}</h4>
+                        <p className="text-xs text-slate-500 max-w-[240px] mx-auto leading-relaxed">
+                          {t('Silakan masuk atau daftar menggunakan akun lelang terverifikasi Anda untuk mengajukan penawaran lelang.')}
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => { if (onOpenLoginModal) onOpenLoginModal(); }}
+                          className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 rounded-xl text-xs font-bold transition-all shadow-md shadow-indigo-500/10 hover:shadow-indigo-500/25 cursor-pointer uppercase tracking-wider"
+                        >
+                          {t('Masuk / Daftar Sekarang')}
+                        </button>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="border-b border-slate-100 pb-3">
+                          <span className="text-[9px] font-mono font-bold bg-blue-50 text-blue-700 px-2.5 py-1 rounded-md border border-blue-100 uppercase">
+                            {t('FORM PENAWARAN')}
+                          </span>
+                          <h3 className="font-bold text-slate-800 text-sm mt-1.5">{t('Ajukan Tawaran & Survei')}</h3>
+                        </div>
 
                     {!formSuccess ? (
                       <form 
@@ -1176,6 +1270,8 @@ export default function CatalogView({ assets, onPlaceBid, selectedAssetId: propS
                         {t('Setiap pengiriman penawaran dijamin aman & tunduk pada Syarat Ketentuan Lelang Pancaran.')}
                       </span>
                     </div>
+                  </>
+                )}
 
                     {/* Extra mobile focus bottom spacer inside form card to prevent virtual keyboard occlusion */}
                     {isFormFocused && (

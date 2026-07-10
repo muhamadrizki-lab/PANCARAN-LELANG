@@ -1,6 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { Asset, AssetStatus, Bid } from '../types';
+import { Asset, AssetStatus, Bid, Brand, Category, Condition } from '../types';
 import { useLanguage } from './LanguageContext';
+import { 
+  addBrandToDb, 
+  deleteBrandFromDb,
+  addCategoryToDb,
+  deleteCategoryFromDb,
+  addConditionToDb,
+  deleteConditionFromDb
+} from '../firebase';
 import { 
   Plus, 
   Search, 
@@ -23,11 +31,15 @@ import {
   ChevronLeft,
   ChevronRight,
   ZoomIn,
-  ZoomOut
+  ZoomOut,
+  Settings
 } from 'lucide-react';
 
 interface AdminAssetsProps {
   assets: Asset[];
+  brands?: Brand[];
+  categories?: Category[];
+  conditions?: Condition[];
   selectedAssetId: string | null;
   onSelectAsset: (assetId: string | null) => void;
   onAddAsset: (newAsset: Omit<Asset, 'id' | 'bids' | 'highestBid'>) => void;
@@ -99,6 +111,9 @@ const VEHICLE_TEMPLATES = [
 
 export default function AdminAssets({
   assets,
+  brands = [],
+  categories = [],
+  conditions = [],
   selectedAssetId,
   onSelectAsset,
   onAddAsset,
@@ -110,6 +125,21 @@ export default function AdminAssets({
   const [activeTab, setActiveTab] = useState<'all' | 'Open' | 'Sold'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [brandFilter, setBrandFilter] = useState<string>('all');
+
+  // Master Brand Management State
+  const [isBrandMasterOpen, setIsBrandMasterOpen] = useState(false);
+  const [newBrandName, setNewBrandName] = useState('');
+  const [brandError, setBrandError] = useState('');
+
+  // Master Category Management State
+  const [isCategoryMasterOpen, setIsCategoryMasterOpen] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState('');
+  const [categoryError, setCategoryError] = useState('');
+
+  // Master Physical Condition Management State
+  const [isConditionMasterOpen, setIsConditionMasterOpen] = useState(false);
+  const [newConditionName, setNewConditionName] = useState('');
+  const [conditionError, setConditionError] = useState('');
   
   // Form State
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -138,6 +168,117 @@ export default function AdminAssets({
   useEffect(() => {
     setDetailImageIdx(0);
   }, [selectedAssetId]);
+
+  const handleAddNewBrand = async () => {
+    const trimmed = newBrandName.trim();
+    if (!trimmed) {
+      setBrandError(t('Nama merek tidak boleh kosong.'));
+      return;
+    }
+    
+    // Check duplication (case-insensitive)
+    const duplicate = brands.some(b => b.name.toLowerCase() === trimmed.toLowerCase());
+    if (duplicate) {
+      setBrandError(t('Merek tersebut sudah terdaftar.'));
+      return;
+    }
+
+    try {
+      const brandId = trimmed.toLowerCase().replace(/\s+/g, '-');
+      await addBrandToDb({
+        id: brandId,
+        name: trimmed,
+        createdAt: new Date().toISOString()
+      });
+      setNewBrandName('');
+      setBrandError('');
+    } catch (err) {
+      console.error("Failed to add brand", err);
+      setBrandError(t('Gagal menambahkan merek.'));
+    }
+  };
+
+  const handleDeleteBrand = async (brandId: string) => {
+    try {
+      await deleteBrandFromDb(brandId);
+    } catch (err) {
+      console.error("Failed to delete brand", err);
+    }
+  };
+
+  const handleAddNewCategory = async () => {
+    const trimmed = newCategoryName.trim();
+    if (!trimmed) {
+      setCategoryError(t('Nama kategori tidak boleh kosong.'));
+      return;
+    }
+    
+    // Check duplication (case-insensitive)
+    const duplicate = categories.some(c => c.name.toLowerCase() === trimmed.toLowerCase());
+    if (duplicate) {
+      setCategoryError(t('Kategori tersebut sudah terdaftar.'));
+      return;
+    }
+
+    try {
+      const catId = trimmed.toLowerCase().replace(/\s+/g, '-');
+      await addCategoryToDb({
+        id: catId,
+        name: trimmed,
+        createdAt: new Date().toISOString()
+      });
+      setNewCategoryName('');
+      setCategoryError('');
+    } catch (err) {
+      console.error("Failed to add category", err);
+      setCategoryError(t('Gagal menambahkan kategori.'));
+    }
+  };
+
+  const handleDeleteCategory = async (catId: string) => {
+    try {
+      await deleteCategoryFromDb(catId);
+    } catch (err) {
+      console.error("Failed to delete category", err);
+    }
+  };
+
+  const handleAddNewCondition = async () => {
+    const trimmed = newConditionName.trim();
+    if (!trimmed) {
+      setConditionError(t('Nama kondisi tidak boleh kosong.'));
+      return;
+    }
+    
+    // Check duplication (case-insensitive)
+    const duplicate = conditions.some(c => c.name.toLowerCase() === trimmed.toLowerCase());
+    if (duplicate) {
+      setConditionError(t('Kondisi tersebut sudah terdaftar.'));
+      return;
+    }
+
+    try {
+      const condId = trimmed.toLowerCase().replace(/\s+/g, '-');
+      await addConditionToDb({
+        id: condId,
+        name: trimmed,
+        createdAt: new Date().toISOString()
+      });
+      setNewConditionName('');
+      setConditionError('');
+    } catch (err) {
+      console.error("Failed to add condition", err);
+      setConditionError(t('Gagal menambahkan kondisi.'));
+    }
+  };
+
+  const handleDeleteCondition = async (condId: string) => {
+    try {
+      await deleteConditionFromDb(condId);
+    } catch (err) {
+      console.error("Failed to delete condition", err);
+    }
+  };
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -277,8 +418,23 @@ export default function AdminAssets({
     return matchesTab && matchesBrand && matchesSearch;
   });
 
+  // Master brands list to display in filter options and forms
+  const displayBrandsList = brands.length > 0
+    ? brands.map(b => b.name)
+    : Array.from(new Set(['Hino', 'Isuzu', 'Fuso', 'Scania', 'Toyota', 'Caterpillar', 'Komatsu', 'Lainnya', ...assets.map(a => a.brand)]));
+
+  // Master categories list to display in forms
+  const displayCategoriesList = categories.length > 0
+    ? categories.map(c => c.name)
+    : Array.from(new Set(['Wingbox', 'Box Truck', 'Dump Truck', 'Trailer Head', 'Pickup', 'Forklift', 'Container', 'Lainnya', ...assets.map(a => a.category)]));
+
+  // Master conditions list to display in forms
+  const displayConditionsList = conditions.length > 0
+    ? conditions.map(c => c.name)
+    : Array.from(new Set(['Sangat Baik', 'Baik', 'Cukup', 'Butuh Perbaikan', ...assets.map(a => a.condition)]));
+
   // Unique brands for filter
-  const uniqueBrands = Array.from(new Set(assets.map(a => a.brand)));
+  const uniqueBrands = displayBrandsList;
 
   const handleTemplateClick = (template: typeof VEHICLE_TEMPLATES[0]) => {
     setFormData(prev => ({
@@ -400,7 +556,7 @@ export default function AdminAssets({
                 />
               </div>
 
-              <div className="flex gap-3">
+              <div className="flex gap-2">
                 <div className="relative flex-shrink-0 min-w-[130px]">
                   <select
                     value={brandFilter}
@@ -414,6 +570,14 @@ export default function AdminAssets({
                   </select>
                   <Filter className="w-4 h-4 absolute right-3.5 top-3.5 text-slate-400 pointer-events-none" />
                 </div>
+                <button
+                  type="button"
+                  onClick={() => setIsBrandMasterOpen(true)}
+                  className="p-2.5 bg-slate-50 hover:bg-slate-100 text-slate-600 hover:text-slate-800 border border-slate-200 rounded-xl transition shadow-sm flex items-center justify-center"
+                  title={t('Kelola Master Merek')}
+                >
+                  <Settings className="w-4 h-4" />
+                </button>
               </div>
             </div>
 
@@ -539,7 +703,6 @@ export default function AdminAssets({
 
                     <div className="pt-2 flex items-center justify-between text-xs text-slate-500 font-medium bg-slate-50 -mx-5 -mb-5 px-5 py-3 border-t border-slate-100">
                       <span className="flex items-center gap-1">
-                        <DollarSign className="w-4 h-4 text-slate-400" />
                         {asset.bids.length} {t('Penawaran')}
                       </span>
                       <span className="text-blue-600 font-bold group-hover:underline flex items-center gap-0.5">
@@ -1101,39 +1264,55 @@ export default function AdminAssets({
 
                 {/* Brand */}
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-600 uppercase">{t('Merek (Brand) *')}</label>
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-bold text-slate-600 uppercase">{t('Merek (Brand) *')}</label>
+                    <button
+                      type="button"
+                      onClick={() => setIsBrandMasterOpen(true)}
+                      className="text-xs text-blue-600 hover:text-blue-700 flex items-center gap-1 font-semibold transition"
+                      title={t('Kelola Master Merek')}
+                    >
+                      <Settings className="w-3.5 h-3.5 animate-spin-hover" />
+                    </button>
+                  </div>
                   <select
                     value={formData.brand}
                     onChange={(e) => setFormData(prev => ({ ...prev, brand: e.target.value }))}
                     className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
                   >
-                    <option value="Hino">Hino</option>
-                    <option value="Isuzu">Isuzu</option>
-                    <option value="Fuso">Fuso</option>
-                    <option value="Scania">Scania</option>
-                    <option value="Toyota">Toyota</option>
-                    <option value="Caterpillar">Caterpillar</option>
-                    <option value="Komatsu">Komatsu</option>
-                    <option value="Lainnya">Lainnya</option>
+                    {displayBrandsList.map(bName => (
+                      <option key={bName} value={bName}>{bName}</option>
+                    ))}
+                    {formData.brand && !displayBrandsList.includes(formData.brand) && (
+                      <option value={formData.brand}>{formData.brand}</option>
+                    )}
                   </select>
                 </div>
 
                 {/* Category */}
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-600 uppercase">{t('Kategori Unit *')}</label>
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-bold text-slate-600 uppercase">{t('Kategori Unit *')}</label>
+                    <button
+                      type="button"
+                      onClick={() => setIsCategoryMasterOpen(true)}
+                      className="text-xs text-blue-600 hover:text-blue-700 flex items-center gap-1 font-semibold transition"
+                      title={t('Kelola Master Kategori')}
+                    >
+                      <Settings className="w-3.5 h-3.5 animate-spin-hover" />
+                    </button>
+                  </div>
                   <select
                     value={formData.category}
                     onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
                     className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
                   >
-                    <option value="Wingbox">Wingbox Truck</option>
-                    <option value="Box Truck">Box Truck</option>
-                    <option value="Dump Truck">Dump Truck</option>
-                    <option value="Trailer Head">Trailer Head</option>
-                    <option value="Pickup">Pickup Operational</option>
-                    <option value="Forklift">Forklift / Warehouse</option>
-                    <option value="Container">Container Body</option>
-                    <option value="Lainnya">Lainnya</option>
+                    {displayCategoriesList.map(catName => (
+                      <option key={catName} value={catName}>{catName}</option>
+                    ))}
+                    {formData.category && !displayCategoriesList.includes(formData.category) && (
+                      <option value={formData.category}>{formData.category}</option>
+                    )}
                   </select>
                 </div>
 
@@ -1165,16 +1344,28 @@ export default function AdminAssets({
 
                 {/* Condition */}
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-600 uppercase">{t('Kondisi Fisik Unit *')}</label>
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-bold text-slate-600 uppercase">{t('Kondisi Fisik Unit *')}</label>
+                    <button
+                      type="button"
+                      onClick={() => setIsConditionMasterOpen(true)}
+                      className="text-xs text-blue-600 hover:text-blue-700 flex items-center gap-1 font-semibold transition"
+                      title={t('Kelola Master Kondisi')}
+                    >
+                      <Settings className="w-3.5 h-3.5 animate-spin-hover" />
+                    </button>
+                  </div>
                   <select
                     value={formData.condition}
-                    onChange={(e) => setFormData(prev => ({ ...prev, condition: e.target.value as Asset['condition'] }))}
+                    onChange={(e) => setFormData(prev => ({ ...prev, condition: e.target.value }))}
                     className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
                   >
-                    <option value="Sangat Baik">{t('Sangat Baik')} ({t('Siap Jalan & Bebas Masalah')})</option>
-                    <option value="Baik">{t('Baik')} ({t('Mesin Bagus, Lecet Halus')})</option>
-                    <option value="Cukup">{t('Cukup')} ({t('Butuh Perawatan Ringan')})</option>
-                    <option value="Butuh Perbaikan">{t('Butuh Perbaikan')} ({t('Overhaul/Sasis/Body')})</option>
+                    {displayConditionsList.map(condName => (
+                      <option key={condName} value={condName}>{condName}</option>
+                    ))}
+                    {formData.condition && !displayConditionsList.includes(formData.condition) && (
+                      <option value={formData.condition}>{formData.condition}</option>
+                    )}
                   </select>
                 </div>
 
@@ -1525,6 +1716,357 @@ export default function AdminAssets({
                 ? t('Klik gambar untuk memperkecil • Geser untuk menjelajah detail') 
                 : t('Klik gambar untuk memperbesar • Klik di luar untuk kembali')}
             </p>
+          </div>
+        </div>
+      )}
+
+      {/* Brand Master Data Management Modal */}
+      {isBrandMasterOpen && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[150] flex items-center justify-center p-4 animate-fade-in">
+          <div className="bg-white rounded-3xl max-w-md w-full shadow-2xl border border-slate-100 overflow-hidden flex flex-col max-h-[85vh]">
+            {/* Header */}
+            <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+              <div>
+                <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                  <Settings className="w-5 h-5 text-blue-600" />
+                  {t('Kelola Master Merek')}
+                </h3>
+                <p className="text-xs text-slate-500 mt-1">
+                  {t('Tambah atau hapus daftar pilihan merek yang ada.')}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsBrandMasterOpen(false);
+                  setNewBrandName('');
+                  setBrandError('');
+                }}
+                className="text-slate-400 hover:text-slate-600 p-1.5 hover:bg-slate-100 rounded-lg transition"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Content & List */}
+            <div className="p-6 overflow-y-auto space-y-6 flex-1">
+              {/* Form Input */}
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-slate-700 uppercase block">
+                  {t('Tambah Merek Baru')}
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    placeholder={t('Contoh: Mitsubishi, Volvo')}
+                    value={newBrandName}
+                    onChange={(e) => {
+                      setNewBrandName(e.target.value);
+                      setBrandError('');
+                    }}
+                    className="flex-1 px-3.5 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handleAddNewBrand();
+                      }
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={handleAddNewBrand}
+                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl text-sm shadow-sm transition flex items-center gap-1 shrink-0"
+                  >
+                    <Plus className="w-4 h-4" />
+                    {t('Tambah')}
+                  </button>
+                </div>
+                {brandError && (
+                  <p className="text-rose-500 text-xs font-medium flex items-center gap-1 mt-1">
+                    <AlertTriangle className="w-3.5 h-3.5" />
+                    {brandError}
+                  </p>
+                )}
+              </div>
+
+              {/* Brands List */}
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-slate-500 uppercase block">
+                  {t('Daftar Merek Aktif')} ({brands.length})
+                </label>
+                
+                <div className="border border-slate-100 rounded-2xl divide-y divide-slate-100 overflow-hidden max-h-[35vh] overflow-y-auto">
+                  {brands.length > 0 ? (
+                    brands.map((brandObj) => (
+                      <div key={brandObj.id} className="flex items-center justify-between p-3.5 hover:bg-slate-50 transition">
+                        <span className="text-sm font-semibold text-slate-800">{brandObj.name}</span>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteBrand(brandObj.id)}
+                          className="text-slate-400 hover:text-rose-600 p-1.5 hover:bg-rose-50 rounded-lg transition"
+                          title={t('Hapus Merek')}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-center py-8 text-slate-400 text-xs font-medium">
+                      {t('Tidak ada data merek.')}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="p-4 border-t border-slate-100 bg-slate-50/50 flex justify-end">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsBrandMasterOpen(false);
+                  setNewBrandName('');
+                  setBrandError('');
+                }}
+                className="px-4 py-2 border border-slate-200 text-slate-700 font-semibold rounded-xl text-sm hover:bg-slate-100 transition shadow-sm"
+              >
+                {t('Tutup')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Category Master Data Management Modal */}
+      {isCategoryMasterOpen && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[150] flex items-center justify-center p-4 animate-fade-in">
+          <div className="bg-white rounded-3xl max-w-md w-full shadow-2xl border border-slate-100 overflow-hidden flex flex-col max-h-[85vh]">
+            {/* Header */}
+            <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+              <div>
+                <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                  <Settings className="w-5 h-5 text-blue-600" />
+                  {t('Kelola Master Kategori')}
+                </h3>
+                <p className="text-xs text-slate-500 mt-1">
+                  {t('Tambah atau hapus daftar pilihan kategori yang ada.')}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsCategoryMasterOpen(false);
+                  setNewCategoryName('');
+                  setCategoryError('');
+                }}
+                className="text-slate-400 hover:text-slate-600 p-1.5 hover:bg-slate-100 rounded-lg transition"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Content & List */}
+            <div className="p-6 overflow-y-auto space-y-6 flex-1">
+              {/* Form Input */}
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-slate-700 uppercase block">
+                  {t('Tambah Kategori Baru')}
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    placeholder={t('Contoh: Trailer, Tronton, Box')}
+                    value={newCategoryName}
+                    onChange={(e) => {
+                      setNewCategoryName(e.target.value);
+                      setCategoryError('');
+                    }}
+                    className="flex-1 px-3.5 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handleAddNewCategory();
+                      }
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={handleAddNewCategory}
+                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl text-sm shadow-sm transition flex items-center gap-1 shrink-0"
+                  >
+                    <Plus className="w-4 h-4" />
+                    {t('Tambah')}
+                  </button>
+                </div>
+                {categoryError && (
+                  <p className="text-rose-500 text-xs font-medium flex items-center gap-1 mt-1">
+                    <AlertTriangle className="w-3.5 h-3.5" />
+                    {categoryError}
+                  </p>
+                )}
+              </div>
+
+              {/* Categories List */}
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-slate-500 uppercase block">
+                  {t('Daftar Kategori Aktif')} ({categories.length})
+                </label>
+                
+                <div className="border border-slate-100 rounded-2xl divide-y divide-slate-100 overflow-hidden max-h-[35vh] overflow-y-auto">
+                  {categories.length > 0 ? (
+                    categories.map((catObj) => (
+                      <div key={catObj.id} className="flex items-center justify-between p-3.5 hover:bg-slate-50 transition">
+                        <span className="text-sm font-semibold text-slate-800">{catObj.name}</span>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteCategory(catObj.id)}
+                          className="text-slate-400 hover:text-rose-600 p-1.5 hover:bg-rose-50 rounded-lg transition"
+                          title={t('Hapus Kategori')}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-center py-8 text-slate-400 text-xs font-medium">
+                      {t('Tidak ada data kategori.')}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="p-4 border-t border-slate-100 bg-slate-50/50 flex justify-end">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsCategoryMasterOpen(false);
+                  setNewCategoryName('');
+                  setCategoryError('');
+                }}
+                className="px-4 py-2 border border-slate-200 text-slate-700 font-semibold rounded-xl text-sm hover:bg-slate-100 transition shadow-sm"
+              >
+                {t('Tutup')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Condition Master Data Management Modal */}
+      {isConditionMasterOpen && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[150] flex items-center justify-center p-4 animate-fade-in">
+          <div className="bg-white rounded-3xl max-w-md w-full shadow-2xl border border-slate-100 overflow-hidden flex flex-col max-h-[85vh]">
+            {/* Header */}
+            <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+              <div>
+                <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                  <Settings className="w-5 h-5 text-blue-600" />
+                  {t('Kelola Master Kondisi')}
+                </h3>
+                <p className="text-xs text-slate-500 mt-1">
+                  {t('Tambah atau hapus daftar pilihan kondisi fisik yang ada.')}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsConditionMasterOpen(false);
+                  setNewConditionName('');
+                  setConditionError('');
+                }}
+                className="text-slate-400 hover:text-slate-600 p-1.5 hover:bg-slate-100 rounded-lg transition"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Content & List */}
+            <div className="p-6 overflow-y-auto space-y-6 flex-1">
+              {/* Form Input */}
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-slate-700 uppercase block">
+                  {t('Tambah Kondisi Baru')}
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    placeholder={t('Contoh: Rusak Ringan, Rekondisi')}
+                    value={newConditionName}
+                    onChange={(e) => {
+                      setNewConditionName(e.target.value);
+                      setConditionError('');
+                    }}
+                    className="flex-1 px-3.5 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handleAddNewCondition();
+                      }
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={handleAddNewCondition}
+                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl text-sm shadow-sm transition flex items-center gap-1 shrink-0"
+                  >
+                    <Plus className="w-4 h-4" />
+                    {t('Tambah')}
+                  </button>
+                </div>
+                {conditionError && (
+                  <p className="text-rose-500 text-xs font-medium flex items-center gap-1 mt-1">
+                    <AlertTriangle className="w-3.5 h-3.5" />
+                    {conditionError}
+                  </p>
+                )}
+              </div>
+
+              {/* Conditions List */}
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-slate-500 uppercase block">
+                  {t('Daftar Kondisi Aktif')} ({conditions.length})
+                </label>
+                
+                <div className="border border-slate-100 rounded-2xl divide-y divide-slate-100 overflow-hidden max-h-[35vh] overflow-y-auto">
+                  {conditions.length > 0 ? (
+                    conditions.map((condObj) => (
+                      <div key={condObj.id} className="flex items-center justify-between p-3.5 hover:bg-slate-50 transition">
+                        <span className="text-sm font-semibold text-slate-800">{condObj.name}</span>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteCondition(condObj.id)}
+                          className="text-slate-400 hover:text-rose-600 p-1.5 hover:bg-rose-50 rounded-lg transition"
+                          title={t('Hapus Kondisi')}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-center py-8 text-slate-400 text-xs font-medium">
+                      {t('Tidak ada data kondisi.')}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="p-4 border-t border-slate-100 bg-slate-50/50 flex justify-end">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsConditionMasterOpen(false);
+                  setNewConditionName('');
+                  setConditionError('');
+                }}
+                className="px-4 py-2 border border-slate-200 text-slate-700 font-semibold rounded-xl text-sm hover:bg-slate-100 transition shadow-sm"
+              >
+                {t('Tutup')}
+              </button>
+            </div>
           </div>
         </div>
       )}

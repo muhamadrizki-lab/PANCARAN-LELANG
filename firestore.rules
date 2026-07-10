@@ -10,5 +10,30 @@ service cloud.firestore {
     match /admins/{adminEmail} {
       allow read, write: if true;
     }
+
+    // Rules for Brands collection
+    match /brands/{brandId} {
+      allow read, write: if true;
+    }
+
+    // Rules for Categories collection
+    match /categories/{categoryId} {
+      allow read, write: if true;
+    }
+
+    // Rules for Conditions collection
+    match /conditions/{conditionId} {
+      allow read, write: if true;
+    }
+
+    // Rules for Registered Users collection
+    match /registered_users/{email} {
+      allow read, write: if true;
+    }
+
+    // Rules for Config collection
+    match /config/{documentId} {
+      allow read, write: if true;
+    }
   }
 }
