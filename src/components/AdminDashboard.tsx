@@ -162,76 +162,88 @@ export default function AdminDashboard({
       {/* Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4" id="stats-metric-grid">
         {/* Total Asset */}
-        <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 border-l-[6px] border-l-slate-300 flex items-center justify-between hover:shadow-md transition-all duration-300">
-          <div className="space-y-1">
-            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">{t('Total Asset')}</span>
-            <p className="text-2xl font-bold text-slate-800">{totalAssets}</p>
-            <span className="text-xs text-blue-600 font-medium">{t('Unit di Database')}</span>
+        <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 border-l-[6px] border-l-slate-300 flex flex-col justify-between h-full min-h-[140px] hover:shadow-md transition-all duration-300">
+          <div className="flex justify-between items-start gap-2">
+            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider line-clamp-2 min-h-[32px]">{t('Total Asset')}</span>
+            <div className="p-2 bg-blue-50 text-blue-600 rounded-xl shrink-0">
+              <Truck className="w-5 h-5" />
+            </div>
           </div>
-          <div className="p-3 bg-blue-50 text-blue-600 rounded-xl">
-            <Truck className="w-6 h-6" />
+          <div className="mt-4">
+            <p className="text-2xl font-bold text-slate-800 leading-none">{totalAssets}</p>
+            <span className="text-xs text-blue-600 font-medium block mt-1.5 truncate">{t('Unit di Database')}</span>
           </div>
         </div>
 
         {/* Total Sold */}
-        <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 border-l-[6px] border-l-slate-300 flex items-center justify-between hover:shadow-md transition-all duration-300">
-          <div className="space-y-1">
-            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">{t('Aset Terjual')}</span>
-            <p className="text-2xl font-bold text-emerald-600">{totalSold}</p>
-            <span className="text-xs text-emerald-600 font-medium">
+        <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 border-l-[6px] border-l-slate-300 flex flex-col justify-between h-full min-h-[140px] hover:shadow-md transition-all duration-300">
+          <div className="flex justify-between items-start gap-2">
+            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider line-clamp-2 min-h-[32px]">{t('Aset Terjual')}</span>
+            <div className="p-2 bg-emerald-50 text-emerald-600 rounded-xl shrink-0">
+              <CheckCircle className="w-5 h-5" />
+            </div>
+          </div>
+          <div className="mt-4">
+            <p className="text-2xl font-bold text-emerald-600 leading-none">{totalSold}</p>
+            <span className="text-xs text-emerald-600 font-medium block mt-1.5 truncate">
               {totalAssets > 0 ? Math.round((totalSold / totalAssets) * 100) : 0}% {t('Sukses Lelang')}
             </span>
-          </div>
-          <div className="p-3 bg-emerald-50 text-emerald-600 rounded-xl">
-            <CheckCircle className="w-6 h-6" />
           </div>
         </div>
 
         {/* Total Open */}
-        <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 border-l-[6px] border-l-slate-300 flex items-center justify-between hover:shadow-md transition-all duration-300">
-          <div className="space-y-1">
-            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">{t('Aset Aktif')}</span>
-            <p className="text-2xl font-bold text-blue-600">{totalOpen}</p>
-            <span className="text-xs text-blue-600 font-medium">{t('Menerima Penawaran')}</span>
+        <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 border-l-[6px] border-l-slate-300 flex flex-col justify-between h-full min-h-[140px] hover:shadow-md transition-all duration-300">
+          <div className="flex justify-between items-start gap-2">
+            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider line-clamp-2 min-h-[32px]">{t('Aset Aktif')}</span>
+            <div className="p-2 bg-blue-50 text-blue-600 rounded-xl shrink-0">
+              <Clock className="w-5 h-5" />
+            </div>
           </div>
-          <div className="p-3 bg-blue-50 text-blue-600 rounded-xl">
-            <Clock className="w-6 h-6" />
+          <div className="mt-4">
+            <p className="text-2xl font-bold text-blue-600 leading-none">{totalOpen}</p>
+            <span className="text-xs text-blue-600 font-medium block mt-1.5 truncate">{t('Menerima Penawaran')}</span>
           </div>
         </div>
 
         {/* Total Bidder */}
-        <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 border-l-[6px] border-l-slate-300 flex items-center justify-between hover:shadow-md transition-all duration-300">
-          <div className="space-y-1">
-            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">{t('Total Bidder')}</span>
-            <p className="text-2xl font-bold text-slate-800">{totalBidders}</p>
-            <span className="text-xs text-purple-600 font-medium">{t('Partisipan Unik')}</span>
+        <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 border-l-[6px] border-l-slate-300 flex flex-col justify-between h-full min-h-[140px] hover:shadow-md transition-all duration-300">
+          <div className="flex justify-between items-start gap-2">
+            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider line-clamp-2 min-h-[32px]">{t('Total Bidder')}</span>
+            <div className="p-2 bg-purple-50 text-purple-600 rounded-xl shrink-0">
+              <Users className="w-5 h-5" />
+            </div>
           </div>
-          <div className="p-3 bg-purple-50 text-purple-600 rounded-xl">
-            <Users className="w-6 h-6" />
+          <div className="mt-4">
+            <p className="text-2xl font-bold text-slate-800 leading-none">{totalBidders}</p>
+            <span className="text-xs text-purple-600 font-medium block mt-1.5 truncate">{t('Partisipan Unik')}</span>
           </div>
         </div>
 
         {/* Total Akses Internal */}
-        <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 border-l-[6px] border-l-slate-300 flex items-center justify-between hover:shadow-md transition-all duration-300">
-          <div className="space-y-1">
-            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">{t('Total Akses Internal')}</span>
-            <p className="text-2xl font-bold text-slate-700">{admins.length}</p>
-            <span className="text-xs text-slate-500 font-medium">{t('Administrator Aktif')}</span>
+        <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 border-l-[6px] border-l-slate-300 flex flex-col justify-between h-full min-h-[140px] hover:shadow-md transition-all duration-300">
+          <div className="flex justify-between items-start gap-2">
+            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider line-clamp-2 min-h-[32px]">{t('Akses Internal')}</span>
+            <div className="p-2 bg-slate-50 text-slate-500 rounded-xl shrink-0">
+              <Shield className="w-5 h-5" />
+            </div>
           </div>
-          <div className="p-3 bg-slate-50 text-slate-500 rounded-xl">
-            <Shield className="w-6 h-6" />
+          <div className="mt-4">
+            <p className="text-2xl font-bold text-slate-700 leading-none">{admins.length}</p>
+            <span className="text-xs text-slate-500 font-medium block mt-1.5 truncate">{t('Administrator Aktif')}</span>
           </div>
         </div>
 
         {/* Total Akses Eksternal */}
-        <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 border-l-[6px] border-l-slate-300 flex items-center justify-between hover:shadow-md transition-all duration-300">
-          <div className="space-y-1">
-            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">{t('Total Akses Eksternal')}</span>
-            <p className="text-2xl font-bold text-slate-700">{registeredUsers.length}</p>
-            <span className="text-xs text-slate-500 font-medium">{t('Pengguna Terdaftar')}</span>
+        <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 border-l-[6px] border-l-slate-300 flex flex-col justify-between h-full min-h-[140px] hover:shadow-md transition-all duration-300">
+          <div className="flex justify-between items-start gap-2">
+            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider line-clamp-2 min-h-[32px]">{t('Akses Eksternal')}</span>
+            <div className="p-2 bg-slate-50 text-slate-500 rounded-xl shrink-0">
+              <Globe className="w-5 h-5" />
+            </div>
           </div>
-          <div className="p-3 bg-slate-50 text-slate-500 rounded-xl">
-            <Globe className="w-6 h-6" />
+          <div className="mt-4">
+            <p className="text-2xl font-bold text-slate-700 leading-none">{registeredUsers.length}</p>
+            <span className="text-xs text-slate-500 font-medium block mt-1.5 truncate">{t('Pengguna Terdaftar')}</span>
           </div>
         </div>
       </div>

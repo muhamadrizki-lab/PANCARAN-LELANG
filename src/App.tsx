@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Asset, AssetStatus, Bid, AdminUser, ToastNotification, Brand, Category, Condition, RegisteredUser } from './types';
+import { Asset, AssetStatus, Bid, AdminUser, ToastNotification, Brand, Category, Condition, RegisteredUser, Series, VehicleColour, FuelType, AttachmentCategory, AttachmentType } from './types';
 import { INITIAL_ASSETS, INITIAL_ADMINS } from './data/mockData';
 import AdminDashboard from './components/AdminDashboard';
 import AdminAssets from './components/AdminAssets';
@@ -25,6 +25,21 @@ import {
   deleteCategoryFromDb,
   addConditionToDb,
   deleteConditionFromDb,
+  addSeriesToDb,
+  deleteSeriesFromDb,
+  subscribeToSeries,
+  addVehicleColourToDb,
+  deleteVehicleColourFromDb,
+  subscribeToVehicleColours,
+  addFuelTypeToDb,
+  deleteFuelTypeFromDb,
+  subscribeToFuelTypes,
+  addAttachmentCategoryToDb,
+  deleteAttachmentCategoryFromDb,
+  subscribeToAttachmentCategories,
+  addAttachmentTypeToDb,
+  deleteAttachmentTypeFromDb,
+  subscribeToAttachmentTypes,
   addAssetToDb, 
   updateAssetInDb, 
   deleteAssetFromDb, 
@@ -68,6 +83,7 @@ export default function App() {
   const [isUserLoggedIn, setIsUserLoggedIn] = useState(false);
   const [loggedInUserEmail, setLoggedInUserEmail] = useState('');
   const [loggedInUserName, setLoggedInUserName] = useState('');
+  const [loggedInUserPhone, setLoggedInUserPhone] = useState('');
   
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   
@@ -83,6 +99,11 @@ export default function App() {
   const [brands, setBrands] = useState<Brand[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [conditions, setConditions] = useState<Condition[]>([]);
+  const [seriesList, setSeriesList] = useState<Series[]>([]);
+  const [vehicleColours, setVehicleColours] = useState<VehicleColour[]>([]);
+  const [fuelTypes, setFuelTypes] = useState<FuelType[]>([]);
+  const [attachmentCategories, setAttachmentCategories] = useState<AttachmentCategory[]>([]);
+  const [attachmentTypes, setAttachmentTypes] = useState<AttachmentType[]>([]);
   const [registeredUsers, setRegisteredUsers] = useState<RegisteredUser[]>([]);
   
   // Selected asset for highlighting or detailed specs in AdminAssets
@@ -333,6 +354,11 @@ export default function App() {
     let unsubscribeBrands: (() => void) | null = null;
     let unsubscribeCategories: (() => void) | null = null;
     let unsubscribeConditions: (() => void) | null = null;
+    let unsubscribeSeries: (() => void) | null = null;
+    let unsubscribeVehicleColours: (() => void) | null = null;
+    let unsubscribeFuelTypes: (() => void) | null = null;
+    let unsubscribeAttachmentCategories: (() => void) | null = null;
+    let unsubscribeAttachmentTypes: (() => void) | null = null;
     let unsubscribeRegisteredUsers: (() => void) | null = null;
 
     // Seed default records if empty, then subscribe to collections in real-time
@@ -352,6 +378,36 @@ export default function App() {
       unsubscribeConditions = subscribeToConditions((updatedConditions) => {
         if (updatedConditions) {
           setConditions(updatedConditions);
+        }
+      });
+
+      unsubscribeSeries = subscribeToSeries((updated) => {
+        if (updated) {
+          setSeriesList(updated);
+        }
+      });
+
+      unsubscribeVehicleColours = subscribeToVehicleColours((updated) => {
+        if (updated) {
+          setVehicleColours(updated);
+        }
+      });
+
+      unsubscribeFuelTypes = subscribeToFuelTypes((updated) => {
+        if (updated) {
+          setFuelTypes(updated);
+        }
+      });
+
+      unsubscribeAttachmentCategories = subscribeToAttachmentCategories((updated) => {
+        if (updated) {
+          setAttachmentCategories(updated);
+        }
+      });
+
+      unsubscribeAttachmentTypes = subscribeToAttachmentTypes((updated) => {
+        if (updated) {
+          setAttachmentTypes(updated);
         }
       });
 
@@ -539,12 +595,14 @@ export default function App() {
     const storedSession = localStorage.getItem('pancaran_session_email');
     const storedSessionType = localStorage.getItem('pancaran_session_type');
     const storedSessionName = localStorage.getItem('pancaran_session_name') || '';
+    const storedSessionPhone = localStorage.getItem('pancaran_session_phone') || '';
 
     if (storedSession) {
       if (storedSessionType === 'user') {
         setIsUserLoggedIn(true);
         setLoggedInUserEmail(storedSession);
         setLoggedInUserName(storedSessionName);
+        setLoggedInUserPhone(storedSessionPhone);
       } else {
         setIsAdminLoggedIn(true);
         setLoggedInAdminEmail(storedSession);
@@ -557,6 +615,11 @@ export default function App() {
       if (unsubscribeBrands) unsubscribeBrands();
       if (unsubscribeCategories) unsubscribeCategories();
       if (unsubscribeConditions) unsubscribeConditions();
+      if (unsubscribeSeries) unsubscribeSeries();
+      if (unsubscribeVehicleColours) unsubscribeVehicleColours();
+      if (unsubscribeFuelTypes) unsubscribeFuelTypes();
+      if (unsubscribeAttachmentCategories) unsubscribeAttachmentCategories();
+      if (unsubscribeAttachmentTypes) unsubscribeAttachmentTypes();
       if (unsubscribeRegisteredUsers) unsubscribeRegisteredUsers();
     };
   }, []);
@@ -721,13 +784,19 @@ export default function App() {
     setAdminTab('dashboard');
   };
 
-  const handleExternalLoginSuccess = (email: string, name: string) => {
+  const handleExternalLoginSuccess = (email: string, name: string, phone?: string) => {
     setIsUserLoggedIn(true);
     setLoggedInUserEmail(email);
     setLoggedInUserName(name);
+    setLoggedInUserPhone(phone || '');
     localStorage.setItem('pancaran_session_email', email);
     localStorage.setItem('pancaran_session_type', 'user');
     localStorage.setItem('pancaran_session_name', name);
+    if (phone) {
+      localStorage.setItem('pancaran_session_phone', phone);
+    } else {
+      localStorage.removeItem('pancaran_session_phone');
+    }
     setRole('external');
   };
 
@@ -737,9 +806,11 @@ export default function App() {
     setIsUserLoggedIn(false);
     setLoggedInUserEmail('');
     setLoggedInUserName('');
+    setLoggedInUserPhone('');
     localStorage.removeItem('pancaran_session_email');
     localStorage.removeItem('pancaran_session_type');
     localStorage.removeItem('pancaran_session_name');
+    localStorage.removeItem('pancaran_session_phone');
     setRole('external'); // Redirect back to external catalog on logout
   };
 
@@ -1662,6 +1733,11 @@ export default function App() {
                   brands={brands}
                   categories={categories}
                   conditions={conditions}
+                  seriesList={seriesList}
+                  vehicleColours={vehicleColours}
+                  fuelTypes={fuelTypes}
+                  attachmentCategories={attachmentCategories}
+                  attachmentTypes={attachmentTypes}
                   selectedAssetId={selectedAssetId}
                   onSelectAsset={setSelectedAssetId}
                   onAddAsset={handleAddAsset}
@@ -1706,6 +1782,7 @@ export default function App() {
               onOpenLoginModal={() => setIsLoginModalOpen(true)}
               loggedInUserEmail={isUserLoggedIn ? loggedInUserEmail : loggedInAdminEmail}
               loggedInUserName={isUserLoggedIn ? loggedInUserName : adminName}
+              loggedInUserPhone={isUserLoggedIn ? loggedInUserPhone : ''}
             />
           ) : (
             <div className="py-24 text-center max-w-md mx-auto space-y-4">

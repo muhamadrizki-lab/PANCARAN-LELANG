@@ -28,6 +28,29 @@ export interface Asset {
   imageUrls?: string[];
   bids: Bid[];
   dimensions?: string;
+  model?: string;
+  series?: string;
+  axels?: string;
+  vehicleColour?: string;
+  fuelType?: string;
+  horsepower?: string;
+  odometer?: string;
+  keurValidUntil?: string;
+  stnkPlateValidUntil?: string;
+  stnkTaxValidUntil?: string;
+  haveAttachment?: boolean;
+  attachmentCategory?: string;
+  attachmentImageUrl?: string;
+  attachmentImageUrls?: string[];
+  attachmentType?: string;
+  attachmentAxels?: string;
+  attachmentYearBuilt?: string;
+  attachmentKeurNo?: string;
+  attachmentValidUntil?: string;
+  attachmentLength?: string;
+  attachmentWidth?: string;
+  attachmentHeight?: string;
+  attachmentExtension?: string;
 }
 
 export interface AdminUser {
@@ -51,6 +74,36 @@ export interface Category {
 }
 
 export interface Condition {
+  id: string;
+  name: string;
+  createdAt: string;
+}
+
+export interface Series {
+  id: string;
+  name: string;
+  createdAt: string;
+}
+
+export interface VehicleColour {
+  id: string;
+  name: string;
+  createdAt: string;
+}
+
+export interface FuelType {
+  id: string;
+  name: string;
+  createdAt: string;
+}
+
+export interface AttachmentCategory {
+  id: string;
+  name: string;
+  createdAt: string;
+}
+
+export interface AttachmentType {
   id: string;
   name: string;
   createdAt: string;

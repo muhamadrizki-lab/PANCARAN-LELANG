@@ -11,7 +11,7 @@ import {
   deleteDoc, 
   onSnapshot 
 } from 'firebase/firestore';
-import { Asset, AdminUser, Bid, Brand, Category, Condition, RegisteredUser } from './types';
+import { Asset, AdminUser, Bid, Brand, Category, Condition, RegisteredUser, Series, VehicleColour, FuelType, AttachmentCategory, AttachmentType } from './types';
 import { INITIAL_ASSETS, INITIAL_ADMINS } from './data/mockData';
 import firebaseConfig from '../firebase-applet-config.json';
 
@@ -29,6 +29,11 @@ const ADMINS_COLLECTION = 'admins';
 const BRANDS_COLLECTION = 'brands';
 const CATEGORIES_COLLECTION = 'categories';
 const CONDITIONS_COLLECTION = 'conditions';
+const SERIES_COLLECTION = 'series';
+const COLOURS_COLLECTION = 'colours';
+const FUELS_COLLECTION = 'fuels';
+const ATTACHMENTS_COLLECTION = 'attachments';
+const ATTACHMENT_TYPES_COLLECTION = 'attachment_types';
 
 // Operation types for standard error handling matching the Firebase skill
 export enum OperationType {
@@ -223,6 +228,86 @@ export async function seedDatabaseIfEmpty() {
         });
       }
       console.log('Conditions successfully seeded.');
+    }
+
+    // Seed Series
+    const seriesSnapshot = await getDocs(collection(db, SERIES_COLLECTION));
+    if (seriesSnapshot.empty) {
+      console.log('Seeding initial series to Firestore...');
+      const defaultSeries = ['440', '500', '320', '260', 'FL 260', 'GIGA', 'Lainnya'];
+      for (const sName of defaultSeries) {
+        const sId = sName.toLowerCase().replace(/\s+/g, '-');
+        await setDoc(doc(db, SERIES_COLLECTION, sId), {
+          id: sId,
+          name: sName,
+          createdAt: new Date().toISOString()
+        });
+      }
+      console.log('Series successfully seeded.');
+    }
+
+    // Seed Colours
+    const coloursSnapshot = await getDocs(collection(db, COLOURS_COLLECTION));
+    if (coloursSnapshot.empty) {
+      console.log('Seeding initial colours to Firestore...');
+      const defaultColours = ['White', 'Yellow', 'Red', 'Blue', 'Green', 'Grey', 'Black', 'Lainnya'];
+      for (const cName of defaultColours) {
+        const cId = cName.toLowerCase().replace(/\s+/g, '-');
+        await setDoc(doc(db, COLOURS_COLLECTION, cId), {
+          id: cId,
+          name: cName,
+          createdAt: new Date().toISOString()
+        });
+      }
+      console.log('Colours successfully seeded.');
+    }
+
+    // Seed Fuels
+    const fuelsSnapshot = await getDocs(collection(db, FUELS_COLLECTION));
+    if (fuelsSnapshot.empty) {
+      console.log('Seeding initial fuels to Firestore...');
+      const defaultFuels = ['Solar', 'Diesel', 'Bensin', 'Listrik'];
+      for (const fName of defaultFuels) {
+        const fId = fName.toLowerCase().replace(/\s+/g, '-');
+        await setDoc(doc(db, FUELS_COLLECTION, fId), {
+          id: fId,
+          name: fName,
+          createdAt: new Date().toISOString()
+        });
+      }
+      console.log('Fuels successfully seeded.');
+    }
+
+    // Seed Attachments
+    const attachmentsSnapshot = await getDocs(collection(db, ATTACHMENTS_COLLECTION));
+    if (attachmentsSnapshot.empty) {
+      console.log('Seeding initial attachments to Firestore...');
+      const defaultAttachments = ['Trailer', 'Box', 'Dump Body', 'Flatbed', 'Lainnya'];
+      for (const aName of defaultAttachments) {
+        const aId = aName.toLowerCase().replace(/\s+/g, '-');
+        await setDoc(doc(db, ATTACHMENTS_COLLECTION, aId), {
+          id: aId,
+          name: aName,
+          createdAt: new Date().toISOString()
+        });
+      }
+      console.log('Attachments successfully seeded.');
+    }
+
+    // Seed Attachment Types
+    const attachmentTypesSnapshot = await getDocs(collection(db, ATTACHMENT_TYPES_COLLECTION));
+    if (attachmentTypesSnapshot.empty) {
+      console.log('Seeding initial attachment types to Firestore...');
+      const defaultAttachmentTypes = ['Highbed 40', 'Highbed 20', 'Flatbed 40', 'Flatbed 20', 'Skeleton 40', 'Skeleton 20', 'Lowbed', 'Dolly', 'Lainnya'];
+      for (const atName of defaultAttachmentTypes) {
+        const atId = atName.toLowerCase().replace(/\s+/g, '-');
+        await setDoc(doc(db, ATTACHMENT_TYPES_COLLECTION, atId), {
+          id: atId,
+          name: atName,
+          createdAt: new Date().toISOString()
+        });
+      }
+      console.log('Attachment types successfully seeded.');
     }
   } catch (error) {
     console.error('Error during database seeding:', error);
@@ -544,6 +629,221 @@ export function subscribeToConditions(callback: (conditions: Condition[]) => voi
     },
     (error) => {
       handleFirestoreError(error, OperationType.LIST, CONDITIONS_COLLECTION);
+    }
+  );
+}
+
+/**
+ * Add a new series to Firestore.
+ */
+export async function addSeriesToDb(series: Series): Promise<void> {
+  const path = `${SERIES_COLLECTION}/${series.id}`;
+  try {
+    await setDoc(doc(db, SERIES_COLLECTION, series.id), sanitizeData(series));
+  } catch (error) {
+    handleFirestoreError(error, OperationType.CREATE, path);
+  }
+}
+
+/**
+ * Delete a series from Firestore.
+ */
+export async function deleteSeriesFromDb(id: string): Promise<void> {
+  const path = `${SERIES_COLLECTION}/${id}`;
+  try {
+    await deleteDoc(doc(db, SERIES_COLLECTION, id));
+  } catch (error) {
+    handleFirestoreError(error, OperationType.DELETE, path);
+  }
+}
+
+/**
+ * Subscribe to realtime updates for series.
+ */
+export function subscribeToSeries(callback: (series: Series[]) => void) {
+  return onSnapshot(
+    collection(db, SERIES_COLLECTION),
+    (snapshot) => {
+      const list: Series[] = [];
+      snapshot.forEach((docSnap) => {
+        list.push(docSnap.data() as Series);
+      });
+      callback(list.sort((a, b) => a.name.localeCompare(b.name)));
+    },
+    (error) => {
+      handleFirestoreError(error, OperationType.LIST, SERIES_COLLECTION);
+    }
+  );
+}
+
+/**
+ * Add a new vehicle colour to Firestore.
+ */
+export async function addVehicleColourToDb(colour: VehicleColour): Promise<void> {
+  const path = `${COLOURS_COLLECTION}/${colour.id}`;
+  try {
+    await setDoc(doc(db, COLOURS_COLLECTION, colour.id), sanitizeData(colour));
+  } catch (error) {
+    handleFirestoreError(error, OperationType.CREATE, path);
+  }
+}
+
+/**
+ * Delete a vehicle colour from Firestore.
+ */
+export async function deleteVehicleColourFromDb(id: string): Promise<void> {
+  const path = `${COLOURS_COLLECTION}/${id}`;
+  try {
+    await deleteDoc(doc(db, COLOURS_COLLECTION, id));
+  } catch (error) {
+    handleFirestoreError(error, OperationType.DELETE, path);
+  }
+}
+
+/**
+ * Subscribe to realtime updates for vehicle colours.
+ */
+export function subscribeToVehicleColours(callback: (colours: VehicleColour[]) => void) {
+  return onSnapshot(
+    collection(db, COLOURS_COLLECTION),
+    (snapshot) => {
+      const list: VehicleColour[] = [];
+      snapshot.forEach((docSnap) => {
+        list.push(docSnap.data() as VehicleColour);
+      });
+      callback(list.sort((a, b) => a.name.localeCompare(b.name)));
+    },
+    (error) => {
+      handleFirestoreError(error, OperationType.LIST, COLOURS_COLLECTION);
+    }
+  );
+}
+
+/**
+ * Add a new fuel type to Firestore.
+ */
+export async function addFuelTypeToDb(fuel: FuelType): Promise<void> {
+  const path = `${FUELS_COLLECTION}/${fuel.id}`;
+  try {
+    await setDoc(doc(db, FUELS_COLLECTION, fuel.id), sanitizeData(fuel));
+  } catch (error) {
+    handleFirestoreError(error, OperationType.CREATE, path);
+  }
+}
+
+/**
+ * Delete a fuel type from Firestore.
+ */
+export async function deleteFuelTypeFromDb(id: string): Promise<void> {
+  const path = `${FUELS_COLLECTION}/${id}`;
+  try {
+    await deleteDoc(doc(db, FUELS_COLLECTION, id));
+  } catch (error) {
+    handleFirestoreError(error, OperationType.DELETE, path);
+  }
+}
+
+/**
+ * Subscribe to realtime updates for fuel types.
+ */
+export function subscribeToFuelTypes(callback: (fuels: FuelType[]) => void) {
+  return onSnapshot(
+    collection(db, FUELS_COLLECTION),
+    (snapshot) => {
+      const list: FuelType[] = [];
+      snapshot.forEach((docSnap) => {
+        list.push(docSnap.data() as FuelType);
+      });
+      callback(list.sort((a, b) => a.name.localeCompare(b.name)));
+    },
+    (error) => {
+      handleFirestoreError(error, OperationType.LIST, FUELS_COLLECTION);
+    }
+  );
+}
+
+/**
+ * Add a new attachment category to Firestore.
+ */
+export async function addAttachmentCategoryToDb(attachment: AttachmentCategory): Promise<void> {
+  const path = `${ATTACHMENTS_COLLECTION}/${attachment.id}`;
+  try {
+    await setDoc(doc(db, ATTACHMENTS_COLLECTION, attachment.id), sanitizeData(attachment));
+  } catch (error) {
+    handleFirestoreError(error, OperationType.CREATE, path);
+  }
+}
+
+/**
+ * Delete an attachment category from Firestore.
+ */
+export async function deleteAttachmentCategoryFromDb(id: string): Promise<void> {
+  const path = `${ATTACHMENTS_COLLECTION}/${id}`;
+  try {
+    await deleteDoc(doc(db, ATTACHMENTS_COLLECTION, id));
+  } catch (error) {
+    handleFirestoreError(error, OperationType.DELETE, path);
+  }
+}
+
+/**
+ * Subscribe to realtime updates for attachment categories.
+ */
+export function subscribeToAttachmentCategories(callback: (attachments: AttachmentCategory[]) => void) {
+  return onSnapshot(
+    collection(db, ATTACHMENTS_COLLECTION),
+    (snapshot) => {
+      const list: AttachmentCategory[] = [];
+      snapshot.forEach((docSnap) => {
+        list.push(docSnap.data() as AttachmentCategory);
+      });
+      callback(list.sort((a, b) => a.name.localeCompare(b.name)));
+    },
+    (error) => {
+      handleFirestoreError(error, OperationType.LIST, ATTACHMENTS_COLLECTION);
+    }
+  );
+}
+
+/**
+ * Add a new attachment type to Firestore.
+ */
+export async function addAttachmentTypeToDb(atType: AttachmentType): Promise<void> {
+  const path = `${ATTACHMENT_TYPES_COLLECTION}/${atType.id}`;
+  try {
+    await setDoc(doc(db, ATTACHMENT_TYPES_COLLECTION, atType.id), sanitizeData(atType));
+  } catch (error) {
+    handleFirestoreError(error, OperationType.CREATE, path);
+  }
+}
+
+/**
+ * Delete an attachment type from Firestore.
+ */
+export async function deleteAttachmentTypeFromDb(id: string): Promise<void> {
+  const path = `${ATTACHMENT_TYPES_COLLECTION}/${id}`;
+  try {
+    await deleteDoc(doc(db, ATTACHMENT_TYPES_COLLECTION, id));
+  } catch (error) {
+    handleFirestoreError(error, OperationType.DELETE, path);
+  }
+}
+
+/**
+ * Subscribe to realtime updates for attachment types.
+ */
+export function subscribeToAttachmentTypes(callback: (atTypes: AttachmentType[]) => void) {
+  return onSnapshot(
+    collection(db, ATTACHMENT_TYPES_COLLECTION),
+    (snapshot) => {
+      const list: AttachmentType[] = [];
+      snapshot.forEach((docSnap) => {
+        list.push(docSnap.data() as AttachmentType);
+      });
+      callback(list.sort((a, b) => a.name.localeCompare(b.name)));
+    },
+    (error) => {
+      handleFirestoreError(error, OperationType.LIST, ATTACHMENT_TYPES_COLLECTION);
     }
   );
 }

@@ -26,6 +26,31 @@ service cloud.firestore {
       allow read, write: if true;
     }
 
+    // Rules for Series collection
+    match /series/{seriesId} {
+      allow read, write: if true;
+    }
+
+    // Rules for Colours collection
+    match /colours/{colourId} {
+      allow read, write: if true;
+    }
+
+    // Rules for Fuels collection
+    match /fuels/{fuelId} {
+      allow read, write: if true;
+    }
+
+    // Rules for Attachments collection
+    match /attachments/{attachmentId} {
+      allow read, write: if true;
+    }
+
+    // Rules for Attachment Types collection
+    match /attachment_types/{typeId} {
+      allow read, write: if true;
+    }
+
     // Rules for Registered Users collection
     match /registered_users/{email} {
       allow read, write: if true;

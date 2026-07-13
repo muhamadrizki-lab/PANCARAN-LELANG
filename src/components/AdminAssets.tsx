@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Asset, AssetStatus, Bid, Brand, Category, Condition } from '../types';
+import { Asset, AssetStatus, Bid, Brand, Category, Condition, Series, VehicleColour, FuelType, AttachmentCategory, AttachmentType } from '../types';
 import { useLanguage } from './LanguageContext';
 import { 
   addBrandToDb, 
@@ -7,7 +7,17 @@ import {
   addCategoryToDb,
   deleteCategoryFromDb,
   addConditionToDb,
-  deleteConditionFromDb
+  deleteConditionFromDb,
+  addSeriesToDb,
+  deleteSeriesFromDb,
+  addVehicleColourToDb,
+  deleteVehicleColourFromDb,
+  addFuelTypeToDb,
+  deleteFuelTypeFromDb,
+  addAttachmentCategoryToDb,
+  deleteAttachmentCategoryFromDb,
+  addAttachmentTypeToDb,
+  deleteAttachmentTypeFromDb
 } from '../firebase';
 import { 
   Plus, 
@@ -40,6 +50,11 @@ interface AdminAssetsProps {
   brands?: Brand[];
   categories?: Category[];
   conditions?: Condition[];
+  seriesList?: Series[];
+  vehicleColours?: VehicleColour[];
+  fuelTypes?: FuelType[];
+  attachmentCategories?: AttachmentCategory[];
+  attachmentTypes?: AttachmentType[];
   selectedAssetId: string | null;
   onSelectAsset: (assetId: string | null) => void;
   onAddAsset: (newAsset: Omit<Asset, 'id' | 'bids' | 'highestBid'>) => void;
@@ -114,6 +129,11 @@ export default function AdminAssets({
   brands = [],
   categories = [],
   conditions = [],
+  seriesList = [],
+  vehicleColours = [],
+  fuelTypes = [],
+  attachmentCategories = [],
+  attachmentTypes = [],
   selectedAssetId,
   onSelectAsset,
   onAddAsset,
@@ -125,6 +145,8 @@ export default function AdminAssets({
   const [activeTab, setActiveTab] = useState<'all' | 'Open' | 'Sold'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [brandFilter, setBrandFilter] = useState<string>('all');
+  const [categoryFilter, setCategoryFilter] = useState<string>('all');
+  const [conditionFilter, setConditionFilter] = useState<string>('all');
 
   // Master Brand Management State
   const [isBrandMasterOpen, setIsBrandMasterOpen] = useState(false);
@@ -140,6 +162,31 @@ export default function AdminAssets({
   const [isConditionMasterOpen, setIsConditionMasterOpen] = useState(false);
   const [newConditionName, setNewConditionName] = useState('');
   const [conditionError, setConditionError] = useState('');
+
+  // Master Series Management State
+  const [isSeriesMasterOpen, setIsSeriesMasterOpen] = useState(false);
+  const [newSeriesName, setNewSeriesName] = useState('');
+  const [seriesError, setSeriesError] = useState('');
+
+  // Master Vehicle Colour Management State
+  const [isColourMasterOpen, setIsColourMasterOpen] = useState(false);
+  const [newColourName, setNewColourName] = useState('');
+  const [colourError, setColourError] = useState('');
+
+  // Master Fuel Type Management State
+  const [isFuelMasterOpen, setIsFuelMasterOpen] = useState(false);
+  const [newFuelName, setNewFuelName] = useState('');
+  const [fuelError, setFuelError] = useState('');
+
+  // Master Attachment Category Management State
+  const [isAttachmentMasterOpen, setIsAttachmentMasterOpen] = useState(false);
+  const [newAttachmentName, setNewAttachmentName] = useState('');
+  const [attachmentError, setAttachmentError] = useState('');
+
+  // Master Attachment Type Management State
+  const [isAttachmentTypeMasterOpen, setIsAttachmentTypeMasterOpen] = useState(false);
+  const [newAttachmentTypeName, setNewAttachmentTypeName] = useState('');
+  const [attachmentTypeError, setAttachmentTypeError] = useState('');
   
   // Form State
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -280,6 +327,176 @@ export default function AdminAssets({
     }
   };
 
+  const handleAddNewSeries = async () => {
+    const trimmed = newSeriesName.trim();
+    if (!trimmed) {
+      setSeriesError(t('Nama seri tidak boleh kosong.'));
+      return;
+    }
+    const duplicate = seriesList.some(s => s.name.toLowerCase() === trimmed.toLowerCase());
+    if (duplicate) {
+      setSeriesError(t('Seri tersebut sudah terdaftar.'));
+      return;
+    }
+    try {
+      const sId = trimmed.toLowerCase().replace(/\s+/g, '-');
+      await addSeriesToDb({
+        id: sId,
+        name: trimmed,
+        createdAt: new Date().toISOString()
+      });
+      setNewSeriesName('');
+      setSeriesError('');
+    } catch (err) {
+      console.error("Failed to add series", err);
+      setSeriesError(t('Gagal menambahkan seri.'));
+    }
+  };
+
+  const handleDeleteSeries = async (sId: string) => {
+    try {
+      await deleteSeriesFromDb(sId);
+    } catch (err) {
+      console.error("Failed to delete series", err);
+    }
+  };
+
+  const handleAddNewColour = async () => {
+    const trimmed = newColourName.trim();
+    if (!trimmed) {
+      setColourError(t('Warna tidak boleh kosong.'));
+      return;
+    }
+    const duplicate = vehicleColours.some(c => c.name.toLowerCase() === trimmed.toLowerCase());
+    if (duplicate) {
+      setColourError(t('Warna tersebut sudah terdaftar.'));
+      return;
+    }
+    try {
+      const cId = trimmed.toLowerCase().replace(/\s+/g, '-');
+      await addVehicleColourToDb({
+        id: cId,
+        name: trimmed,
+        createdAt: new Date().toISOString()
+      });
+      setNewColourName('');
+      setColourError('');
+    } catch (err) {
+      console.error("Failed to add colour", err);
+      setColourError(t('Gagal menambahkan warna.'));
+    }
+  };
+
+  const handleDeleteColour = async (cId: string) => {
+    try {
+      await deleteVehicleColourFromDb(cId);
+    } catch (err) {
+      console.error("Failed to delete colour", err);
+    }
+  };
+
+  const handleAddNewFuel = async () => {
+    const trimmed = newFuelName.trim();
+    if (!trimmed) {
+      setFuelError(t('Bahan bakar tidak boleh kosong.'));
+      return;
+    }
+    const duplicate = fuelTypes.some(f => f.name.toLowerCase() === trimmed.toLowerCase());
+    if (duplicate) {
+      setFuelError(t('Bahan bakar tersebut sudah terdaftar.'));
+      return;
+    }
+    try {
+      const fId = trimmed.toLowerCase().replace(/\s+/g, '-');
+      await addFuelTypeToDb({
+        id: fId,
+        name: trimmed,
+        createdAt: new Date().toISOString()
+      });
+      setNewFuelName('');
+      setFuelError('');
+    } catch (err) {
+      console.error("Failed to add fuel type", err);
+      setFuelError(t('Gagal menambahkan bahan bakar.'));
+    }
+  };
+
+  const handleDeleteFuel = async (fId: string) => {
+    try {
+      await deleteFuelTypeFromDb(fId);
+    } catch (err) {
+      console.error("Failed to delete fuel type", err);
+    }
+  };
+
+  const handleAddNewAttachment = async () => {
+    const trimmed = newAttachmentName.trim();
+    if (!trimmed) {
+      setAttachmentError(t('Nama jenis gandengan tidak boleh kosong.'));
+      return;
+    }
+    const duplicate = attachmentCategories.some(a => a.name.toLowerCase() === trimmed.toLowerCase());
+    if (duplicate) {
+      setAttachmentError(t('Jenis gandengan tersebut sudah terdaftar.'));
+      return;
+    }
+    try {
+      const aId = trimmed.toLowerCase().replace(/\s+/g, '-');
+      await addAttachmentCategoryToDb({
+        id: aId,
+        name: trimmed,
+        createdAt: new Date().toISOString()
+      });
+      setNewAttachmentName('');
+      setAttachmentError('');
+    } catch (err) {
+      console.error("Failed to add attachment category", err);
+      setAttachmentError(t('Gagal menambahkan jenis gandengan.'));
+    }
+  };
+
+  const handleDeleteAttachment = async (aId: string) => {
+    try {
+      await deleteAttachmentCategoryFromDb(aId);
+    } catch (err) {
+      console.error("Failed to delete attachment category", err);
+    }
+  };
+
+  const handleAddNewAttachmentType = async () => {
+    const trimmed = newAttachmentTypeName.trim();
+    if (!trimmed) {
+      setAttachmentTypeError(t('Tipe gandengan tidak boleh kosong.'));
+      return;
+    }
+    const duplicate = attachmentTypes.some(at => at.name.toLowerCase() === trimmed.toLowerCase());
+    if (duplicate) {
+      setAttachmentTypeError(t('Tipe gandengan tersebut sudah terdaftar.'));
+      return;
+    }
+    try {
+      const atId = trimmed.toLowerCase().replace(/\s+/g, '-');
+      await addAttachmentTypeToDb({
+        id: atId,
+        name: trimmed,
+        createdAt: new Date().toISOString()
+      });
+      setNewAttachmentTypeName('');
+      setAttachmentTypeError('');
+    } catch (err) {
+      console.error("Failed to add attachment type", err);
+      setAttachmentTypeError(t('Gagal menambahkan tipe gandengan.'));
+    }
+  };
+
+  const handleDeleteAttachmentType = async (atId: string) => {
+    try {
+      await deleteAttachmentTypeFromDb(atId);
+    } catch (err) {
+      console.error("Failed to delete attachment type", err);
+    }
+  };
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
@@ -312,7 +529,30 @@ export default function AdminAssets({
     startingPrice: '',
     imageUrl: '',
     imageUrls: [] as string[],
-    dimensions: ''
+    dimensions: '',
+    model: '',
+    series: '',
+    axels: '',
+    vehicleColour: 'White',
+    fuelType: 'Solar',
+    horsepower: '',
+    odometer: '',
+    keurValidUntil: '',
+    stnkPlateValidUntil: '',
+    stnkTaxValidUntil: '',
+    haveAttachment: false,
+    attachmentCategory: 'Trailer',
+    attachmentImageUrl: '',
+    attachmentImageUrls: [] as string[],
+    attachmentType: '',
+    attachmentAxels: '',
+    attachmentYearBuilt: '',
+    attachmentKeurNo: '',
+    attachmentValidUntil: '',
+    attachmentLength: '',
+    attachmentWidth: '',
+    attachmentHeight: '',
+    attachmentExtension: ''
   });
 
   const descriptionRef = React.useRef<HTMLTextAreaElement>(null);
@@ -338,7 +578,30 @@ export default function AdminAssets({
       startingPrice: '',
       imageUrl: '',
       imageUrls: [],
-      dimensions: ''
+      dimensions: '',
+      model: '',
+      series: '440',
+      axels: '',
+      vehicleColour: 'White',
+      fuelType: 'Solar',
+      horsepower: '',
+      odometer: '',
+      keurValidUntil: '',
+      stnkPlateValidUntil: '',
+      stnkTaxValidUntil: '',
+      haveAttachment: false,
+      attachmentCategory: 'Trailer',
+      attachmentImageUrl: '',
+      attachmentImageUrls: [],
+      attachmentType: 'Highbed 40',
+      attachmentAxels: '',
+      attachmentYearBuilt: '',
+      attachmentKeurNo: '',
+      attachmentValidUntil: '',
+      attachmentLength: '',
+      attachmentWidth: '',
+      attachmentHeight: '',
+      attachmentExtension: ''
     });
     setIsFormOpen(true);
   };
@@ -360,7 +623,30 @@ export default function AdminAssets({
       startingPrice: String(asset.startingPrice),
       imageUrl: asset.imageUrl || (resolvedUrls[0] || ''),
       imageUrls: resolvedUrls,
-      dimensions: asset.dimensions || ''
+      dimensions: asset.dimensions || '',
+      model: asset.model || '',
+      series: asset.series || '440',
+      axels: asset.axels || '',
+      vehicleColour: asset.vehicleColour || 'White',
+      fuelType: asset.fuelType || 'Solar',
+      horsepower: asset.horsepower || '',
+      odometer: asset.odometer || '',
+      keurValidUntil: asset.keurValidUntil || '',
+      stnkPlateValidUntil: asset.stnkPlateValidUntil || '',
+      stnkTaxValidUntil: asset.stnkTaxValidUntil || '',
+      haveAttachment: !!asset.haveAttachment,
+      attachmentCategory: asset.attachmentCategory || 'Trailer',
+      attachmentImageUrl: asset.attachmentImageUrl || '',
+      attachmentImageUrls: asset.attachmentImageUrls || [],
+      attachmentType: asset.attachmentType || 'Highbed 40',
+      attachmentAxels: asset.attachmentAxels || '',
+      attachmentYearBuilt: asset.attachmentYearBuilt || '',
+      attachmentKeurNo: asset.attachmentKeurNo || '',
+      attachmentValidUntil: asset.attachmentValidUntil || '',
+      attachmentLength: asset.attachmentLength || '',
+      attachmentWidth: asset.attachmentWidth || '',
+      attachmentHeight: asset.attachmentHeight || '',
+      attachmentExtension: asset.attachmentExtension || ''
     });
     setIsFormOpen(true);
   };
@@ -406,19 +692,62 @@ export default function AdminAssets({
     }
   };
 
+  const handleAttachmentFilesChange = async (files: FileList | File[]) => {
+    if (!files || files.length === 0) return;
+    
+    const newImageUrls: string[] = [];
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      if (!file.type.startsWith('image/')) {
+        alert('Hanya file gambar yang diperbolehkan.');
+        continue;
+      }
+      
+      try {
+        const compressedBase64 = await compressImage(file, 800, 600, 0.75);
+        newImageUrls.push(compressedBase64);
+      } catch (err) {
+        console.error('Gagal mengompresi gambar:', err);
+        const readerStr = await new Promise<string>((resolve) => {
+          const reader = new FileReader();
+          reader.onload = (e) => resolve(e.target?.result as string || '');
+          reader.readAsDataURL(file);
+        });
+        if (readerStr) {
+          newImageUrls.push(readerStr);
+        }
+      }
+    }
+
+    if (newImageUrls.length > 0) {
+      setFormData(prev => {
+        const currentUrls = prev.attachmentImageUrls || [];
+        const merged = [...currentUrls, ...newImageUrls];
+        return {
+          ...prev,
+          attachmentImageUrls: merged,
+          attachmentImageUrl: merged[0] || prev.attachmentImageUrl
+        };
+      });
+    }
+  };
+
   const selectedAsset = assets.find(a => a.id === selectedAssetId);
 
   // Filter logic
   const filteredAssets = assets.filter(asset => {
     const matchesTab = activeTab === 'all' || asset.status === activeTab;
     const matchesBrand = brandFilter === 'all' || asset.brand === brandFilter;
+    const matchesCategory = categoryFilter === 'all' || asset.category === categoryFilter;
+    const matchesCondition = conditionFilter === 'all' || asset.condition === conditionFilter;
     const matchesSearch = 
       asset.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       asset.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
       asset.plateNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      asset.category.toLowerCase().includes(searchQuery.toLowerCase());
+      asset.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      asset.brand.toLowerCase().includes(searchQuery.toLowerCase());
 
-    return matchesTab && matchesBrand && matchesSearch;
+    return matchesTab && matchesBrand && matchesCategory && matchesCondition && matchesSearch;
   });
 
   // Master brands list to display in filter options and forms
@@ -435,6 +764,31 @@ export default function AdminAssets({
   const displayConditionsList = conditions.length > 0
     ? conditions.map(c => c.name)
     : Array.from(new Set(['Sangat Baik', 'Baik', 'Cukup', 'Butuh Perbaikan', ...assets.map(a => a.condition)]));
+
+  // Master series list to display in forms and filters
+  const displaySeriesList = seriesList.length > 0
+    ? seriesList.map(s => s.name)
+    : Array.from(new Set(['440', '500', '320', '260', 'FL 260', 'GIGA', 'Lainnya', ...assets.map(a => a.series).filter((x): x is string => !!x)]));
+
+  // Master colours list to display in forms and filters
+  const displayColoursList = vehicleColours.length > 0
+    ? vehicleColours.map(c => c.name)
+    : Array.from(new Set(['White', 'Yellow', 'Red', 'Blue', 'Green', 'Grey', 'Black', 'Lainnya', ...assets.map(a => a.vehicleColour).filter((x): x is string => !!x)]));
+
+  // Master fuel list to display in forms and filters
+  const displayFuelsList = fuelTypes.length > 0
+    ? fuelTypes.map(f => f.name)
+    : Array.from(new Set(['Solar', 'Diesel', 'Bensin', 'Listrik', ...assets.map(a => a.fuelType).filter((x): x is string => !!x)]));
+
+  // Master attachment category list to display in forms and filters
+  const displayAttachmentCategoriesList = attachmentCategories.length > 0
+    ? attachmentCategories.map(ac => ac.name)
+    : Array.from(new Set(['Trailer', 'Box', 'Dump Body', 'Flatbed', 'Lainnya', ...assets.map(a => a.attachmentCategory).filter((x): x is string => !!x)]));
+
+  // Master attachment type list to display in forms and filters
+  const displayAttachmentTypesList = attachmentTypes.length > 0
+    ? attachmentTypes.map(at => at.name)
+    : Array.from(new Set(['Highbed 40', 'Highbed 20', 'Flatbed 40', 'Flatbed 20', 'Skeleton 40', 'Skeleton 20', 'Lowbed', 'Dolly', 'Lainnya', ...assets.map(a => a.attachmentType).filter((x): x is string => !!x)]));
 
   // Unique brands for filter
   const uniqueBrands = displayBrandsList;
@@ -473,7 +827,30 @@ export default function AdminAssets({
       startingPrice: Number(formData.startingPrice),
       imageUrl: formData.imageUrl || (resolvedUrls[0] || ''),
       imageUrls: resolvedUrls,
-      dimensions: formData.dimensions || ''
+      dimensions: formData.dimensions || '',
+      model: formData.model || '',
+      series: formData.series || '',
+      axels: formData.axels || '',
+      vehicleColour: formData.vehicleColour || 'White',
+      fuelType: formData.fuelType || 'Solar',
+      horsepower: formData.horsepower || '',
+      odometer: formData.odometer || '',
+      keurValidUntil: formData.keurValidUntil || '',
+      stnkPlateValidUntil: formData.stnkPlateValidUntil || '',
+      stnkTaxValidUntil: formData.stnkTaxValidUntil || '',
+      haveAttachment: formData.haveAttachment,
+      attachmentCategory: formData.attachmentCategory || 'Trailer',
+      attachmentImageUrl: formData.attachmentImageUrl || '',
+      attachmentImageUrls: formData.attachmentImageUrls || [],
+      attachmentType: formData.attachmentType || '',
+      attachmentAxels: formData.attachmentAxels || '',
+      attachmentYearBuilt: formData.attachmentYearBuilt || '',
+      attachmentKeurNo: formData.attachmentKeurNo || '',
+      attachmentValidUntil: formData.attachmentValidUntil || '',
+      attachmentLength: formData.attachmentLength || '',
+      attachmentWidth: formData.attachmentWidth || '',
+      attachmentHeight: formData.attachmentHeight || '',
+      attachmentExtension: formData.attachmentExtension || ''
     };
 
     if (editAssetId) {
@@ -499,7 +876,30 @@ export default function AdminAssets({
       startingPrice: '',
       imageUrl: '',
       imageUrls: [],
-      dimensions: ''
+      dimensions: '',
+      model: '',
+      series: '440',
+      axels: '',
+      vehicleColour: 'White',
+      fuelType: 'Solar',
+      horsepower: '',
+      odometer: '',
+      keurValidUntil: '',
+      stnkPlateValidUntil: '',
+      stnkTaxValidUntil: '',
+      haveAttachment: false,
+      attachmentCategory: 'Trailer',
+      attachmentImageUrl: '',
+      attachmentImageUrls: [],
+      attachmentType: 'Highbed 40',
+      attachmentAxels: '',
+      attachmentYearBuilt: '',
+      attachmentKeurNo: '',
+      attachmentValidUntil: '',
+      attachmentLength: '',
+      attachmentWidth: '',
+      attachmentHeight: '',
+      attachmentExtension: ''
     });
     setIsFormOpen(false);
   };
@@ -548,8 +948,8 @@ export default function AdminAssets({
           {/* Filters & Search Row */}
           <div className="bg-white p-4 rounded-2xl border border-slate-200 border-l-[6px] border-l-slate-300 shadow-sm space-y-4">
             
-            {/* Search and Brand Filter */}
-            <div className="flex flex-col md:flex-row gap-3">
+            {/* Search and Filters */}
+            <div className="flex flex-col xl:flex-row gap-3">
               <div className="relative flex-1">
                 <Search className="w-4 h-4 absolute left-3.5 top-3.5 text-slate-400" />
                 <input
@@ -561,28 +961,81 @@ export default function AdminAssets({
                 />
               </div>
 
-              <div className="flex gap-2">
-                <div className="relative flex-shrink-0 min-w-[130px]">
-                  <select
-                    value={brandFilter}
-                    onChange={(e) => setBrandFilter(e.target.value)}
-                    className="w-full pl-3 pr-8 py-2.5 bg-white border border-slate-200 rounded-xl appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-sm font-medium text-slate-700"
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 w-full xl:w-auto xl:min-w-[520px]">
+                {/* Brand Filter */}
+                <div className="flex gap-1.5 items-center">
+                  <div className="relative flex-1">
+                    <select
+                      value={brandFilter}
+                      onChange={(e) => setBrandFilter(e.target.value)}
+                      className="w-full pl-3 pr-8 py-2 bg-white border border-slate-200 rounded-xl appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-xs font-semibold text-slate-700"
+                    >
+                      <option value="all">{t('Semua Brand')}</option>
+                      {uniqueBrands.map(b => (
+                        <option key={b} value={b}>{b}</option>
+                      ))}
+                    </select>
+                    <Filter className="w-3.5 h-3.5 absolute right-3 top-3 text-slate-400 pointer-events-none" />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setIsBrandMasterOpen(true)}
+                    className="p-2 bg-slate-50 hover:bg-slate-100 text-slate-600 hover:text-slate-800 border border-slate-200 rounded-xl transition shadow-sm flex items-center justify-center shrink-0"
+                    title={t('Kelola Master Merek')}
                   >
-                    <option value="all">{t('Semua Brand')}</option>
-                    {uniqueBrands.map(b => (
-                      <option key={b} value={b}>{b}</option>
-                    ))}
-                  </select>
-                  <Filter className="w-4 h-4 absolute right-3.5 top-3.5 text-slate-400 pointer-events-none" />
+                    <Settings className="w-4 h-4 animate-spin-hover" />
+                  </button>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setIsBrandMasterOpen(true)}
-                  className="p-2.5 bg-slate-50 hover:bg-slate-100 text-slate-600 hover:text-slate-800 border border-slate-200 rounded-xl transition shadow-sm flex items-center justify-center"
-                  title={t('Kelola Master Merek')}
-                >
-                  <Settings className="w-4 h-4" />
-                </button>
+
+                {/* Category Filter */}
+                <div className="flex gap-1.5 items-center">
+                  <div className="relative flex-1">
+                    <select
+                      value={categoryFilter}
+                      onChange={(e) => setCategoryFilter(e.target.value)}
+                      className="w-full pl-3 pr-8 py-2 bg-white border border-slate-200 rounded-xl appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-xs font-semibold text-slate-700"
+                    >
+                      <option value="all">{t('Semua Kategori')}</option>
+                      {displayCategoriesList.map(c => (
+                        <option key={c} value={c}>{c}</option>
+                      ))}
+                    </select>
+                    <Filter className="w-3.5 h-3.5 absolute right-3 top-3 text-slate-400 pointer-events-none" />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setIsCategoryMasterOpen(true)}
+                    className="p-2 bg-slate-50 hover:bg-slate-100 text-slate-600 hover:text-slate-800 border border-slate-200 rounded-xl transition shadow-sm flex items-center justify-center shrink-0"
+                    title={t('Kelola Master Kategori')}
+                  >
+                    <Settings className="w-4 h-4 animate-spin-hover" />
+                  </button>
+                </div>
+
+                {/* Condition Filter */}
+                <div className="flex gap-1.5 items-center">
+                  <div className="relative flex-1">
+                    <select
+                      value={conditionFilter}
+                      onChange={(e) => setConditionFilter(e.target.value)}
+                      className="w-full pl-3 pr-8 py-2 bg-white border border-slate-200 rounded-xl appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-xs font-semibold text-slate-700"
+                    >
+                      <option value="all">{t('Semua Kondisi')}</option>
+                      {displayConditionsList.map(c => (
+                        <option key={c} value={t(c)}>{t(c)}</option>
+                      ))}
+                    </select>
+                    <Filter className="w-3.5 h-3.5 absolute right-3 top-3 text-slate-400 pointer-events-none" />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setIsConditionMasterOpen(true)}
+                    className="p-2 bg-slate-50 hover:bg-slate-100 text-slate-600 hover:text-slate-800 border border-slate-200 rounded-xl transition shadow-sm flex items-center justify-center shrink-0"
+                    title={t('Kelola Master Kondisi')}
+                  >
+                    <Settings className="w-4 h-4 animate-spin-hover" />
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -931,6 +1384,48 @@ export default function AdminAssets({
                     <span className="font-semibold text-slate-800 font-mono text-xs">{selectedAsset.dimensions}</span>
                   </div>
                 )}
+                {selectedAsset.model && (
+                  <div>
+                    <span className="text-[11px] text-slate-400 font-bold block">{t('MODEL')}</span>
+                    <span className="font-semibold text-slate-800 text-xs">{selectedAsset.model}</span>
+                  </div>
+                )}
+                {selectedAsset.series && (
+                  <div>
+                    <span className="text-[11px] text-slate-400 font-bold block">{t('SERIES')}</span>
+                    <span className="font-semibold text-slate-800 text-xs">{selectedAsset.series}</span>
+                  </div>
+                )}
+                {selectedAsset.axels && (
+                  <div>
+                    <span className="text-[11px] text-slate-400 font-bold block">{t('AXELS')}</span>
+                    <span className="font-semibold text-slate-800 text-xs">{selectedAsset.axels}</span>
+                  </div>
+                )}
+                {selectedAsset.vehicleColour && (
+                  <div>
+                    <span className="text-[11px] text-slate-400 font-bold block">{t('WARNA')}</span>
+                    <span className="font-semibold text-slate-800 text-xs">{t(selectedAsset.vehicleColour)}</span>
+                  </div>
+                )}
+                {selectedAsset.fuelType && (
+                  <div>
+                    <span className="text-[11px] text-slate-400 font-bold block">{t('BAHAN BAKAR')}</span>
+                    <span className="font-semibold text-slate-800 text-xs">{t(selectedAsset.fuelType)}</span>
+                  </div>
+                )}
+                {selectedAsset.horsepower && (
+                  <div>
+                    <span className="text-[11px] text-slate-400 font-bold block">{t('Horsepower (HP)')}</span>
+                    <span className="font-semibold text-slate-800 text-xs">{selectedAsset.horsepower}</span>
+                  </div>
+                )}
+                {selectedAsset.odometer && (
+                  <div>
+                    <span className="text-[11px] text-slate-400 font-bold block">{t('KM Spidometer')}</span>
+                    <span className="font-semibold text-slate-800 text-xs">{selectedAsset.odometer}</span>
+                  </div>
+                )}
               </div>
 
               <div className="pt-2 border-t border-slate-50">
@@ -1222,7 +1717,7 @@ export default function AdminAssets({
         <div className={`fixed inset-0 transition-all duration-300 z-50 flex items-center justify-center p-4 ${
           isFormFocused ? 'bg-slate-950/92 backdrop-blur-md' : 'bg-slate-900/60 backdrop-blur-sm'
         }`}>
-          <div className={`bg-white rounded-3xl shadow-xl w-full max-w-2xl overflow-hidden animate-zoom-in max-h-[90vh] flex flex-col transition-all duration-300 ${
+          <div className={`bg-white rounded-3xl shadow-xl w-full max-w-4xl overflow-hidden animate-zoom-in max-h-[90vh] flex flex-col transition-all duration-300 ${
             isFormFocused ? 'ring-4 ring-blue-500/10' : ''
           }`}>
             
@@ -1255,174 +1750,9 @@ export default function AdminAssets({
                   setIsFormFocused(false);
                 }
               }}
-              className="flex-1 overflow-y-auto p-6 space-y-6"
+              className="flex-1 overflow-y-auto p-6 space-y-8"
             >
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                
-                {/* Name */}
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-600 uppercase">{t('Nama Kendaraan / Aset')} *</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder={t('Contoh: Fuso Ranger FL Wingbox 2022')}
-                    value={formData.name}
-                    onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                    className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-                  />
-                </div>
-
-                {/* Brand */}
-                <div className="space-y-1.5">
-                  <div className="flex items-center justify-between">
-                    <label className="text-xs font-bold text-slate-600 uppercase">{t('Merek (Brand) *')}</label>
-                    <button
-                      type="button"
-                      onClick={() => setIsBrandMasterOpen(true)}
-                      className="text-xs text-blue-600 hover:text-blue-700 flex items-center gap-1 font-semibold transition"
-                      title={t('Kelola Master Merek')}
-                    >
-                      <Settings className="w-3.5 h-3.5 animate-spin-hover" />
-                    </button>
-                  </div>
-                  <select
-                    value={formData.brand}
-                    onChange={(e) => setFormData(prev => ({ ...prev, brand: e.target.value }))}
-                    className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-                  >
-                    {displayBrandsList.map(bName => (
-                      <option key={bName} value={bName}>{bName}</option>
-                    ))}
-                    {formData.brand && !displayBrandsList.includes(formData.brand) && (
-                      <option value={formData.brand}>{formData.brand}</option>
-                    )}
-                  </select>
-                </div>
-
-                {/* Category */}
-                <div className="space-y-1.5">
-                  <div className="flex items-center justify-between">
-                    <label className="text-xs font-bold text-slate-600 uppercase">{t('Kategori Unit *')}</label>
-                    <button
-                      type="button"
-                      onClick={() => setIsCategoryMasterOpen(true)}
-                      className="text-xs text-blue-600 hover:text-blue-700 flex items-center gap-1 font-semibold transition"
-                      title={t('Kelola Master Kategori')}
-                    >
-                      <Settings className="w-3.5 h-3.5 animate-spin-hover" />
-                    </button>
-                  </div>
-                  <select
-                    value={formData.category}
-                    onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
-                    className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-                  >
-                    {displayCategoriesList.map(catName => (
-                      <option key={catName} value={catName}>{catName}</option>
-                    ))}
-                    {formData.category && !displayCategoriesList.includes(formData.category) && (
-                      <option value={formData.category}>{formData.category}</option>
-                    )}
-                  </select>
-                </div>
-
-                {/* Model Year */}
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-600 uppercase">{t('Tahun Produksi *')}</label>
-                  <input
-                    type="number"
-                    min="1990"
-                    max="2027"
-                    required
-                    value={formData.modelYear}
-                    onChange={(e) => setFormData(prev => ({ ...prev, modelYear: Number(e.target.value) }))}
-                    className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-                  />
-                </div>
-
-                {/* Plate Number */}
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-600 uppercase">{t('No. Registrasi / Plat Nomor')}</label>
-                  <input
-                    type="text"
-                    placeholder={t('Contoh: B 9912 PXT (kosongkan jika alat berat)')}
-                    value={formData.plateNumber}
-                    onChange={(e) => setFormData(prev => ({ ...prev, plateNumber: e.target.value }))}
-                    className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-sm font-mono"
-                  />
-                </div>
-
-                {/* Dimensi Unit */}
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-600 uppercase">{t('Dimensi Unit (Opsional)')}</label>
-                  <input
-                    type="text"
-                    placeholder={t('Contoh: 12.0 x 2.5 x 3.7 m')}
-                    value={formData.dimensions}
-                    onChange={(e) => setFormData(prev => ({ ...prev, dimensions: e.target.value }))}
-                    className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-sm"
-                  />
-                </div>
-
-                {/* Condition */}
-                <div className="space-y-1.5">
-                  <div className="flex items-center justify-between">
-                    <label className="text-xs font-bold text-slate-600 uppercase">{t('Kondisi Fisik Unit *')}</label>
-                    <button
-                      type="button"
-                      onClick={() => setIsConditionMasterOpen(true)}
-                      className="text-xs text-blue-600 hover:text-blue-700 flex items-center gap-1 font-semibold transition"
-                      title={t('Kelola Master Kondisi')}
-                    >
-                      <Settings className="w-3.5 h-3.5 animate-spin-hover" />
-                    </button>
-                  </div>
-                  <select
-                    value={formData.condition}
-                    onChange={(e) => setFormData(prev => ({ ...prev, condition: e.target.value }))}
-                    className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-                  >
-                    {displayConditionsList.map(condName => (
-                      <option key={condName} value={condName}>{condName}</option>
-                    ))}
-                    {formData.condition && !displayConditionsList.includes(formData.condition) && (
-                      <option value={formData.condition}>{formData.condition}</option>
-                    )}
-                  </select>
-                </div>
-
-                {/* Starting Price */}
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-600 uppercase">{t('Harga Awal Lelang (IDR) *')}</label>
-                  <input
-                    type="text"
-                    inputMode="numeric"
-                    required
-                    placeholder={t('Contoh: 150.000.000')}
-                    value={formatNumberWithDots(formData.startingPrice)}
-                    onChange={(e) => {
-                      const raw = e.target.value.replace(/\D/g, '');
-                      setFormData(prev => ({ ...prev, startingPrice: raw }));
-                    }}
-                    className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-                  />
-                </div>
-
-                {/* Location */}
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-600 uppercase">{t('Lokasi Pool / Depo Unit *')}</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder={t('Contoh: Pool Marunda Blok C, Jakut')}
-                    value={formData.location}
-                    onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
-                    className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-                  />
-                </div>
-              </div>
-
               {/* Image Upload Component */}
               <div className="space-y-4">
                 <label className="text-xs font-bold text-slate-600 uppercase tracking-wider block">{t('Foto / Gambar Unit * (Bisa Unggah Banyak)')}</label>
@@ -1599,6 +1929,632 @@ export default function AdminAssets({
                     </p>
                   </details>
                 </div>
+              </div>
+
+              {/* GROUP 1: MAIN INFORMATION */}
+              <div className="space-y-4">
+                <div className="border-b border-slate-100 pb-2">
+                  <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
+                    <span className="w-1.5 h-4 bg-blue-600 rounded-full"></span>
+                    {t('INFORMASI UTAMA (MAIN INFORMATION)')}
+                  </h3>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Name */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-600 uppercase">{t('Nama Kendaraan / Aset')} *</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder={t('Contoh: Fuso Ranger FL Wingbox 2022')}
+                      value={formData.name}
+                      onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                      className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                    />
+                  </div>
+
+                  {/* Brand */}
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-bold text-slate-600 uppercase">{t('Merek (Brand) *')}</label>
+                      <button
+                        type="button"
+                        onClick={() => setIsBrandMasterOpen(true)}
+                        className="text-xs text-blue-600 hover:text-blue-700 flex items-center gap-1 font-semibold transition"
+                        title={t('Kelola Master Merek')}
+                      >
+                        <Settings className="w-3.5 h-3.5 animate-spin-hover" />
+                      </button>
+                    </div>
+                    <select
+                      value={formData.brand}
+                      onChange={(e) => setFormData(prev => ({ ...prev, brand: e.target.value }))}
+                      className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                    >
+                      {displayBrandsList.map(bName => (
+                        <option key={bName} value={bName}>{bName}</option>
+                      ))}
+                      {formData.brand && !displayBrandsList.includes(formData.brand) && (
+                        <option value={formData.brand}>{formData.brand}</option>
+                      )}
+                    </select>
+                  </div>
+
+                  {/* Category */}
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-bold text-slate-600 uppercase">{t('Kategori Unit *')}</label>
+                      <button
+                        type="button"
+                        onClick={() => setIsCategoryMasterOpen(true)}
+                        className="text-xs text-blue-600 hover:text-blue-700 flex items-center gap-1 font-semibold transition"
+                        title={t('Kelola Master Kategori')}
+                      >
+                        <Settings className="w-3.5 h-3.5 animate-spin-hover" />
+                      </button>
+                    </div>
+                    <select
+                      value={formData.category}
+                      onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
+                      className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                    >
+                      {displayCategoriesList.map(catName => (
+                        <option key={catName} value={catName}>{catName}</option>
+                      ))}
+                      {formData.category && !displayCategoriesList.includes(formData.category) && (
+                        <option value={formData.category}>{formData.category}</option>
+                      )}
+                    </select>
+                  </div>
+
+                  {/* Model Year */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-600 uppercase">{t('Tahun Produksi *')}</label>
+                    <input
+                      type="number"
+                      min="1990"
+                      max="2027"
+                      required
+                      value={formData.modelYear}
+                      onChange={(e) => setFormData(prev => ({ ...prev, modelYear: Number(e.target.value) }))}
+                      className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                    />
+                  </div>
+
+                  {/* Plate Number */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-600 uppercase">{t('No. Registrasi / Plat Nomor')}</label>
+                    <input
+                      type="text"
+                      placeholder={t('Contoh: B 9912 PXT (kosongkan jika alat berat)')}
+                      value={formData.plateNumber}
+                      onChange={(e) => setFormData(prev => ({ ...prev, plateNumber: e.target.value }))}
+                      className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-sm font-mono"
+                    />
+                  </div>
+
+                  {/* Dimensi Unit */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-600 uppercase">{t('Dimensi Unit (Opsional)')}</label>
+                    <input
+                      type="text"
+                      placeholder={t('Contoh: 12.0 x 2.5 x 3.7 m')}
+                      value={formData.dimensions}
+                      onChange={(e) => setFormData(prev => ({ ...prev, dimensions: e.target.value }))}
+                      className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-sm"
+                    />
+                  </div>
+
+                  {/* Condition */}
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-bold text-slate-600 uppercase">{t('Kondisi Fisik Unit *')}</label>
+                      <button
+                        type="button"
+                        onClick={() => setIsConditionMasterOpen(true)}
+                        className="text-xs text-blue-600 hover:text-blue-700 flex items-center gap-1 font-semibold transition"
+                        title={t('Kelola Master Kondisi')}
+                      >
+                        <Settings className="w-3.5 h-3.5 animate-spin-hover" />
+                      </button>
+                    </div>
+                    <select
+                      value={formData.condition}
+                      onChange={(e) => setFormData(prev => ({ ...prev, condition: e.target.value }))}
+                      className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                    >
+                      {displayConditionsList.map(condName => (
+                        <option key={condName} value={condName}>{condName}</option>
+                      ))}
+                      {formData.condition && !displayConditionsList.includes(formData.condition) && (
+                        <option value={formData.condition}>{formData.condition}</option>
+                      )}
+                    </select>
+                  </div>
+
+                  {/* Starting Price */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-600 uppercase">{t('Harga Awal Lelang (IDR) *')}</label>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      required
+                      placeholder={t('Contoh: 150.000.000')}
+                      value={formatNumberWithDots(formData.startingPrice)}
+                      onChange={(e) => {
+                        const raw = e.target.value.replace(/\D/g, '');
+                        setFormData(prev => ({ ...prev, startingPrice: raw }));
+                      }}
+                      className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                    />
+                  </div>
+
+                  {/* Location */}
+                  <div className="space-y-1.5 md:col-span-2">
+                    <label className="text-xs font-bold text-slate-600 uppercase">{t('Lokasi Pool / Depo Unit *')}</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder={t('Contoh: Pool Marunda Blok C, Jakut')}
+                      value={formData.location}
+                      onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
+                      className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* GROUP 2: VEHICLE SPECIFICATION DETAILS */}
+              <div className="space-y-4">
+                <div className="border-b border-slate-100 pb-2">
+                  <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
+                    <span className="w-1.5 h-4 bg-emerald-600 rounded-full"></span>
+                    {t('DETAIL SPESIFIKASI KENDARAAN (VEHICLE SPECIFICATION DETAILS)')}
+                  </h3>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Model */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-600 uppercase">{t('Model')}</label>
+                    <input
+                      type="text"
+                      placeholder={t('Contoh: FMX, Ranger, Giga')}
+                      value={formData.model}
+                      onChange={(e) => setFormData(prev => ({ ...prev, model: e.target.value }))}
+                      className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                    />
+                  </div>
+
+                  {/* Series */}
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-bold text-slate-600 uppercase">{t('Series')}</label>
+                      <button
+                        type="button"
+                        onClick={() => setIsSeriesMasterOpen(true)}
+                        className="text-xs text-blue-600 hover:text-blue-700 flex items-center gap-1 font-semibold transition"
+                        title={t('Kelola Master Seri')}
+                      >
+                        <Settings className="w-3.5 h-3.5 animate-spin-hover" />
+                      </button>
+                    </div>
+                    <select
+                      value={formData.series}
+                      onChange={(e) => setFormData(prev => ({ ...prev, series: e.target.value }))}
+                      className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                    >
+                      {displaySeriesList.map(sName => (
+                        <option key={sName} value={sName}>{sName}</option>
+                      ))}
+                      {formData.series && !displaySeriesList.includes(formData.series) && (
+                        <option value={formData.series}>{formData.series}</option>
+                      )}
+                    </select>
+                  </div>
+
+                  {/* Axels */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-600 uppercase">{t('Axels')}</label>
+                    <input
+                      type="text"
+                      placeholder={t('Contoh: 6x4, 4x2')}
+                      value={formData.axels}
+                      onChange={(e) => setFormData(prev => ({ ...prev, axels: e.target.value }))}
+                      className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                    />
+                  </div>
+
+                  {/* Vehicle Colour */}
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-bold text-slate-600 uppercase">{t('Warna Kendaraan')}</label>
+                      <button
+                        type="button"
+                        onClick={() => setIsColourMasterOpen(true)}
+                        className="text-xs text-blue-600 hover:text-blue-700 flex items-center gap-1 font-semibold transition"
+                        title={t('Kelola Master Warna')}
+                      >
+                        <Settings className="w-3.5 h-3.5 animate-spin-hover" />
+                      </button>
+                    </div>
+                    <select
+                      value={formData.vehicleColour}
+                      onChange={(e) => setFormData(prev => ({ ...prev, vehicleColour: e.target.value }))}
+                      className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                    >
+                      {displayColoursList.map(cName => (
+                        <option key={cName} value={cName}>{cName}</option>
+                      ))}
+                      {formData.vehicleColour && !displayColoursList.includes(formData.vehicleColour) && (
+                        <option value={formData.vehicleColour}>{formData.vehicleColour}</option>
+                      )}
+                    </select>
+                  </div>
+
+                  {/* Fuel Type */}
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-bold text-slate-600 uppercase">{t('Bahan Bakar')}</label>
+                      <button
+                        type="button"
+                        onClick={() => setIsFuelMasterOpen(true)}
+                        className="text-xs text-blue-600 hover:text-blue-700 flex items-center gap-1 font-semibold transition"
+                        title={t('Kelola Master Bahan Bakar')}
+                      >
+                        <Settings className="w-3.5 h-3.5 animate-spin-hover" />
+                      </button>
+                    </div>
+                    <select
+                      value={formData.fuelType}
+                      onChange={(e) => setFormData(prev => ({ ...prev, fuelType: e.target.value }))}
+                      className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                    >
+                      {displayFuelsList.map(fName => (
+                        <option key={fName} value={fName}>{fName}</option>
+                      ))}
+                      {formData.fuelType && !displayFuelsList.includes(formData.fuelType) && (
+                        <option value={formData.fuelType}>{formData.fuelType}</option>
+                      )}
+                    </select>
+                  </div>
+
+                  {/* Horsepower */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-600 uppercase">{t('Horsepower (HP)')}</label>
+                    <input
+                      type="text"
+                      placeholder={t('Contoh: 280 HP atau 340')}
+                      value={formData.horsepower}
+                      onChange={(e) => setFormData(prev => ({ ...prev, horsepower: e.target.value }))}
+                      className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                    />
+                  </div>
+
+                  {/* KM Spidometer */}
+                  <div className="space-y-1.5 md:col-span-2">
+                    <label className="text-xs font-bold text-slate-600 uppercase">{t('KM Spidometer')}</label>
+                    <input
+                      type="text"
+                      placeholder={t('Contoh: 150.000 atau 75.000')}
+                      value={formData.odometer}
+                      onChange={(e) => setFormData(prev => ({ ...prev, odometer: e.target.value }))}
+                      className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* GROUP 2.5: VEHICLE DOCUMENTS & LEGALITY */}
+              <div className="space-y-4">
+                <div className="border-b border-slate-100 pb-2">
+                  <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
+                    <span className="w-1.5 h-4 bg-teal-600 rounded-full"></span>
+                    {t('DOKUMEN & LEGALITAS KENDARAAN (VEHICLE DOCUMENTS & LEGALITY)')}
+                  </h3>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {/* KEUR Berlaku Hingga */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-600 uppercase">{t('KEUR BERLAKU HINGGA')}</label>
+                    <input
+                      type="date"
+                      value={formData.keurValidUntil}
+                      onChange={(e) => setFormData(prev => ({ ...prev, keurValidUntil: e.target.value }))}
+                      className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                    />
+                  </div>
+
+                  {/* STNK Plat Berlaku Hingga */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-600 uppercase">{t('PLAT STNK BERLAKU HINGGA')}</label>
+                    <input
+                      type="date"
+                      value={formData.stnkPlateValidUntil}
+                      onChange={(e) => setFormData(prev => ({ ...prev, stnkPlateValidUntil: e.target.value }))}
+                      className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                    />
+                  </div>
+
+                  {/* STNK Pajak Berlaku Hingga */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-600 uppercase">{t('PAJAK STNK BERLAKU HINGGA')}</label>
+                    <input
+                      type="date"
+                      value={formData.stnkTaxValidUntil}
+                      onChange={(e) => setFormData(prev => ({ ...prev, stnkTaxValidUntil: e.target.value }))}
+                      className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* GROUP 3: ATTACHMENT SPECIFICATIONS */}
+              <div className="space-y-4">
+                <div className="border-b border-slate-100 pb-2">
+                  <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
+                    <span className="w-1.5 h-4 bg-indigo-600 rounded-full"></span>
+                    {t('SPESIFIKASI ATTACHMENT (ATTACHMENT SPECIFICATIONS)')}
+                  </h3>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Have Attachment Radio Buttons */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-600 uppercase block">{t('Memiliki Attachment?')}</label>
+                    <div className="flex items-center gap-6 pt-1.5">
+                      <label className="flex items-center gap-2.5 cursor-pointer text-sm font-semibold text-slate-700 select-none">
+                        <input
+                          type="radio"
+                          name="haveAttachment"
+                          checked={formData.haveAttachment === true}
+                          onChange={() => setFormData(prev => ({ ...prev, haveAttachment: true }))}
+                          className="w-4 h-4 text-blue-600 focus:ring-blue-500 border-slate-300"
+                        />
+                        {t('Ya')}
+                      </label>
+                      <label className="flex items-center gap-2.5 cursor-pointer text-sm font-semibold text-slate-700 select-none">
+                        <input
+                          type="radio"
+                          name="haveAttachment"
+                          checked={formData.haveAttachment === false}
+                          onChange={() => setFormData(prev => ({ ...prev, haveAttachment: false }))}
+                          className="w-4 h-4 text-blue-600 focus:ring-blue-500 border-slate-300"
+                        />
+                        {t('Tidak')}
+                      </label>
+                    </div>
+                  </div>
+
+                  {/* Attachment Category */}
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-bold text-slate-600 uppercase">{t('Attachment')}</label>
+                      {formData.haveAttachment && (
+                        <button
+                          type="button"
+                          onClick={() => setIsAttachmentMasterOpen(true)}
+                          className="text-xs text-blue-600 hover:text-blue-700 flex items-center gap-1 font-semibold transition"
+                          title={t('Kelola Master Jenis Gandengan')}
+                        >
+                          <Settings className="w-3.5 h-3.5 animate-spin-hover" />
+                        </button>
+                      )}
+                    </div>
+                    <select
+                      value={formData.attachmentCategory}
+                      onChange={(e) => setFormData(prev => ({ ...prev, attachmentCategory: e.target.value }))}
+                      disabled={!formData.haveAttachment}
+                      className={`w-full px-3.5 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition ${
+                        !formData.haveAttachment ? 'bg-slate-50 text-slate-400 cursor-not-allowed' : 'bg-white'
+                      }`}
+                    >
+                      {displayAttachmentCategoriesList.map(aName => (
+                        <option key={aName} value={aName}>{aName}</option>
+                      ))}
+                      {formData.attachmentCategory && !displayAttachmentCategoriesList.includes(formData.attachmentCategory) && (
+                        <option value={formData.attachmentCategory}>{formData.attachmentCategory}</option>
+                      )}
+                    </select>
+                  </div>
+                </div>
+
+                {/* ATTACHMENT DETAIL PANEL (Shown only if haveAttachment is true) */}
+                {formData.haveAttachment && (
+                  <div className="border border-slate-200/80 bg-slate-50/50 rounded-2xl p-5 space-y-5 animate-fade-in">
+                    <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider">{t('Detail Attachment')}</h4>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      
+                      {/* Upload Attachment Photo */}
+                      <div className="space-y-2 md:col-span-2">
+                        <label className="text-xs font-semibold text-slate-600 uppercase block">{t('Unggah Attachment')}</label>
+                        
+                        <div className="flex flex-col md:flex-row gap-4 items-start">
+                          {/* Mini Drag Drop Area */}
+                          <div 
+                            onClick={() => document.getElementById('attachment-file-input')?.click()}
+                            className="border-2 border-dashed border-slate-300 hover:border-blue-400 bg-white hover:bg-slate-50/50 rounded-xl p-4 text-center cursor-pointer flex-1 w-full flex flex-col items-center justify-center min-h-[100px] transition"
+                          >
+                            <input
+                              id="attachment-file-input"
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              onChange={(e) => {
+                                const files = e.target.files;
+                                if (files && files.length > 0) handleAttachmentFilesChange(files);
+                              }}
+                            />
+                            <Upload className="w-5 h-5 text-slate-400 mb-1" />
+                            <p className="text-xs font-semibold text-slate-600">{t('Pilih Foto Attachment')}</p>
+                            <p className="text-[10px] text-slate-400 mt-0.5">JPG, JPEG, PNG (Max 1MB)</p>
+                          </div>
+
+                          {/* Previews */}
+                          {formData.attachmentImageUrls && formData.attachmentImageUrls.length > 0 && (
+                            <div className="flex flex-wrap gap-2 shrink-0">
+                              {formData.attachmentImageUrls.map((url, i) => (
+                                <div key={i} className="relative w-20 h-20 rounded-lg overflow-hidden border border-slate-200 bg-white">
+                                  <img 
+                                    src={url} 
+                                    alt="Attachment Preview" 
+                                    className="w-full h-full object-cover" 
+                                    referrerPolicy="no-referrer"
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={() => setFormData(prev => {
+                                      const filtered = prev.attachmentImageUrls.filter((_, idx) => idx !== i);
+                                      return {
+                                        ...prev,
+                                        attachmentImageUrls: filtered,
+                                        attachmentImageUrl: prev.attachmentImageUrl === url ? (filtered[0] || '') : prev.attachmentImageUrl
+                                      };
+                                    })}
+                                    className="absolute top-1 right-1 bg-rose-500 hover:bg-rose-600 text-white p-0.5 rounded-full shadow"
+                                  >
+                                    <X className="w-3 h-3" />
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Type (Subtype) */}
+                      <div className="space-y-1.5">
+                        <div className="flex items-center justify-between">
+                          <label className="text-xs font-bold text-slate-600 uppercase">{t('Tipe')}</label>
+                          <button
+                            type="button"
+                            onClick={() => setIsAttachmentTypeMasterOpen(true)}
+                            className="text-xs text-blue-600 hover:text-blue-700 flex items-center gap-1 font-semibold transition"
+                            title={t('Kelola Master Tipe Gandengan')}
+                          >
+                            <Settings className="w-3.5 h-3.5 animate-spin-hover" />
+                          </button>
+                        </div>
+                        <select
+                          value={formData.attachmentType}
+                          onChange={(e) => setFormData(prev => ({ ...prev, attachmentType: e.target.value }))}
+                          className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white"
+                        >
+                          {displayAttachmentTypesList.map(atName => (
+                            <option key={atName} value={atName}>{atName}</option>
+                          ))}
+                          {formData.attachmentType && !displayAttachmentTypesList.includes(formData.attachmentType) && (
+                            <option value={formData.attachmentType}>{formData.attachmentType}</option>
+                          )}
+                        </select>
+                      </div>
+
+                      {/* Axels */}
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-bold text-slate-600 uppercase">{t('Axels')}</label>
+                        <input
+                          type="text"
+                          placeholder={t('Contoh: 2.2 atau 3.0')}
+                          value={formData.attachmentAxels}
+                          onChange={(e) => setFormData(prev => ({ ...prev, attachmentAxels: e.target.value }))}
+                          className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white"
+                        />
+                      </div>
+
+                      {/* Year Built */}
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-bold text-slate-600 uppercase">{t('Tahun Produksi *')}</label>
+                        <input
+                          type="text"
+                          placeholder={t('Contoh: 2016')}
+                          value={formData.attachmentYearBuilt}
+                          onChange={(e) => setFormData(prev => ({ ...prev, attachmentYearBuilt: e.target.value }))}
+                          className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white"
+                        />
+                      </div>
+
+                      {/* KEUR No */}
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-bold text-slate-600 uppercase">{t('Nomor KEUR')}</label>
+                        <input
+                          type="text"
+                          placeholder={t('Contoh: JKTI915545')}
+                          value={formData.attachmentKeurNo}
+                          onChange={(e) => setFormData(prev => ({ ...prev, attachmentKeurNo: e.target.value }))}
+                          className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white font-mono"
+                        />
+                      </div>
+
+                      {/* Valid Until */}
+                      <div className="space-y-1.5 md:col-span-2">
+                        <label className="text-xs font-bold text-slate-600 uppercase">{t('Berlaku Hingga')}</label>
+                        <input
+                          type="date"
+                          value={formData.attachmentValidUntil}
+                          onChange={(e) => setFormData(prev => ({ ...prev, attachmentValidUntil: e.target.value }))}
+                          className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white"
+                        />
+                      </div>
+
+                      {/* Nested subsection Dimension */}
+                      <div className="md:col-span-2 border-t border-slate-200 pt-4 mt-2 space-y-4">
+                        <h5 className="text-xs font-bold text-slate-700 uppercase tracking-wider">{t('Dimensi')}</h5>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          {/* Length */}
+                          <div className="space-y-1.5">
+                            <label className="text-xs font-semibold text-slate-500 uppercase">{t('Panjang Total (Meter)')}</label>
+                            <input
+                              type="text"
+                              placeholder={t('Contoh: 40 M atau 12.0')}
+                              value={formData.attachmentLength}
+                              onChange={(e) => setFormData(prev => ({ ...prev, attachmentLength: e.target.value }))}
+                              className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white"
+                            />
+                          </div>
+
+                          {/* Width */}
+                          <div className="space-y-1.5">
+                            <label className="text-xs font-semibold text-slate-500 uppercase">{t('Lebar Total (TON)')}</label>
+                            <input
+                              type="text"
+                              placeholder={t('Contoh: 60 Ton')}
+                              value={formData.attachmentWidth}
+                              onChange={(e) => setFormData(prev => ({ ...prev, attachmentWidth: e.target.value }))}
+                              className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white"
+                            />
+                          </div>
+
+                          {/* Height */}
+                          <div className="space-y-1.5">
+                            <label className="text-xs font-semibold text-slate-500 uppercase">{t('Tinggi Total (Meter)')}</label>
+                            <input
+                              type="text"
+                              placeholder={t('Contoh: 1.5 M')}
+                              value={formData.attachmentHeight}
+                              onChange={(e) => setFormData(prev => ({ ...prev, attachmentHeight: e.target.value }))}
+                              className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white"
+                            />
+                          </div>
+
+                          {/* Extension */}
+                          <div className="space-y-1.5">
+                            <label className="text-xs font-semibold text-slate-500 uppercase">{t('Ekstensi')}</label>
+                            <input
+                              type="text"
+                              placeholder={t('Contoh: - atau 1.5 M')}
+                              value={formData.attachmentExtension}
+                              onChange={(e) => setFormData(prev => ({ ...prev, attachmentExtension: e.target.value }))}
+                              className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Description */}
@@ -2084,6 +3040,591 @@ export default function AdminAssets({
                   setIsConditionMasterOpen(false);
                   setNewConditionName('');
                   setConditionError('');
+                }}
+                className="px-4 py-2 border border-slate-200 text-slate-700 font-semibold rounded-xl text-sm hover:bg-slate-100 transition shadow-sm"
+              >
+                {t('Tutup')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Series Master Data Management Modal */}
+      {isSeriesMasterOpen && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[150] flex items-center justify-center p-4 animate-fade-in">
+          <div className="bg-white rounded-3xl max-w-md w-full shadow-2xl border border-slate-100 overflow-hidden flex flex-col max-h-[85vh]">
+            {/* Header */}
+            <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+              <div>
+                <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                  <Settings className="w-5 h-5 text-blue-600" />
+                  {t('Kelola Master Seri')}
+                </h3>
+                <p className="text-xs text-slate-500 mt-1">
+                  {t('Tambah atau hapus daftar pilihan seri kendaraan.')}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsSeriesMasterOpen(false);
+                  setNewSeriesName('');
+                  setSeriesError('');
+                }}
+                className="text-slate-400 hover:text-slate-600 p-1.5 hover:bg-slate-100 rounded-lg transition"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Content & List */}
+            <div className="p-6 overflow-y-auto space-y-6 flex-1">
+              {/* Form Input */}
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-slate-700 uppercase block">
+                  {t('Tambah Seri Baru')}
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    placeholder={t('Contoh: 500, GIGA, FL 260')}
+                    value={newSeriesName}
+                    onChange={(e) => {
+                      setNewSeriesName(e.target.value);
+                      setSeriesError('');
+                    }}
+                    className="flex-1 px-3.5 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handleAddNewSeries();
+                      }
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={handleAddNewSeries}
+                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl text-sm shadow-sm transition flex items-center gap-1 shrink-0"
+                  >
+                    <Plus className="w-4 h-4" />
+                    {t('Tambah')}
+                  </button>
+                </div>
+                {seriesError && (
+                  <p className="text-rose-500 text-xs font-medium flex items-center gap-1 mt-1">
+                    <AlertTriangle className="w-3.5 h-3.5" />
+                    {seriesError}
+                  </p>
+                )}
+              </div>
+
+              {/* Series List */}
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-slate-500 uppercase block">
+                  {t('Daftar Seri Aktif')} ({seriesList.length})
+                </label>
+                
+                <div className="border border-slate-100 rounded-2xl divide-y divide-slate-100 overflow-hidden max-h-[35vh] overflow-y-auto">
+                  {seriesList.length > 0 ? (
+                    seriesList.map((sObj) => (
+                      <div key={sObj.id} className="flex items-center justify-between p-3.5 hover:bg-slate-50 transition">
+                        <span className="text-sm font-semibold text-slate-800">{sObj.name}</span>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteSeries(sObj.id)}
+                          className="text-slate-400 hover:text-rose-600 p-1.5 hover:bg-rose-50 rounded-lg transition"
+                          title={t('Hapus Seri')}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-center py-8 text-slate-400 text-xs font-medium">
+                      {t('Tidak ada data seri.')}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="p-4 border-t border-slate-100 bg-slate-50/50 flex justify-end">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsSeriesMasterOpen(false);
+                  setNewSeriesName('');
+                  setSeriesError('');
+                }}
+                className="px-4 py-2 border border-slate-200 text-slate-700 font-semibold rounded-xl text-sm hover:bg-slate-100 transition shadow-sm"
+              >
+                {t('Tutup')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Colour Master Data Management Modal */}
+      {isColourMasterOpen && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[150] flex items-center justify-center p-4 animate-fade-in">
+          <div className="bg-white rounded-3xl max-w-md w-full shadow-2xl border border-slate-100 overflow-hidden flex flex-col max-h-[85vh]">
+            {/* Header */}
+            <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+              <div>
+                <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                  <Settings className="w-5 h-5 text-blue-600" />
+                  {t('Kelola Master Warna')}
+                </h3>
+                <p className="text-xs text-slate-500 mt-1">
+                  {t('Tambah atau hapus daftar pilihan warna kendaraan.')}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsColourMasterOpen(false);
+                  setNewColourName('');
+                  setColourError('');
+                }}
+                className="text-slate-400 hover:text-slate-600 p-1.5 hover:bg-slate-100 rounded-lg transition"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Content & List */}
+            <div className="p-6 overflow-y-auto space-y-6 flex-1">
+              {/* Form Input */}
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-slate-700 uppercase block">
+                  {t('Tambah Warna Baru')}
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    placeholder={t('Contoh: Merah, Putih, Kuning')}
+                    value={newColourName}
+                    onChange={(e) => {
+                      setNewColourName(e.target.value);
+                      setColourError('');
+                    }}
+                    className="flex-1 px-3.5 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handleAddNewColour();
+                      }
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={handleAddNewColour}
+                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl text-sm shadow-sm transition flex items-center gap-1 shrink-0"
+                  >
+                    <Plus className="w-4 h-4" />
+                    {t('Tambah')}
+                  </button>
+                </div>
+                {colourError && (
+                  <p className="text-rose-500 text-xs font-medium flex items-center gap-1 mt-1">
+                    <AlertTriangle className="w-3.5 h-3.5" />
+                    {colourError}
+                  </p>
+                )}
+              </div>
+
+              {/* Colours List */}
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-slate-500 uppercase block">
+                  {t('Daftar Warna Aktif')} ({vehicleColours.length})
+                </label>
+                
+                <div className="border border-slate-100 rounded-2xl divide-y divide-slate-100 overflow-hidden max-h-[35vh] overflow-y-auto">
+                  {vehicleColours.length > 0 ? (
+                    vehicleColours.map((cObj) => (
+                      <div key={cObj.id} className="flex items-center justify-between p-3.5 hover:bg-slate-50 transition">
+                        <span className="text-sm font-semibold text-slate-800">{cObj.name}</span>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteColour(cObj.id)}
+                          className="text-slate-400 hover:text-rose-600 p-1.5 hover:bg-rose-50 rounded-lg transition"
+                          title={t('Hapus Warna')}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-center py-8 text-slate-400 text-xs font-medium">
+                      {t('Tidak ada data warna.')}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="p-4 border-t border-slate-100 bg-slate-50/50 flex justify-end">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsColourMasterOpen(false);
+                  setNewColourName('');
+                  setColourError('');
+                }}
+                className="px-4 py-2 border border-slate-200 text-slate-700 font-semibold rounded-xl text-sm hover:bg-slate-100 transition shadow-sm"
+              >
+                {t('Tutup')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Fuel Master Data Management Modal */}
+      {isFuelMasterOpen && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[150] flex items-center justify-center p-4 animate-fade-in">
+          <div className="bg-white rounded-3xl max-w-md w-full shadow-2xl border border-slate-100 overflow-hidden flex flex-col max-h-[85vh]">
+            {/* Header */}
+            <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+              <div>
+                <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                  <Settings className="w-5 h-5 text-blue-600" />
+                  {t('Kelola Master Bahan Bakar')}
+                </h3>
+                <p className="text-xs text-slate-500 mt-1">
+                  {t('Tambah atau hapus daftar pilihan jenis bahan bakar.')}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsFuelMasterOpen(false);
+                  setNewFuelName('');
+                  setFuelError('');
+                }}
+                className="text-slate-400 hover:text-slate-600 p-1.5 hover:bg-slate-100 rounded-lg transition"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Content & List */}
+            <div className="p-6 overflow-y-auto space-y-6 flex-1">
+              {/* Form Input */}
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-slate-700 uppercase block">
+                  {t('Tambah Bahan Bakar Baru')}
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    placeholder={t('Contoh: Solar, Diesel, Bensin')}
+                    value={newFuelName}
+                    onChange={(e) => {
+                      setNewFuelName(e.target.value);
+                      setFuelError('');
+                    }}
+                    className="flex-1 px-3.5 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handleAddNewFuel();
+                      }
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={handleAddNewFuel}
+                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl text-sm shadow-sm transition flex items-center gap-1 shrink-0"
+                  >
+                    <Plus className="w-4 h-4" />
+                    {t('Tambah')}
+                  </button>
+                </div>
+                {fuelError && (
+                  <p className="text-rose-500 text-xs font-medium flex items-center gap-1 mt-1">
+                    <AlertTriangle className="w-3.5 h-3.5" />
+                    {fuelError}
+                  </p>
+                )}
+              </div>
+
+              {/* Fuel List */}
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-slate-500 uppercase block">
+                  {t('Daftar Bahan Bakar Aktif')} ({fuelTypes.length})
+                </label>
+                
+                <div className="border border-slate-100 rounded-2xl divide-y divide-slate-100 overflow-hidden max-h-[35vh] overflow-y-auto">
+                  {fuelTypes.length > 0 ? (
+                    fuelTypes.map((fObj) => (
+                      <div key={fObj.id} className="flex items-center justify-between p-3.5 hover:bg-slate-50 transition">
+                        <span className="text-sm font-semibold text-slate-800">{fObj.name}</span>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteFuel(fObj.id)}
+                          className="text-slate-400 hover:text-rose-600 p-1.5 hover:bg-rose-50 rounded-lg transition"
+                          title={t('Hapus Bahan Bakar')}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-center py-8 text-slate-400 text-xs font-medium">
+                      {t('Tidak ada data bahan bakar.')}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="p-4 border-t border-slate-100 bg-slate-50/50 flex justify-end">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsFuelMasterOpen(false);
+                  setNewFuelName('');
+                  setFuelError('');
+                }}
+                className="px-4 py-2 border border-slate-200 text-slate-700 font-semibold rounded-xl text-sm hover:bg-slate-100 transition shadow-sm"
+              >
+                {t('Tutup')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Attachment Category Master Data Management Modal */}
+      {isAttachmentMasterOpen && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[150] flex items-center justify-center p-4 animate-fade-in">
+          <div className="bg-white rounded-3xl max-w-md w-full shadow-2xl border border-slate-100 overflow-hidden flex flex-col max-h-[85vh]">
+            {/* Header */}
+            <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+              <div>
+                <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                  <Settings className="w-5 h-5 text-blue-600" />
+                  {t('Kelola Master Jenis Gandengan')}
+                </h3>
+                <p className="text-xs text-slate-500 mt-1">
+                  {t('Tambah atau hapus daftar pilihan jenis gandengan.')}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsAttachmentMasterOpen(false);
+                  setNewAttachmentName('');
+                  setAttachmentError('');
+                }}
+                className="text-slate-400 hover:text-slate-600 p-1.5 hover:bg-slate-100 rounded-lg transition"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Content & List */}
+            <div className="p-6 overflow-y-auto space-y-6 flex-1">
+              {/* Form Input */}
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-slate-700 uppercase block">
+                  {t('Tambah Jenis Gandengan Baru')}
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    placeholder={t('Contoh: Trailer, Box, Dump Body')}
+                    value={newAttachmentName}
+                    onChange={(e) => {
+                      setNewAttachmentName(e.target.value);
+                      setAttachmentError('');
+                    }}
+                    className="flex-1 px-3.5 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handleAddNewAttachment();
+                      }
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={handleAddNewAttachment}
+                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl text-sm shadow-sm transition flex items-center gap-1 shrink-0"
+                  >
+                    <Plus className="w-4 h-4" />
+                    {t('Tambah')}
+                  </button>
+                </div>
+                {attachmentError && (
+                  <p className="text-rose-500 text-xs font-medium flex items-center gap-1 mt-1">
+                    <AlertTriangle className="w-3.5 h-3.5" />
+                    {attachmentError}
+                  </p>
+                )}
+              </div>
+
+              {/* Attachment Category List */}
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-slate-500 uppercase block">
+                  {t('Daftar Jenis Gandengan Aktif')} ({attachmentCategories.length})
+                </label>
+                
+                <div className="border border-slate-100 rounded-2xl divide-y divide-slate-100 overflow-hidden max-h-[35vh] overflow-y-auto">
+                  {attachmentCategories.length > 0 ? (
+                    attachmentCategories.map((aObj) => (
+                      <div key={aObj.id} className="flex items-center justify-between p-3.5 hover:bg-slate-50 transition">
+                        <span className="text-sm font-semibold text-slate-800">{aObj.name}</span>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteAttachment(aObj.id)}
+                          className="text-slate-400 hover:text-rose-600 p-1.5 hover:bg-rose-50 rounded-lg transition"
+                          title={t('Hapus Jenis Gandengan')}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-center py-8 text-slate-400 text-xs font-medium">
+                      {t('Tidak ada data jenis gandengan.')}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="p-4 border-t border-slate-100 bg-slate-50/50 flex justify-end">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsAttachmentMasterOpen(false);
+                  setNewAttachmentName('');
+                  setAttachmentError('');
+                }}
+                className="px-4 py-2 border border-slate-200 text-slate-700 font-semibold rounded-xl text-sm hover:bg-slate-100 transition shadow-sm"
+              >
+                {t('Tutup')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Attachment Type Master Data Management Modal */}
+      {isAttachmentTypeMasterOpen && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[150] flex items-center justify-center p-4 animate-fade-in">
+          <div className="bg-white rounded-3xl max-w-md w-full shadow-2xl border border-slate-100 overflow-hidden flex flex-col max-h-[85vh]">
+            {/* Header */}
+            <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+              <div>
+                <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                  <Settings className="w-5 h-5 text-blue-600" />
+                  {t('Kelola Master Tipe Gandengan')}
+                </h3>
+                <p className="text-xs text-slate-500 mt-1">
+                  {t('Tambah atau hapus daftar pilihan tipe/model gandengan.')}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsAttachmentTypeMasterOpen(false);
+                  setNewAttachmentTypeName('');
+                  setAttachmentTypeError('');
+                }}
+                className="text-slate-400 hover:text-slate-600 p-1.5 hover:bg-slate-100 rounded-lg transition"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Content & List */}
+            <div className="p-6 overflow-y-auto space-y-6 flex-1">
+              {/* Form Input */}
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-slate-700 uppercase block">
+                  {t('Tambah Tipe Gandengan Baru')}
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    placeholder={t('Contoh: Highbed 40, Skeleton 20')}
+                    value={newAttachmentTypeName}
+                    onChange={(e) => {
+                      setNewAttachmentTypeName(e.target.value);
+                      setAttachmentTypeError('');
+                    }}
+                    className="flex-1 px-3.5 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handleAddNewAttachmentType();
+                      }
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={handleAddNewAttachmentType}
+                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl text-sm shadow-sm transition flex items-center gap-1 shrink-0"
+                  >
+                    <Plus className="w-4 h-4" />
+                    {t('Tambah')}
+                  </button>
+                </div>
+                {attachmentTypeError && (
+                  <p className="text-rose-500 text-xs font-medium flex items-center gap-1 mt-1">
+                    <AlertTriangle className="w-3.5 h-3.5" />
+                    {attachmentTypeError}
+                  </p>
+                )}
+              </div>
+
+              {/* Attachment Type List */}
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-slate-500 uppercase block">
+                  {t('Daftar Tipe Gandengan Aktif')} ({attachmentTypes.length})
+                </label>
+                
+                <div className="border border-slate-100 rounded-2xl divide-y divide-slate-100 overflow-hidden max-h-[35vh] overflow-y-auto">
+                  {attachmentTypes.length > 0 ? (
+                    attachmentTypes.map((atObj) => (
+                      <div key={atObj.id} className="flex items-center justify-between p-3.5 hover:bg-slate-50 transition">
+                        <span className="text-sm font-semibold text-slate-800">{atObj.name}</span>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteAttachmentType(atObj.id)}
+                          className="text-slate-400 hover:text-rose-600 p-1.5 hover:bg-rose-50 rounded-lg transition"
+                          title={t('Hapus Tipe Gandengan')}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-center py-8 text-slate-400 text-xs font-medium">
+                      {t('Tidak ada data tipe gandengan.')}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="p-4 border-t border-slate-100 bg-slate-50/50 flex justify-end">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsAttachmentTypeMasterOpen(false);
+                  setNewAttachmentTypeName('');
+                  setAttachmentTypeError('');
                 }}
                 className="px-4 py-2 border border-slate-200 text-slate-700 font-semibold rounded-xl text-sm hover:bg-slate-100 transition shadow-sm"
               >

@@ -21,7 +21,7 @@ interface LoginModalProps {
   isOpen: boolean;
   onClose: () => void;
   onLoginSuccess: (email: string) => void;
-  onExternalLoginSuccess: (email: string, name: string) => void;
+  onExternalLoginSuccess: (email: string, name: string, phone?: string) => void;
   admins: AdminUser[];
 }
 
@@ -142,7 +142,7 @@ export default function LoginModal({
             }
 
             if (userData.status === 'Disetujui') {
-              onExternalLoginSuccess(cleanEmail, userData.name);
+              onExternalLoginSuccess(cleanEmail, userData.name, userData.phone);
               onClose();
               setIsLoading(false);
               return;

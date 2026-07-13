@@ -37,6 +37,7 @@ interface CatalogViewProps {
   onOpenLoginModal?: () => void;
   loggedInUserEmail?: string;
   loggedInUserName?: string;
+  loggedInUserPhone?: string;
 }
 
 interface CatalogCardProps {
@@ -295,7 +296,8 @@ export default function CatalogView({
   isUserLoggedIn = false,
   onOpenLoginModal,
   loggedInUserEmail = '',
-  loggedInUserName = ''
+  loggedInUserName = '',
+  loggedInUserPhone = ''
 }: CatalogViewProps) {
   const { t } = useLanguage();
   const [internalSelectedAssetId, setInternalSelectedAssetId] = useState<string | null>(null);
@@ -382,9 +384,10 @@ export default function CatalogView({
         ...prev,
         email: loggedInUserEmail,
         name: loggedInUserName || prev.name,
+        contact: loggedInUserPhone || prev.contact,
       }));
     }
-  }, [isUserLoggedIn, loggedInUserEmail, loggedInUserName]);
+  }, [isUserLoggedIn, loggedInUserEmail, loggedInUserName, loggedInUserPhone]);
 
   const [formError, setFormError] = useState('');
   const [formSuccess, setFormSuccess] = useState(false);
@@ -461,6 +464,17 @@ export default function CatalogView({
     return new Intl.NumberFormat('id-ID').format(Number(clean));
   };
 
+  const formatDateIndonesian = (dateStr?: string) => {
+    if (!dateStr) return '-';
+    try {
+      const d = new Date(dateStr);
+      if (isNaN(d.getTime())) return dateStr;
+      return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+    } catch {
+      return dateStr;
+    }
+  };
+
   const isTimeBooked = (time: string, date: string) => {
     if (!date) return false;
     return assets.some(asset => 
@@ -481,9 +495,9 @@ export default function CatalogView({
     if (asset) {
       const highest = asset.bids.length > 0 ? Math.max(...asset.bids.map(b => b.price)) : asset.startingPrice;
       setBidForm({
-        name: '',
-        email: '',
-        contact: '',
+        name: isUserLoggedIn ? loggedInUserName : '',
+        email: isUserLoggedIn ? loggedInUserEmail : '',
+        contact: isUserLoggedIn ? loggedInUserPhone : '',
         price: '0',
         requestSurvey: false,
         surveyDate: '',
@@ -851,43 +865,219 @@ export default function CatalogView({
                   </div>
 
                   {/* Ikhtisar Card */}
-                  <div className="bg-white p-6 rounded-2xl border border-slate-200/80 border-l-[6px] border-l-slate-300 shadow-xs space-y-4">
+                  <div className="bg-white p-6 rounded-2xl border border-slate-200/80 border-l-[6px] border-l-slate-300 shadow-xs space-y-5">
                     <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2 border-b border-slate-100 pb-2.5">
                       <Info className="w-4 h-4 text-blue-600" />
                       <span>{t('Ikhtisar Spesifikasi')}</span>
                     </h3>
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-xs font-semibold">
-                      <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
-                        <span className="text-slate-400 text-[9px] block uppercase mb-0.5">{t('Merek / Brand')}</span>
-                        <strong className="text-slate-700 text-sm">{selectedAsset.brand}</strong>
-                      </div>
-                      <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
-                        <span className="text-slate-400 text-[9px] block uppercase mb-0.5">{t('Kategori')}</span>
-                        <strong className="text-slate-700 text-sm">{selectedAsset.category}</strong>
-                      </div>
-                      <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
-                        <span className="text-slate-400 text-[9px] block uppercase mb-0.5">{t('Tahun Registrasi')}</span>
-                        <strong className="text-slate-700 text-sm">{selectedAsset.modelYear}</strong>
-                      </div>
-                      <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
-                        <span className="text-slate-400 text-[9px] block uppercase mb-0.5">{t('No Polisi')}</span>
-                        <strong className="text-slate-700 text-sm font-mono uppercase">{selectedAsset.plateNumber}</strong>
-                      </div>
-                      <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
-                        <span className="text-slate-400 text-[9px] block uppercase mb-0.5">{t('Kondisi Fisik')}</span>
-                        <strong className="text-blue-700 text-sm">{t(selectedAsset.condition)}</strong>
-                      </div>
-                      <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
-                        <span className="text-slate-400 text-[9px] block uppercase mb-0.5">{t('Lokasi Detail')}</span>
-                        <strong className="text-slate-700 text-sm line-clamp-1">{selectedAsset.location}</strong>
-                      </div>
-                      {selectedAsset.dimensions && (
-                        <div className="bg-slate-50 p-3 rounded-xl border border-slate-100 col-span-2 md:col-span-3">
-                          <span className="text-slate-400 text-[9px] block uppercase mb-0.5">{t('Dimensi Unit')}</span>
-                          <strong className="text-slate-700 text-sm font-mono">{selectedAsset.dimensions}</strong>
+                    
+                    {/* Part A: Main Specifications */}
+                    <div className="space-y-2">
+                      <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{t('Spesifikasi Utama')}</h4>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-xs font-semibold">
+                        <div className="bg-slate-50 p-3 rounded-xl border border-slate-100/85">
+                          <span className="text-slate-400 text-[9px] block uppercase mb-0.5">{t('Merek / Brand')}</span>
+                          <strong className="text-slate-700 text-sm">{selectedAsset.brand}</strong>
                         </div>
-                      )}
+                        <div className="bg-slate-50 p-3 rounded-xl border border-slate-100/85">
+                          <span className="text-slate-400 text-[9px] block uppercase mb-0.5">{t('Kategori')}</span>
+                          <strong className="text-slate-700 text-sm">{selectedAsset.category}</strong>
+                        </div>
+                        <div className="bg-slate-50 p-3 rounded-xl border border-slate-100/85">
+                          <span className="text-slate-400 text-[9px] block uppercase mb-0.5">{t('Tahun Registrasi')}</span>
+                          <strong className="text-slate-700 text-sm">{selectedAsset.modelYear}</strong>
+                        </div>
+                        <div className="bg-slate-50 p-3 rounded-xl border border-slate-100/85">
+                          <span className="text-slate-400 text-[9px] block uppercase mb-0.5">{t('No Polisi')}</span>
+                          <strong className="text-slate-700 text-sm font-mono uppercase">{selectedAsset.plateNumber || '-'}</strong>
+                        </div>
+                        <div className="bg-slate-50 p-3 rounded-xl border border-slate-100/85">
+                          <span className="text-slate-400 text-[9px] block uppercase mb-0.5">{t('Kondisi Fisik')}</span>
+                          <strong className="text-blue-700 text-sm">{t(selectedAsset.condition)}</strong>
+                        </div>
+                        <div className="bg-slate-50 p-3 rounded-xl border border-slate-100/85">
+                          <span className="text-slate-400 text-[9px] block uppercase mb-0.5">{t('Lokasi Detail')}</span>
+                          <strong className="text-slate-700 text-sm line-clamp-1">{selectedAsset.location}</strong>
+                        </div>
+                        
+                        {/* New specifications fields */}
+                        {selectedAsset.model && (
+                          <div className="bg-slate-50 p-3 rounded-xl border border-slate-100/85">
+                            <span className="text-slate-400 text-[9px] block uppercase mb-0.5">{t('Model')}</span>
+                            <strong className="text-slate-700 text-sm">{selectedAsset.model}</strong>
+                          </div>
+                        )}
+                        {selectedAsset.series && (
+                          <div className="bg-slate-50 p-3 rounded-xl border border-slate-100/85">
+                            <span className="text-slate-400 text-[9px] block uppercase mb-0.5">{t('Series')}</span>
+                            <strong className="text-slate-700 text-sm">{selectedAsset.series}</strong>
+                          </div>
+                        )}
+                        {selectedAsset.axels && (
+                          <div className="bg-slate-50 p-3 rounded-xl border border-slate-100/85">
+                            <span className="text-slate-400 text-[9px] block uppercase mb-0.5">{t('Axels')}</span>
+                            <strong className="text-slate-700 text-sm">{selectedAsset.axels}</strong>
+                          </div>
+                        )}
+                        {selectedAsset.vehicleColour && (
+                          <div className="bg-slate-50 p-3 rounded-xl border border-slate-100/85">
+                            <span className="text-slate-400 text-[9px] block uppercase mb-0.5">{t('Warna')}</span>
+                            <strong className="text-slate-700 text-sm">{t(selectedAsset.vehicleColour)}</strong>
+                          </div>
+                        )}
+                        {selectedAsset.fuelType && (
+                          <div className="bg-slate-50 p-3 rounded-xl border border-slate-100/85">
+                            <span className="text-slate-400 text-[9px] block uppercase mb-0.5">{t('Bahan Bakar')}</span>
+                            <strong className="text-slate-700 text-sm">{t(selectedAsset.fuelType)}</strong>
+                          </div>
+                        )}
+                        {selectedAsset.horsepower && (
+                          <div className="bg-slate-50 p-3 rounded-xl border border-slate-100/85">
+                            <span className="text-slate-400 text-[9px] block uppercase mb-0.5">{t('Horsepower (HP)')}</span>
+                            <strong className="text-slate-700 text-sm">{selectedAsset.horsepower}</strong>
+                          </div>
+                        )}
+                        {selectedAsset.odometer && (
+                          <div className="bg-slate-50 p-3 rounded-xl border border-slate-100/85">
+                            <span className="text-slate-400 text-[9px] block uppercase mb-0.5">{t('KM Spidometer')}</span>
+                            <strong className="text-slate-700 text-sm">{selectedAsset.odometer}</strong>
+                          </div>
+                        )}
+                        {selectedAsset.dimensions && (
+                          <div className="bg-slate-50 p-3 rounded-xl border border-slate-100/85 col-span-2 md:col-span-3">
+                            <span className="text-slate-400 text-[9px] block uppercase mb-0.5">{t('Dimensi Unit')}</span>
+                            <strong className="text-slate-700 text-sm font-mono">{selectedAsset.dimensions}</strong>
+                          </div>
+                        )}
+                      </div>
                     </div>
+
+                    {/* Part A.5: Documents & Legality */}
+                    {(selectedAsset.keurValidUntil || selectedAsset.stnkPlateValidUntil || selectedAsset.stnkTaxValidUntil) && (
+                      <div className="space-y-2 pt-3 border-t border-slate-100">
+                        <h4 className="text-[10px] font-bold text-teal-600 uppercase tracking-wider">{t('Dokumen & Legalitas')}</h4>
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs font-semibold">
+                          {selectedAsset.keurValidUntil && (
+                            <div className="bg-teal-50/40 p-3 rounded-xl border border-teal-100/60">
+                              <span className="text-teal-600 text-[9px] block uppercase mb-0.5">{t('KEUR Berlaku Hingga')}</span>
+                              <strong className="text-teal-900 text-sm">{formatDateIndonesian(selectedAsset.keurValidUntil)}</strong>
+                            </div>
+                          )}
+                          {selectedAsset.stnkPlateValidUntil && (
+                            <div className="bg-teal-50/40 p-3 rounded-xl border border-teal-100/60">
+                              <span className="text-teal-600 text-[9px] block uppercase mb-0.5">{t('Plat STNK Berlaku Hingga')}</span>
+                              <strong className="text-teal-900 text-sm">{formatDateIndonesian(selectedAsset.stnkPlateValidUntil)}</strong>
+                            </div>
+                          )}
+                          {selectedAsset.stnkTaxValidUntil && (
+                            <div className="bg-teal-50/40 p-3 rounded-xl border border-teal-100/60">
+                              <span className="text-teal-600 text-[9px] block uppercase mb-0.5">{t('Pajak STNK Berlaku Hingga')}</span>
+                              <strong className="text-teal-900 text-sm">{formatDateIndonesian(selectedAsset.stnkTaxValidUntil)}</strong>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Part B: Attachment Specifications */}
+                    {selectedAsset.haveAttachment && (
+                      <div className="space-y-3 pt-3 border-t border-slate-100">
+                        <div className="flex items-center justify-between">
+                          <h4 className="text-[10px] font-bold text-indigo-500 uppercase tracking-wider">{t('Spesifikasi Attachment')}</h4>
+                          <span className="bg-indigo-50 text-indigo-700 text-[8px] font-bold px-2 py-0.5 rounded-md border border-indigo-100 uppercase">
+                            {selectedAsset.attachmentCategory || 'Trailer'}
+                          </span>
+                        </div>
+
+                        {/* Attachment Photo Display if available */}
+                        {((selectedAsset.attachmentImageUrls && selectedAsset.attachmentImageUrls.length > 0) || selectedAsset.attachmentImageUrl) && (
+                          <div className="flex gap-2 pb-2 overflow-x-auto">
+                            {(selectedAsset.attachmentImageUrls || (selectedAsset.attachmentImageUrl ? [selectedAsset.attachmentImageUrl] : [])).map((imgUrl, idx) => (
+                              <div key={idx} className="relative w-28 h-20 rounded-lg overflow-hidden border border-slate-200 shrink-0 bg-slate-100">
+                                <img
+                                  src={imgUrl}
+                                  alt={`${t('Attachment Photo')} ${idx + 1}`}
+                                  className="w-full h-full object-cover cursor-zoom-in hover:opacity-90 transition"
+                                  referrerPolicy="no-referrer"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    const attImages = selectedAsset.attachmentImageUrls || [selectedAsset.attachmentImageUrl || ''];
+                                    setLightboxImages(attImages);
+                                    setLightboxIndex(idx);
+                                  }}
+                                />
+                              </div>
+                            ))}
+                          </div>
+                        )}
+
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-xs font-semibold bg-indigo-50/20 p-4 rounded-xl border border-indigo-100/30">
+                          {selectedAsset.attachmentType && (
+                            <div className="bg-white p-2.5 rounded-lg border border-slate-100">
+                              <span className="text-slate-400 text-[9px] block uppercase mb-0.5">{t('Tipe')}</span>
+                              <strong className="text-slate-700 text-xs">{selectedAsset.attachmentType}</strong>
+                            </div>
+                          )}
+                          {selectedAsset.attachmentAxels && (
+                            <div className="bg-white p-2.5 rounded-lg border border-slate-100">
+                              <span className="text-slate-400 text-[9px] block uppercase mb-0.5">{t('Axels')}</span>
+                              <strong className="text-slate-700 text-xs">{selectedAsset.attachmentAxels}</strong>
+                            </div>
+                          )}
+                          {selectedAsset.attachmentYearBuilt && (
+                            <div className="bg-white p-2.5 rounded-lg border border-slate-100">
+                              <span className="text-slate-400 text-[9px] block uppercase mb-0.5">{t('Tahun Produksi')}</span>
+                              <strong className="text-slate-700 text-xs">{selectedAsset.attachmentYearBuilt}</strong>
+                            </div>
+                          )}
+                          {selectedAsset.attachmentKeurNo && (
+                            <div className="bg-white p-2.5 rounded-lg border border-slate-100">
+                              <span className="text-slate-400 text-[9px] block uppercase mb-0.5">{t('Nomor KEUR')}</span>
+                              <strong className="text-slate-700 text-xs font-mono">{selectedAsset.attachmentKeurNo}</strong>
+                            </div>
+                          )}
+                          {selectedAsset.attachmentValidUntil && (
+                            <div className="bg-white p-2.5 rounded-lg border border-slate-100 col-span-2">
+                              <span className="text-slate-400 text-[9px] block uppercase mb-0.5">{t('Berlaku Hingga')}</span>
+                              <strong className="text-slate-700 text-xs">{selectedAsset.attachmentValidUntil}</strong>
+                            </div>
+                          )}
+
+                          {/* Attachment Dimensions */}
+                          {(selectedAsset.attachmentLength || selectedAsset.attachmentWidth || selectedAsset.attachmentHeight || selectedAsset.attachmentExtension) && (
+                            <div className="col-span-2 md:col-span-3 mt-1 pt-2 border-t border-indigo-100/40">
+                              <span className="text-slate-400 text-[9px] block uppercase mb-1.5 font-bold tracking-wider">{t('Dimensi Attachment')}</span>
+                              <div className="grid grid-cols-2 gap-2">
+                                {selectedAsset.attachmentLength && (
+                                  <div className="bg-white p-2 rounded-lg border border-slate-100">
+                                    <span className="text-slate-400 text-[8px] block uppercase">{t('Panjang Total')}</span>
+                                    <strong className="text-slate-700 text-xs font-mono">{selectedAsset.attachmentLength}</strong>
+                                  </div>
+                                )}
+                                {selectedAsset.attachmentWidth && (
+                                  <div className="bg-white p-2 rounded-lg border border-slate-100">
+                                    <span className="text-slate-400 text-[8px] block uppercase">{t('Lebar Total')}</span>
+                                    <strong className="text-slate-700 text-xs font-mono">{selectedAsset.attachmentWidth}</strong>
+                                  </div>
+                                )}
+                                {selectedAsset.attachmentHeight && (
+                                  <div className="bg-white p-2 rounded-lg border border-slate-100">
+                                    <span className="text-slate-400 text-[8px] block uppercase">{t('Tinggi Total')}</span>
+                                    <strong className="text-slate-700 text-xs font-mono">{selectedAsset.attachmentHeight}</strong>
+                                  </div>
+                                )}
+                                {selectedAsset.attachmentExtension && (
+                                  <div className="bg-white p-2 rounded-lg border border-slate-100">
+                                    <span className="text-slate-400 text-[8px] block uppercase">{t('Ekstensi')}</span>
+                                    <strong className="text-slate-700 text-xs font-mono">{selectedAsset.attachmentExtension}</strong>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   {/* Deskripsi (OLX-style Truncated preview + "Selengkapnya" modal link) */}
@@ -1002,7 +1192,9 @@ export default function CatalogView({
                           <span className="text-[9px] font-mono font-bold bg-blue-50 text-blue-700 px-2.5 py-1 rounded-md border border-blue-100 uppercase">
                             {t('FORM PENAWARAN')}
                           </span>
-                          <h3 className="font-bold text-slate-800 text-sm mt-1.5">{t('Ajukan Tawaran & Survei')}</h3>
+                          <h3 className="font-bold text-slate-800 text-sm mt-1.5">
+                            {bidForm.requestSurvey ? t('Ajukan Tawaran & Survei') : t('Kirim Penawaran')}
+                          </h3>
                         </div>
 
                     {!formSuccess ? (
@@ -1239,7 +1431,7 @@ export default function CatalogView({
                           className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl text-xs font-bold shadow-md shadow-blue-500/15 hover:shadow-blue-500/30 transition-all flex items-center justify-center gap-1.5 cursor-pointer uppercase tracking-wider"
                         >
                           <ArrowUpRight className="w-4 h-4" />
-                          <span>{t('Kirim Penawaran & Booking')}</span>
+                          <span>{bidForm.requestSurvey ? t('Kirim Penawaran & Booking') : t('Kirim Penawaran')}</span>
                         </button>
                       </form>
                     ) : (
