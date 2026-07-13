@@ -311,7 +311,8 @@ export default function AdminAssets({
     description: '',
     startingPrice: '',
     imageUrl: '',
-    imageUrls: [] as string[]
+    imageUrls: [] as string[],
+    dimensions: ''
   });
 
   const descriptionRef = React.useRef<HTMLTextAreaElement>(null);
@@ -336,7 +337,8 @@ export default function AdminAssets({
       description: '',
       startingPrice: '',
       imageUrl: '',
-      imageUrls: []
+      imageUrls: [],
+      dimensions: ''
     });
     setIsFormOpen(true);
   };
@@ -357,7 +359,8 @@ export default function AdminAssets({
       description: asset.description,
       startingPrice: String(asset.startingPrice),
       imageUrl: asset.imageUrl || (resolvedUrls[0] || ''),
-      imageUrls: resolvedUrls
+      imageUrls: resolvedUrls,
+      dimensions: asset.dimensions || ''
     });
     setIsFormOpen(true);
   };
@@ -426,7 +429,7 @@ export default function AdminAssets({
   // Master categories list to display in forms
   const displayCategoriesList = categories.length > 0
     ? categories.map(c => c.name)
-    : Array.from(new Set(['Wingbox', 'Box Truck', 'Dump Truck', 'Trailer Head', 'Pickup', 'Forklift', 'Container', 'Lainnya', ...assets.map(a => a.category)]));
+    : Array.from(new Set(['Head', 'Chassis', 'Rigid', 'HDE', 'Wingbox', 'Box Truck', 'Dump Truck', 'Trailer Head', 'Pickup', 'Forklift', 'Container', 'Lainnya', ...assets.map(a => a.category)]));
 
   // Master conditions list to display in forms
   const displayConditionsList = conditions.length > 0
@@ -469,7 +472,8 @@ export default function AdminAssets({
       description: formData.description || 'Tidak ada deskripsi tambahan.',
       startingPrice: Number(formData.startingPrice),
       imageUrl: formData.imageUrl || (resolvedUrls[0] || ''),
-      imageUrls: resolvedUrls
+      imageUrls: resolvedUrls,
+      dimensions: formData.dimensions || ''
     };
 
     if (editAssetId) {
@@ -494,7 +498,8 @@ export default function AdminAssets({
       description: '',
       startingPrice: '',
       imageUrl: '',
-      imageUrls: []
+      imageUrls: [],
+      dimensions: ''
     });
     setIsFormOpen(false);
   };
@@ -920,6 +925,12 @@ export default function AdminAssets({
                     <span className="truncate" title={selectedAsset.location}>{selectedAsset.location}</span>
                   </span>
                 </div>
+                {selectedAsset.dimensions && (
+                  <div className="col-span-2 border-t border-slate-50/50 pt-2">
+                    <span className="text-[11px] text-slate-400 font-bold block">{t('Dimensi Unit')}</span>
+                    <span className="font-semibold text-slate-800 font-mono text-xs">{selectedAsset.dimensions}</span>
+                  </div>
+                )}
               </div>
 
               <div className="pt-2 border-t border-slate-50">
@@ -1339,6 +1350,18 @@ export default function AdminAssets({
                     value={formData.plateNumber}
                     onChange={(e) => setFormData(prev => ({ ...prev, plateNumber: e.target.value }))}
                     className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-sm font-mono"
+                  />
+                </div>
+
+                {/* Dimensi Unit */}
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-600 uppercase">{t('Dimensi Unit (Opsional)')}</label>
+                  <input
+                    type="text"
+                    placeholder={t('Contoh: 12.0 x 2.5 x 3.7 m')}
+                    value={formData.dimensions}
+                    onChange={(e) => setFormData(prev => ({ ...prev, dimensions: e.target.value }))}
+                    className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-sm"
                   />
                 </div>
 

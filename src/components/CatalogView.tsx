@@ -881,6 +881,12 @@ export default function CatalogView({
                         <span className="text-slate-400 text-[9px] block uppercase mb-0.5">{t('Lokasi Detail')}</span>
                         <strong className="text-slate-700 text-sm line-clamp-1">{selectedAsset.location}</strong>
                       </div>
+                      {selectedAsset.dimensions && (
+                        <div className="bg-slate-50 p-3 rounded-xl border border-slate-100 col-span-2 md:col-span-3">
+                          <span className="text-slate-400 text-[9px] block uppercase mb-0.5">{t('Dimensi Unit')}</span>
+                          <strong className="text-slate-700 text-sm font-mono">{selectedAsset.dimensions}</strong>
+                        </div>
+                      )}
                     </div>
                   </div>
 

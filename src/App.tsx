@@ -103,6 +103,7 @@ export default function App() {
         const parsed = JSON.parse(stored);
         return parsed.map((item: any) => ({
           ...item,
+          read: item.read !== undefined ? item.read : false,
           timestamp: new Date(item.timestamp)
         }));
       }
@@ -112,10 +113,14 @@ export default function App() {
     return [];
   });
 
-  const [unreadCount, setUnreadCount] = useState<number>(() => {
-    const stored = localStorage.getItem('pancaran_unread_notif_count');
-    return stored ? parseInt(stored, 10) : 0;
-  });
+  const [unreadCount, setUnreadCount] = useState<number>(0);
+
+  // Synchronize unread count with notification history
+  useEffect(() => {
+    const count = notificationHistory.filter(n => !n.read).length;
+    setUnreadCount(count);
+    localStorage.setItem('pancaran_unread_notif_count', String(count));
+  }, [notificationHistory]);
 
   const [isNotifOpen, setIsNotifOpen] = useState(false);
   const [bookingCancelConfirmId, setBookingCancelConfirmId] = useState<string | null>(null);
@@ -151,7 +156,7 @@ export default function App() {
 
   const addNotification = (type: 'info' | 'success' | 'warning' | 'bid' | 'sync', title: string, message: string, assetId?: string) => {
     const id = Math.random().toString(36).substring(2, 9);
-    const newNotif: ToastNotification = { id, type, title, message, timestamp: new Date(), assetId };
+    const newNotif: ToastNotification = { id, type, title, message, timestamp: new Date(), assetId, read: false };
     setNotifications(prev => [newNotif, ...prev].slice(0, 5));
     
     // Save to persistent notification history
@@ -159,12 +164,6 @@ export default function App() {
       const updated = [newNotif, ...prev].slice(0, 50); // Keep last 50
       localStorage.setItem('pancaran_notification_history', JSON.stringify(updated));
       return updated;
-    });
-
-    setUnreadCount(prev => {
-      const next = prev + 1;
-      localStorage.setItem('pancaran_unread_notif_count', String(next));
-      return next;
     });
 
     // Auto remove after 6 seconds
@@ -175,15 +174,11 @@ export default function App() {
 
   const handleOpenNotifications = () => {
     setIsNotifOpen(!isNotifOpen);
-    setUnreadCount(0);
-    localStorage.setItem('pancaran_unread_notif_count', '0');
   };
 
   const handleClearNotifications = () => {
     setNotificationHistory([]);
-    setUnreadCount(0);
     localStorage.removeItem('pancaran_notification_history');
-    localStorage.setItem('pancaran_unread_notif_count', '0');
   };
 
   const handleDeleteNotification = (id: string, e: React.MouseEvent) => {
@@ -246,7 +241,22 @@ export default function App() {
 
   const [notifTab, setNotifTab] = useState<'logs' | 'bookings'>('logs');
 
+  const handleMarkAllNotificationsAsRead = () => {
+    setNotificationHistory(prev => {
+      const updated = prev.map(n => ({ ...n, read: true }));
+      localStorage.setItem('pancaran_notification_history', JSON.stringify(updated));
+      return updated;
+    });
+  };
+
   const handleNotificationClick = (notif: ToastNotification) => {
+    // Mark as read
+    setNotificationHistory(prev => {
+      const updated = prev.map(n => n.id === notif.id ? { ...n, read: true } : n);
+      localStorage.setItem('pancaran_notification_history', JSON.stringify(updated));
+      return updated;
+    });
+
     if (notif.assetId) {
       if (isAdminLoggedIn) {
         setRole('internal');
@@ -883,14 +893,24 @@ export default function App() {
                             <Bell className="w-4 h-4 text-blue-600" />
                             <span className="font-bold text-xs text-slate-800 uppercase tracking-wide">{t('Notifikasi Terkini')}</span>
                           </div>
-                          {notifTab === 'logs' && notificationHistory.length > 0 && (
-                            <button
-                              onClick={handleClearNotifications}
-                              className="text-[10px] text-slate-400 hover:text-rose-500 font-bold transition-colors uppercase cursor-pointer"
-                            >
-                              {t('Bersihkan')}
-                            </button>
-                          )}
+                          <div className="flex items-center gap-2">
+                            {notifTab === 'logs' && notificationHistory.some(n => !n.read) && (
+                              <button
+                                onClick={handleMarkAllNotificationsAsRead}
+                                className="text-[10px] text-blue-600 hover:text-blue-800 font-bold transition-colors uppercase cursor-pointer"
+                              >
+                                {t('Tandai Dibaca')}
+                              </button>
+                            )}
+                            {notifTab === 'logs' && notificationHistory.length > 0 && (
+                              <button
+                                onClick={handleClearNotifications}
+                                className="text-[10px] text-slate-400 hover:text-rose-500 font-bold transition-colors uppercase cursor-pointer ml-1"
+                              >
+                                {t('Bersihkan')}
+                              </button>
+                            )}
+                          </div>
                         </div>
 
                         {/* Tab Switcher */}
@@ -924,18 +944,24 @@ export default function App() {
                                 <div 
                                   key={notif.id} 
                                   onClick={() => handleNotificationClick(notif)}
-                                  className={`p-3 hover:bg-slate-50/75 transition-colors flex items-start gap-2.5 text-left relative group ${notif.assetId ? 'cursor-pointer border-l-2 border-l-blue-500/30' : ''}`}
+                                  className={`p-3 hover:bg-slate-50/75 transition-colors flex items-start gap-2.5 text-left relative group ${notif.assetId ? 'cursor-pointer' : ''} ${!notif.read ? 'bg-blue-50/30' : ''}`}
                                 >
-                                  <div className="mt-0.5 shrink-0">
+                                  <div className="mt-0.5 shrink-0 relative">
                                     {notif.type === 'bid' && <span className="text-blue-500 text-sm">💰</span>}
                                     {notif.type === 'success' && <span className="text-emerald-500 text-sm">📅</span>}
                                     {notif.type === 'info' && <span className="text-indigo-500 text-sm">ℹ️</span>}
                                     {notif.type === 'warning' && <span className="text-amber-500 text-sm">⚠️</span>}
                                     {notif.type === 'sync' && <span className="text-sky-500 text-sm">🔄</span>}
+                                    {!notif.read && (
+                                      <span className="absolute -top-1 -right-1 flex h-2 w-2">
+                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                                        <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-600"></span>
+                                      </span>
+                                    )}
                                   </div>
                                   <div className="space-y-0.5 flex-1 min-w-0 pr-5">
-                                    <p className="font-bold text-slate-800 text-[11px] leading-tight truncate">{notif.title}</p>
-                                    <p className="text-[10px] text-slate-500 leading-normal font-medium whitespace-normal break-words">{notif.message}</p>
+                                    <p className={`text-slate-800 text-[11px] leading-tight truncate ${!notif.read ? 'font-black text-slate-900' : 'font-bold'}`}>{notif.title}</p>
+                                    <p className={`text-[10px] leading-normal whitespace-normal break-words ${!notif.read ? 'text-slate-950 font-semibold' : 'text-slate-500 font-medium'}`}>{notif.message}</p>
                                     {notif.assetId && (
                                       <span className="inline-flex items-center gap-0.5 text-[9px] text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded font-bold mt-1">
                                         {t('Lihat Unit')} &rarr;
@@ -1180,14 +1206,24 @@ export default function App() {
                             <Bell className="w-4 h-4 text-blue-600" />
                             <span className="font-bold text-xs text-slate-800 uppercase tracking-wide">{t('Notifikasi Terkini')}</span>
                           </div>
-                          {notifTab === 'logs' && notificationHistory.length > 0 && (
-                            <button
-                              onClick={handleClearNotifications}
-                              className="text-[10px] text-slate-400 hover:text-rose-500 font-bold transition-colors uppercase cursor-pointer"
-                            >
-                              {t('Bersihkan')}
-                            </button>
-                          )}
+                          <div className="flex items-center gap-2">
+                            {notifTab === 'logs' && notificationHistory.some(n => !n.read) && (
+                              <button
+                                onClick={handleMarkAllNotificationsAsRead}
+                                className="text-[10px] text-blue-600 hover:text-blue-800 font-bold transition-colors uppercase cursor-pointer"
+                              >
+                                {t('Tandai Dibaca')}
+                              </button>
+                            )}
+                            {notifTab === 'logs' && notificationHistory.length > 0 && (
+                              <button
+                                onClick={handleClearNotifications}
+                                className="text-[10px] text-slate-400 hover:text-rose-500 font-bold transition-colors uppercase cursor-pointer ml-1"
+                              >
+                                {t('Bersihkan')}
+                              </button>
+                            )}
+                          </div>
                         </div>
 
                         {/* Mobile Tab Switcher */}
@@ -1221,18 +1257,24 @@ export default function App() {
                                 <div 
                                   key={notif.id} 
                                   onClick={() => handleNotificationClick(notif)}
-                                  className={`p-3 hover:bg-slate-50/75 transition-colors flex items-start gap-2 text-left relative group ${notif.assetId ? 'cursor-pointer border-l-2 border-l-blue-500/30' : ''}`}
+                                  className={`p-3 hover:bg-slate-50/75 transition-colors flex items-start gap-2 text-left relative group ${notif.assetId ? 'cursor-pointer' : ''} ${!notif.read ? 'bg-blue-50/30' : ''}`}
                                 >
-                                  <div className="mt-0.5 shrink-0">
+                                  <div className="mt-0.5 shrink-0 relative">
                                     {notif.type === 'bid' && <span className="text-blue-500 text-sm">💰</span>}
                                     {notif.type === 'success' && <span className="text-emerald-500 text-sm">📅</span>}
                                     {notif.type === 'info' && <span className="text-indigo-500 text-sm">ℹ️</span>}
                                     {notif.type === 'warning' && <span className="text-amber-500 text-sm">⚠️</span>}
                                     {notif.type === 'sync' && <span className="text-sky-500 text-sm">🔄</span>}
+                                    {!notif.read && (
+                                      <span className="absolute -top-1 -right-1 flex h-2 w-2">
+                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                                        <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-600"></span>
+                                      </span>
+                                    )}
                                   </div>
                                   <div className="space-y-0.5 flex-1 min-w-0 pr-5">
-                                    <p className="font-bold text-slate-800 text-[11px] leading-tight truncate">{notif.title}</p>
-                                    <p className="text-[10px] text-slate-500 leading-normal font-medium whitespace-normal break-words">{notif.message}</p>
+                                    <p className={`text-slate-800 text-[11px] leading-tight truncate ${!notif.read ? 'font-black text-slate-900' : 'font-bold'}`}>{notif.title}</p>
+                                    <p className={`text-[10px] leading-normal whitespace-normal break-words ${!notif.read ? 'text-slate-950 font-semibold' : 'text-slate-500 font-medium'}`}>{notif.message}</p>
                                     {notif.assetId && (
                                       <span className="inline-flex items-center gap-0.5 text-[9px] text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded font-bold mt-1">
                                         {t('Lihat Unit')} &rarr;

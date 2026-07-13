@@ -27,6 +27,7 @@ export interface Asset {
   imageUrl: string;
   imageUrls?: string[];
   bids: Bid[];
+  dimensions?: string;
 }
 
 export interface AdminUser {
@@ -73,4 +74,5 @@ export interface ToastNotification {
   message: string;
   timestamp: Date;
   assetId?: string;
+  read?: boolean;
 }

@@ -183,7 +183,7 @@ export async function seedDatabaseIfEmpty() {
     const categoriesSnapshot = await getDocs(collection(db, CATEGORIES_COLLECTION));
     if (categoriesSnapshot.empty) {
       console.log('Seeding initial categories to Firestore...');
-      const defaultCategories = ['Wingbox', 'Box Truck', 'Dump Truck', 'Trailer Head', 'Pickup', 'Forklift', 'Container', 'Lainnya'];
+      const defaultCategories = ['Head', 'Chassis', 'Rigid', 'HDE', 'Wingbox', 'Box Truck', 'Dump Truck', 'Trailer Head', 'Pickup', 'Forklift', 'Container', 'Lainnya'];
       for (const catName of defaultCategories) {
         const catId = catName.toLowerCase().replace(/\s+/g, '-');
         await setDoc(doc(db, CATEGORIES_COLLECTION, catId), {
@@ -193,6 +193,21 @@ export async function seedDatabaseIfEmpty() {
         });
       }
       console.log('Categories successfully seeded.');
+    } else {
+      // Ensure requested categories Head, Chassis, Rigid, HDE exist even if database was already seeded
+      const requestedCategories = ['Head', 'Chassis', 'Rigid', 'HDE'];
+      for (const catName of requestedCategories) {
+        const catId = catName.toLowerCase().replace(/\s+/g, '-');
+        const docRef = doc(db, CATEGORIES_COLLECTION, catId);
+        const docSnap = await getDoc(docRef);
+        if (!docSnap.exists()) {
+          await setDoc(docRef, {
+            id: catId,
+            name: catName,
+            createdAt: new Date().toISOString()
+          });
+        }
+      }
     }
 
     const conditionsSnapshot = await getDocs(collection(db, CONDITIONS_COLLECTION));
