@@ -76,8 +76,7 @@ function CatalogCard({ asset, onSelectAsset, formatIDR, onZoomImage, isUserLogge
     setActiveImgIdx(prev => (prev === images.length - 1 ? 0 : prev + 1));
   };
 
-  const scheduledBids = (asset.bids || []).filter(b => b.scheduleSurveyDate && b.scheduleSurveyTime);
-  const highestOffer = scheduledBids.length > 0 ? Math.max(...scheduledBids.map(b => b.price)) : asset.startingPrice;
+  const highestOffer = asset.bids && asset.bids.length > 0 ? Math.max(...asset.bids.map(b => b.price)) : asset.startingPrice;
 
   return (
     <div className="bg-white rounded-3xl overflow-hidden border border-slate-200 border-l-[6px] border-l-slate-300 hover:border-blue-200 hover:shadow-xl transition-all duration-300 flex flex-col justify-between group">
@@ -445,9 +444,8 @@ export default function CatalogView({
   const uniqueCategories = Array.from(new Set(openAssets.map(a => a.category)));
 
   const selectedAsset = assets.find(a => a.id === selectedAssetId);
-  const selectedScheduledBids = selectedAsset ? (selectedAsset.bids || []).filter(b => b.scheduleSurveyDate && b.scheduleSurveyTime) : [];
   const currentHighestBid = selectedAsset 
-    ? (selectedScheduledBids.length > 0 ? Math.max(...selectedScheduledBids.map(b => b.price)) : selectedAsset.startingPrice)
+    ? (selectedAsset.bids && selectedAsset.bids.length > 0 ? Math.max(...selectedAsset.bids.map(b => b.price)) : selectedAsset.startingPrice)
     : 0;
 
   const formatIDR = (value: number) => {
@@ -490,10 +488,9 @@ export default function CatalogView({
     setFormError('');
     setFormSuccess(false);
     
-    // Default bid price suggested is highest bid + 5,000,000 IDR
+    // Default bid price suggested is highest bid + 1,000,000 IDR
     const asset = assets.find(a => a.id === assetId);
     if (asset) {
-      const highest = asset.bids.length > 0 ? Math.max(...asset.bids.map(b => b.price)) : asset.startingPrice;
       setBidForm({
         name: isUserLoggedIn ? loggedInUserName : '',
         email: isUserLoggedIn ? loggedInUserEmail : '',
@@ -521,9 +518,17 @@ export default function CatalogView({
       return;
     }
 
-    if (bidPriceNum <= currentHighestBid) {
-      setFormError(`${t('Harga penawaran Anda harus lebih tinggi dari penawaran tertinggi saat ini')} (${formatIDR(currentHighestBid)}).`);
-      return;
+    const hasBids = selectedAsset.bids && selectedAsset.bids.length > 0;
+    if (hasBids) {
+      if (bidPriceNum <= currentHighestBid) {
+        setFormError(`${t('Harga penawaran Anda harus lebih tinggi dari penawaran tertinggi saat ini')} (${formatIDR(currentHighestBid)}).`);
+        return;
+      }
+    } else {
+      if (bidPriceNum < currentHighestBid) {
+        setFormError(`${t('Harga penawaran Anda tidak boleh kurang dari harga awal')} (${formatIDR(currentHighestBid)}).`);
+        return;
+      }
     }
 
     // Survey Validation if checked
@@ -1030,12 +1035,6 @@ export default function CatalogView({
                               <strong className="text-slate-700 text-xs">{selectedAsset.attachmentYearBuilt}</strong>
                             </div>
                           )}
-                          {selectedAsset.attachmentKeurNo && (
-                            <div className="bg-white p-2.5 rounded-lg border border-slate-100">
-                              <span className="text-slate-400 text-[9px] block uppercase mb-0.5">{t('Nomor KEUR')}</span>
-                              <strong className="text-slate-700 text-xs font-mono">{selectedAsset.attachmentKeurNo}</strong>
-                            </div>
-                          )}
                           {selectedAsset.attachmentValidUntil && (
                             <div className="bg-white p-2.5 rounded-lg border border-slate-100 col-span-2">
                               <span className="text-slate-400 text-[9px] block uppercase mb-0.5">{t('Berlaku Hingga')}</span>
@@ -1044,7 +1043,7 @@ export default function CatalogView({
                           )}
 
                           {/* Attachment Dimensions */}
-                          {(selectedAsset.attachmentLength || selectedAsset.attachmentWidth || selectedAsset.attachmentHeight || selectedAsset.attachmentExtension) && (
+                          {(selectedAsset.attachmentLength || selectedAsset.attachmentWidth || selectedAsset.attachmentHeight) && (
                             <div className="col-span-2 md:col-span-3 mt-1 pt-2 border-t border-indigo-100/40">
                               <span className="text-slate-400 text-[9px] block uppercase mb-1.5 font-bold tracking-wider">{t('Dimensi Attachment')}</span>
                               <div className="grid grid-cols-2 gap-2">
@@ -1064,12 +1063,6 @@ export default function CatalogView({
                                   <div className="bg-white p-2 rounded-lg border border-slate-100">
                                     <span className="text-slate-400 text-[8px] block uppercase">{t('Tinggi Total')}</span>
                                     <strong className="text-slate-700 text-xs font-mono">{selectedAsset.attachmentHeight}</strong>
-                                  </div>
-                                )}
-                                {selectedAsset.attachmentExtension && (
-                                  <div className="bg-white p-2 rounded-lg border border-slate-100">
-                                    <span className="text-slate-400 text-[8px] block uppercase">{t('Ekstensi')}</span>
-                                    <strong className="text-slate-700 text-xs font-mono">{selectedAsset.attachmentExtension}</strong>
                                   </div>
                                 )}
                               </div>
@@ -1301,7 +1294,18 @@ export default function CatalogView({
                               className="w-full pl-8 pr-4 py-2.5 border border-slate-200 rounded-xl text-sm font-bold text-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
                             />
                           </div>
-                          <p className="text-[10px] text-slate-400">{t('Minimal harga bid:')} <strong className="text-slate-600">{formatIDR(currentHighestBid + 1000000)}</strong></p>
+                          <div className="flex items-center justify-between mt-1">
+                            <p className="text-[10px] text-slate-400">
+                              {t('Penawaran Tertinggi:')} <strong className="text-slate-600">{formatIDR(currentHighestBid)}</strong>
+                            </p>
+                            <button
+                              type="button"
+                              onClick={() => setBidForm(prev => ({ ...prev, price: String(currentHighestBid) }))}
+                              className="text-[9px] font-bold text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 px-2 py-0.5 rounded-md transition-all cursor-pointer"
+                            >
+                              {t('Gunakan')}
+                            </button>
+                          </div>
                         </div>
 
                         {/* Request Survey Toggle */}

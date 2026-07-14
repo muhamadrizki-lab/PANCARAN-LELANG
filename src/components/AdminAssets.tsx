@@ -42,7 +42,10 @@ import {
   ChevronRight,
   ZoomIn,
   ZoomOut,
-  Settings
+  Settings,
+  Mail,
+  Phone,
+  Copy
 } from 'lucide-react';
 
 interface AdminAssetsProps {
@@ -192,6 +195,7 @@ export default function AdminAssets({
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isFormFocused, setIsFormFocused] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
+  const [isAttachmentDragging, setIsAttachmentDragging] = useState(false);
   const [editAssetId, setEditAssetId] = useState<string | null>(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [bidDeleteConfirmId, setBidDeleteConfirmId] = useState<string | null>(null);
@@ -202,6 +206,8 @@ export default function AdminAssets({
   const [editingBidId, setEditingBidId] = useState<string | null>(null);
   const [newSurveyDate, setNewSurveyDate] = useState('');
   const [newSurveyTime, setNewSurveyTime] = useState('');
+  const [focusedBid, setFocusedBid] = useState<Bid | null>(null);
+  const [copiedState, setCopiedState] = useState(false);
 
   // States for fullscreen image lightbox
   const [lightboxImages, setLightboxImages] = useState<string[]>([]);
@@ -918,6 +924,26 @@ export default function AdminAssets({
     return new Intl.NumberFormat('id-ID').format(Number(clean));
   };
 
+  const handleCopyDetails = (bid: Bid, assetName: string) => {
+    const textToCopy = `Detail Penawaran Harga:
+----------------------------------
+Nama Unit: ${assetName}
+Nama Penawar: ${bid.name}
+Nilai Bid: ${formatIDR(bid.price)}
+Nomor Telepon: ${bid.contact}
+Email: ${bid.email}
+Jadwal Survei: ${bid.scheduleSurveyDate ? `${bid.scheduleSurveyDate} @ ${bid.scheduleSurveyTime || 'N/A'} WIB` : 'Belum dijadwalkan'}`;
+    
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(textToCopy)
+        .then(() => {
+          setCopiedState(true);
+          setTimeout(() => setCopiedState(false), 2000);
+        })
+        .catch(() => {});
+    }
+  };
+
   return (
     <div className="space-y-8 animate-fade-in" id="admin-assets-view">
       
@@ -1079,8 +1105,7 @@ export default function AdminAssets({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {filteredAssets.map((asset) => {
               const isSelected = asset.id === selectedAssetId;
-              const scheduledBids = (asset.bids || []).filter(b => b.scheduleSurveyDate && b.scheduleSurveyTime);
-              const highestOffer = scheduledBids.length > 0 ? Math.max(...scheduledBids.map(b => b.price)) : asset.startingPrice;
+              const highestOffer = asset.bids && asset.bids.length > 0 ? Math.max(...asset.bids.map(b => b.price)) : asset.startingPrice;
               
               return (
                 <div
@@ -1264,13 +1289,38 @@ export default function AdminAssets({
                       </div>
                       <div className="space-y-1 pt-1 text-slate-700 bg-white/50 p-2.5 rounded-xl border border-emerald-100/30">
                         <p className="text-[10px] text-emerald-700 font-bold uppercase tracking-wider mb-1.5">{t('Kontak Pemenang')}</p>
-                        <div className="space-y-1">
-                          <p className="flex items-center gap-1.5 font-medium">
-                            <span className="text-slate-400">📱</span> {winnerBid.contact}
-                          </p>
-                          <p className="flex items-center gap-1.5 font-medium">
-                            <span className="text-slate-400">✉️</span> {winnerBid.email}
-                          </p>
+                        <div className="space-y-1.5">
+                          <div className="flex items-center justify-between gap-1.5 font-medium">
+                            <span className="flex items-center gap-1.5">
+                              <span className="text-slate-400">📱</span> {winnerBid.contact}
+                            </span>
+                            {winnerBid.contact && (
+                              <a
+                                href={`https://wa.me/${winnerBid.contact.replace(/\D/g, '').startsWith('0') ? '62' + winnerBid.contact.replace(/\D/g, '').slice(1) : winnerBid.contact.replace(/\D/g, '')}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center gap-1 px-2.5 py-1 text-[10px] font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg shadow-xs hover:shadow-md transition-all cursor-pointer"
+                                title={t('Hubungi via WhatsApp')}
+                              >
+                                <Phone className="w-3 h-3" />
+                                <span>WhatsApp</span>
+                              </a>
+                            )}
+                          </div>
+                          <div className="flex items-center justify-between gap-1.5 font-medium">
+                            <span className="flex items-center gap-1.5">
+                              <span className="text-slate-400">✉️</span> {winnerBid.email}
+                            </span>
+                            {winnerBid.email && (
+                              <a
+                                href={`mailto:${winnerBid.email}`}
+                                className="p-1 bg-white hover:bg-blue-50 text-blue-600 border border-slate-200/60 rounded-lg hover:border-blue-200 transition-all shrink-0"
+                                title={t('Kirim Email')}
+                              >
+                                <Mail className="w-3 h-3" />
+                              </a>
+                            )}
+                          </div>
                         </div>
                         {winnerBid.scheduleSurveyDate && (
                           <div className="text-[10px] text-emerald-800 bg-emerald-100/70 px-2.5 py-1.5 rounded-lg mt-2 font-semibold flex items-center gap-1.5">
@@ -1449,7 +1499,11 @@ export default function AdminAssets({
                 {selectedAsset.bids
                   .sort((a, b) => b.price - a.price)
                   .map((bid, i) => (
-                    <div key={bid.id} className="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-1.5 text-xs relative group">
+                    <div 
+                      key={bid.id} 
+                      onClick={() => setFocusedBid(bid)}
+                      className="p-3 bg-slate-50 rounded-xl border border-slate-200 hover:border-blue-400 hover:bg-white transition-all cursor-pointer space-y-1.5 text-xs relative group shadow-xs hover:shadow-md"
+                    >
                       <div className="flex justify-between items-start gap-2">
                         <div className="flex-1 min-w-0">
                           <span className="font-bold text-slate-700 block truncate">{bid.name}</span>
@@ -1460,18 +1514,21 @@ export default function AdminAssets({
                             <span className="text-[9px] font-bold text-rose-700 shrink-0">{t('Hapus?')}</span>
                             <button
                               type="button"
-                              onClick={() => setBidDeleteConfirmId(null)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setBidDeleteConfirmId(null);
+                              }}
                               className="px-1.5 py-0.5 bg-white text-slate-600 border border-slate-200 rounded text-[9px] font-bold hover:bg-slate-50 cursor-pointer"
                             >
                               {t('Batal')}
                             </button>
                             <button
                               type="button"
-                              onClick={() => {
+                              onClick={(e) => {
+                                e.stopPropagation();
                                 const updatedBids = selectedAsset.bids.filter(b => b.id !== bid.id);
-                                const scheduledBids = updatedBids.filter(b => b.scheduleSurveyDate && b.scheduleSurveyTime);
-                                const highestBid = scheduledBids.length > 0
-                                  ? Math.max(...scheduledBids.map(b => b.price), selectedAsset.startingPrice)
+                                const highestBid = updatedBids.length > 0
+                                  ? Math.max(...updatedBids.map(b => b.price), selectedAsset.startingPrice)
                                   : selectedAsset.startingPrice;
                                 onUpdateAsset(selectedAsset.id, { 
                                   bids: updatedBids,
@@ -1487,7 +1544,10 @@ export default function AdminAssets({
                         ) : (
                           <button
                             type="button"
-                            onClick={() => setBidDeleteConfirmId(bid.id)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setBidDeleteConfirmId(bid.id);
+                            }}
                             className="p-1 text-slate-400 hover:text-rose-500 rounded transition-colors cursor-pointer shrink-0"
                             title={t('Hapus Penawaran')}
                           >
@@ -1502,7 +1562,10 @@ export default function AdminAssets({
                       
                       {/* Survey date if requested, or inline rescheduling */}
                       {editingBidId === bid.id ? (
-                        <div className="mt-2.5 pt-2 border-t border-dashed border-slate-200 space-y-2.5 bg-blue-50/40 p-2.5 rounded-xl border border-blue-100">
+                        <div 
+                          onClick={(e) => e.stopPropagation()}
+                          className="mt-2.5 pt-2 border-t border-dashed border-slate-200 space-y-2.5 bg-blue-50/40 p-2.5 rounded-xl border border-blue-100"
+                        >
                           <p className="font-bold text-blue-800 text-[10px] uppercase tracking-wide">{t('Atur Jadwal Baru')}</p>
                           <div className="grid grid-cols-2 gap-2">
                             <div className="space-y-0.5">
@@ -1532,14 +1595,18 @@ export default function AdminAssets({
                           <div className="flex gap-1.5 pt-0.5">
                             <button
                               type="button"
-                              onClick={() => setEditingBidId(null)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setEditingBidId(null);
+                              }}
                               className="flex-1 py-1 bg-white hover:bg-slate-100 text-slate-600 border border-slate-200 rounded-md text-[10px] font-bold transition-colors cursor-pointer"
                             >
                               {t('Batal')}
                             </button>
                             <button
                               type="button"
-                              onClick={() => {
+                              onClick={(e) => {
+                                e.stopPropagation();
                                 // Find bid and update it
                                 const updatedBids = selectedAsset.bids.map(b => {
                                   if (b.id === bid.id) {
@@ -1551,9 +1618,8 @@ export default function AdminAssets({
                                   }
                                   return b;
                                 });
-                                const scheduledBids = updatedBids.filter(b => b.scheduleSurveyDate && b.scheduleSurveyTime);
-                                const highestBid = scheduledBids.length > 0
-                                  ? Math.max(...scheduledBids.map(b => b.price), selectedAsset.startingPrice)
+                                const highestBid = updatedBids.length > 0
+                                  ? Math.max(...updatedBids.map(b => b.price), selectedAsset.startingPrice)
                                   : selectedAsset.startingPrice;
                                 onUpdateAsset(selectedAsset.id, { 
                                   bids: updatedBids,
@@ -1571,19 +1637,26 @@ export default function AdminAssets({
                         <div className="mt-1.5 pt-1.5 border-t border-dashed border-slate-200 flex flex-col gap-1.5">
                           {bid.scheduleSurveyDate ? (
                             surveyCancelConfirmId === bid.id ? (
-                              <div className="flex items-center justify-between text-[10px] font-semibold text-rose-700 bg-rose-50 px-2 py-1 rounded gap-1.5 border border-rose-100 animate-fade-in">
+                              <div 
+                                onClick={(e) => e.stopPropagation()}
+                                className="flex items-center justify-between text-[10px] font-semibold text-rose-700 bg-rose-50 px-2 py-1 rounded gap-1.5 border border-rose-100 animate-fade-in"
+                              >
                                 <span className="font-bold truncate flex-1">{t('Batalkan survei ini?')}</span>
                                 <div className="flex gap-1 shrink-0">
                                   <button
                                     type="button"
-                                    onClick={() => setSurveyCancelConfirmId(null)}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setSurveyCancelConfirmId(null);
+                                    }}
                                     className="px-1.5 py-0.5 bg-white text-slate-600 border border-slate-200 rounded text-[9px] font-bold hover:bg-slate-50 cursor-pointer"
                                   >
                                     {t('Batal')}
                                   </button>
                                   <button
                                     type="button"
-                                    onClick={() => {
+                                    onClick={(e) => {
+                                      e.stopPropagation();
                                       const updatedBids = selectedAsset.bids.map(b => {
                                         if (b.id === bid.id) {
                                           const updatedBid = { ...b };
@@ -1593,9 +1666,8 @@ export default function AdminAssets({
                                         }
                                         return b;
                                       });
-                                      const scheduledBids = updatedBids.filter(b => b.scheduleSurveyDate && b.scheduleSurveyTime);
-                                      const highestBid = scheduledBids.length > 0
-                                        ? Math.max(...scheduledBids.map(b => b.price), selectedAsset.startingPrice)
+                                      const highestBid = updatedBids.length > 0
+                                        ? Math.max(...updatedBids.map(b => b.price), selectedAsset.startingPrice)
                                         : selectedAsset.startingPrice;
                                       onUpdateAsset(selectedAsset.id, { 
                                         bids: updatedBids,
@@ -1617,7 +1689,10 @@ export default function AdminAssets({
                                 </span>
                                 <button
                                   type="button"
-                                  onClick={() => setSurveyCancelConfirmId(bid.id)}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setSurveyCancelConfirmId(bid.id);
+                                  }}
                                   className="p-0.5 text-blue-400 hover:text-rose-500 rounded transition-colors cursor-pointer shrink-0"
                                   title={t('Batalkan Booking')}
                                 >
@@ -1634,7 +1709,8 @@ export default function AdminAssets({
                           {selectedAsset.status !== 'Sold' && (
                             <button
                               type="button"
-                              onClick={() => {
+                              onClick={(e) => {
+                                e.stopPropagation();
                                 setEditingBidId(bid.id);
                                 setNewSurveyDate(bid.scheduleSurveyDate || new Date().toISOString().split('T')[0]);
                                 setNewSurveyTime(bid.scheduleSurveyTime || '09:00');
@@ -2376,12 +2452,28 @@ export default function AdminAssets({
                           {/* Mini Drag Drop Area */}
                           <div 
                             onClick={() => document.getElementById('attachment-file-input')?.click()}
-                            className="border-2 border-dashed border-slate-300 hover:border-blue-400 bg-white hover:bg-slate-50/50 rounded-xl p-4 text-center cursor-pointer flex-1 w-full flex flex-col items-center justify-center min-h-[100px] transition"
+                            onDragOver={(e) => {
+                              e.preventDefault();
+                              setIsAttachmentDragging(true);
+                            }}
+                            onDragLeave={() => setIsAttachmentDragging(false)}
+                            onDrop={(e) => {
+                              e.preventDefault();
+                              setIsAttachmentDragging(false);
+                              const files = e.dataTransfer.files;
+                              if (files && files.length > 0) handleAttachmentFilesChange(files);
+                            }}
+                            className={`border-2 border-dashed rounded-xl p-4 text-center cursor-pointer flex-1 w-full flex flex-col items-center justify-center min-h-[100px] transition-all ${
+                              isAttachmentDragging 
+                                ? 'border-blue-500 bg-blue-50/50 animate-pulse' 
+                                : 'border-slate-300 bg-white hover:border-blue-400 hover:bg-slate-50/50'
+                            }`}
                           >
                             <input
                               id="attachment-file-input"
                               type="file"
                               accept="image/*"
+                              multiple
                               className="hidden"
                               onChange={(e) => {
                                 const files = e.target.files;
@@ -2476,21 +2568,9 @@ export default function AdminAssets({
                         />
                       </div>
 
-                      {/* KEUR No */}
-                      <div className="space-y-1.5">
-                        <label className="text-xs font-bold text-slate-600 uppercase">{t('Nomor KEUR')}</label>
-                        <input
-                          type="text"
-                          placeholder={t('Contoh: JKTI915545')}
-                          value={formData.attachmentKeurNo}
-                          onChange={(e) => setFormData(prev => ({ ...prev, attachmentKeurNo: e.target.value }))}
-                          className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white font-mono"
-                        />
-                      </div>
-
                       {/* Valid Until */}
-                      <div className="space-y-1.5 md:col-span-2">
-                        <label className="text-xs font-bold text-slate-600 uppercase">{t('Berlaku Hingga')}</label>
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-bold text-slate-600 uppercase">{t('KEUR BERLAKU HINGGA')}</label>
                         <input
                           type="date"
                           value={formData.attachmentValidUntil}
@@ -2502,7 +2582,7 @@ export default function AdminAssets({
                       {/* Nested subsection Dimension */}
                       <div className="md:col-span-2 border-t border-slate-200 pt-4 mt-2 space-y-4">
                         <h5 className="text-xs font-bold text-slate-700 uppercase tracking-wider">{t('Dimensi')}</h5>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                           {/* Length */}
                           <div className="space-y-1.5">
                             <label className="text-xs font-semibold text-slate-500 uppercase">{t('Panjang Total (Meter)')}</label>
@@ -2539,17 +2619,7 @@ export default function AdminAssets({
                             />
                           </div>
 
-                          {/* Extension */}
-                          <div className="space-y-1.5">
-                            <label className="text-xs font-semibold text-slate-500 uppercase">{t('Ekstensi')}</label>
-                            <input
-                              type="text"
-                              placeholder={t('Contoh: - atau 1.5 M')}
-                              value={formData.attachmentExtension}
-                              onChange={(e) => setFormData(prev => ({ ...prev, attachmentExtension: e.target.value }))}
-                              className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white"
-                            />
-                          </div>
+
                         </div>
                       </div>
                     </div>
@@ -2695,6 +2765,181 @@ export default function AdminAssets({
                 ? t('Klik gambar untuk memperkecil • Geser untuk menjelajah detail') 
                 : t('Klik gambar untuk memperbesar • Klik di luar untuk kembali')}
             </p>
+          </div>
+        </div>
+      )}
+
+      {/* Immersive Focused Bid Details Modal Overlay */}
+      {focusedBid && selectedAsset && (
+        <div 
+          className="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-[120] flex items-center justify-center p-4 animate-fade-in"
+          onClick={() => setFocusedBid(null)}
+        >
+          <div 
+            className="bg-white rounded-3xl border border-slate-100 shadow-2xl max-w-lg w-full p-6 sm:p-8 relative overflow-hidden transition-all duration-300 animate-zoom-in flex flex-col max-h-[90vh]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header Gradient line */}
+            <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-blue-500 via-indigo-500 to-sky-500" />
+            
+            {/* Title Bar */}
+            <div className="flex justify-between items-start mb-6">
+              <div className="flex items-center gap-3">
+                <div className="p-3 bg-blue-50 rounded-2xl border border-blue-100 text-blue-600">
+                  <FileText className="w-6 h-6 animate-pulse" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-slate-900 tracking-tight">
+                    {t('Detail Penawaran')}
+                  </h3>
+                  <p className="text-xs text-slate-500 font-semibold mt-0.5">
+                    {selectedAsset.brand} {selectedAsset.name} ({selectedAsset.plateNumber})
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setFocusedBid(null)}
+                className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-all cursor-pointer"
+                title={t('Tutup')}
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Scrollable details area */}
+            <div className="space-y-6 overflow-y-auto pr-1 flex-1 py-1">
+              {/* Huge Price Block */}
+              <div className="bg-slate-50/70 border border-slate-100 rounded-2xl p-5 text-center shadow-xs">
+                <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block mb-1">
+                  {t('NILAI PENAWARAN (BID PRICE)')}
+                </span>
+                <span className="text-3xl sm:text-4xl font-extrabold text-blue-600 font-mono tracking-tight block">
+                  {formatIDR(focusedBid.price)}
+                </span>
+              </div>
+
+              {/* Grid of Key Bidder Details */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* Bidder Name */}
+                <div className="bg-slate-50/40 p-4 rounded-2xl border border-slate-100 flex flex-col justify-between">
+                  <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block mb-1">
+                    {t('NAMA PENAWAR')}
+                  </span>
+                  <span className="text-sm font-bold text-slate-800 break-words block">
+                    {focusedBid.name}
+                  </span>
+                </div>
+
+                {/* Scheduled Visit / Survey Date */}
+                <div className="bg-slate-50/40 p-4 rounded-2xl border border-slate-100 flex flex-col justify-between">
+                  <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block mb-1">
+                    {t('JADWAL KUNJUNGAN / SURVEY')}
+                  </span>
+                  {focusedBid.scheduleSurveyDate ? (
+                    <div className="flex items-center gap-1.5 text-blue-600 font-bold text-xs mt-1">
+                      <Calendar className="w-4 h-4 shrink-0 text-blue-500" />
+                      <span className="truncate">
+                        {focusedBid.scheduleSurveyDate} @ {focusedBid.scheduleSurveyTime || '09:00'} WIB
+                      </span>
+                    </div>
+                  ) : (
+                    <span className="text-xs text-slate-400 font-medium italic mt-1">
+                      {t('Belum ada jadwal survei.')}
+                    </span>
+                  )}
+                </div>
+
+                {/* Email address */}
+                <div className="bg-slate-50/40 p-4 rounded-2xl border border-slate-100 flex flex-col justify-between">
+                  <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block mb-1">
+                    EMAIL
+                  </span>
+                  <div className="flex items-center justify-between gap-1 mt-1">
+                    <span className="text-xs text-slate-700 font-semibold break-all block truncate flex-1" title={focusedBid.email}>
+                      {focusedBid.email}
+                    </span>
+                    {focusedBid.email && (
+                      <a
+                        href={`mailto:${focusedBid.email}`}
+                        className="p-1 bg-white hover:bg-blue-50 text-blue-600 border border-slate-200/60 rounded-lg hover:border-blue-200 transition-all shrink-0 ml-1"
+                        title={t('Kirim Email')}
+                      >
+                        <Mail className="w-3.5 h-3.5" />
+                      </a>
+                    )}
+                  </div>
+                </div>
+
+                {/* Contact/WhatsApp */}
+                <div className="bg-slate-50/40 p-4 rounded-2xl border border-slate-100 flex flex-col justify-between">
+                  <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block mb-1">
+                    {t('NOMOR HP / WHATSAPP')}
+                  </span>
+                  <div className="flex items-center justify-between gap-1 mt-1">
+                    <span className="text-xs text-slate-700 font-semibold break-words block truncate flex-1">
+                      {focusedBid.contact}
+                    </span>
+                    {focusedBid.contact && (
+                      <a
+                        href={`https://wa.me/${focusedBid.contact.replace(/\D/g, '').startsWith('0') ? '62' + focusedBid.contact.replace(/\D/g, '').slice(1) : focusedBid.contact.replace(/\D/g, '')}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="p-1 bg-white hover:bg-emerald-50 text-emerald-600 border border-slate-200/60 rounded-lg hover:border-emerald-200 transition-all shrink-0 ml-1"
+                        title={t('Hubungi via WhatsApp')}
+                      >
+                        <Phone className="w-3.5 h-3.5" />
+                      </a>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Timestamp Info */}
+              {focusedBid.timestamp && (
+                <div className="text-right text-[10px] text-slate-400 font-semibold">
+                  {t('Penawaran masuk pada')}: {new Date(focusedBid.timestamp).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' })}
+                </div>
+              )}
+            </div>
+
+            {/* Bottom Panel Actions */}
+            <div className="mt-6 pt-4 border-t border-slate-100 flex flex-col sm:flex-row gap-2.5 shrink-0">
+              {/* Copy structured details */}
+              <button
+                type="button"
+                onClick={() => handleCopyDetails(focusedBid, `${selectedAsset.brand} ${selectedAsset.name} (${selectedAsset.plateNumber})`)}
+                className={`flex-1 py-3 px-4 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer border ${
+                  copiedState 
+                    ? "bg-emerald-50 text-emerald-700 border-emerald-200" 
+                    : "bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-200/60"
+                }`}
+              >
+                {copiedState ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
+                <span>{copiedState ? t('Berhasil Disalin!') : t('Salin Detail Penawaran')}</span>
+              </button>
+
+              {/* WhatsApp direct contact */}
+              {focusedBid.contact && (
+                <a
+                  href={`https://wa.me/${focusedBid.contact.replace(/\D/g, '').startsWith('0') ? '62' + focusedBid.contact.replace(/\D/g, '').slice(1) : focusedBid.contact.replace(/\D/g, '')}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white py-3 px-4 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-sm shadow-emerald-600/10 hover:shadow-emerald-600/20"
+                >
+                  <Phone className="w-4 h-4" />
+                  <span>{t('Hubungi WhatsApp')}</span>
+                </a>
+              )}
+
+              {/* Close Button */}
+              <button
+                type="button"
+                onClick={() => setFocusedBid(null)}
+                className="py-3 px-5 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-bold transition-all cursor-pointer text-center"
+              >
+                {t('Tutup')}
+              </button>
+            </div>
           </div>
         </div>
       )}

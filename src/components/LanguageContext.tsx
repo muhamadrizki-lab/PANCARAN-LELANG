@@ -77,6 +77,7 @@ const translations: Record<Language, Record<string, string>> = {
     'Harga Awal': 'Harga Awal',
     'Harga Pembuka': 'Harga Pembuka',
     'Penawaran Tertinggi': 'Penawaran Tertinggi',
+    'Penawaran Tertinggi:': 'Penawaran Tertinggi:',
     'Belum ada penawaran': 'Belum ada penawaran',
     'Penawaran': 'Penawaran',
     'Penawaran Masuk': 'Penawaran Masuk',
@@ -443,6 +444,7 @@ const translations: Record<Language, Record<string, string>> = {
     'Contoh: 0812XXXXXXXX': 'Contoh: 0812XXXXXXXX',
     'Harga Bid Anda (IDR) *': 'Harga Bid Anda (IDR) *',
     'Minimal harga bid:': 'Minimal harga bid:',
+    'Gunakan': 'Gunakan',
     'Booking Jadwal Survei Fisik': 'Booking Jadwal Survei Fisik',
     'Ingin cek kondisi mesin langsung di Pool?': 'Ingin cek kondisi mesin langsung di Pool?',
     'Tentukan Waktu Kunjungan Pool': 'Tentukan Waktu Kunjungan Pool',
@@ -564,7 +566,7 @@ const translations: Record<Language, Record<string, string>> = {
   },
   en: {
     // General / Header / Footer
-    'Pancaran Lelang': 'Pancaran Auctions',
+    'Pancaran Lelang': 'Pancaran Lelang',
     'Katalog Eksternal': 'External Catalog',
     'Katalog Eksternal (Public)': 'External Catalog (Public)',
     'Area Admin Internal': 'Internal Admin Area',
@@ -630,6 +632,7 @@ const translations: Record<Language, Record<string, string>> = {
     'Harga Awal': 'Starting Price',
     'Harga Pembuka': 'Starting Price',
     'Penawaran Tertinggi': 'Highest Bid',
+    'Penawaran Tertinggi:': 'Highest Bid:',
     'Belum ada penawaran': 'No bids yet',
     'Penawaran': 'Bid(s)',
     'Penawaran Masuk': 'Bid(s) Submitted',
@@ -890,7 +893,7 @@ const translations: Record<Language, Record<string, string>> = {
 
     // Additional Admin Users Keys
     'Manajemen Akses Admin': 'Admin Access Management',
-    'Buat akses administrator baru, tinjau tingkatan hak akses, dan kelola otoritas keamanan internal Pancaran Lelang.': 'Create new administrator access, review privilege levels, and manage internal security authority for Pancaran Auctions.',
+    'Buat akses administrator baru, tinjau tingkatan hak akses, dan kelola otoritas keamanan internal Pancaran Lelang.': 'Create new administrator access, review privilege levels, and manage internal security authority for Pancaran Lelang.',
     'Buat Akses Baru': 'Create New Access',
     'Daftarkan akun email karyawan baru untuk memberikan akses masuk ke dashboard internal.': 'Register a new employee email account to grant access to the internal dashboard.',
     'Nama Lengkap Admin': 'Admin Full Name',
@@ -949,7 +952,7 @@ const translations: Record<Language, Record<string, string>> = {
     'Belum ada user eksternal yang mendaftar.': 'No external users registered yet.',
 
     // New keys for Admin Dashboard and other pages
-    'Dashboard Pancaran Lelang': 'Pancaran Auctions Dashboard',
+    'Dashboard Pancaran Lelang': 'Pancaran Lelang Dashboard',
     'Halo Admin, kelola aset lelang komersial, pantau penawaran harga, dan atur survei fisik dalam satu portal terpadu.': 'Hello Admin, manage commercial auction assets, monitor price bids, and organize physical surveys in one integrated portal.',
     'Waktu Sistem (WIB)': 'System Time (WIB)',
     'Sukses Lelang': 'Auction Success',
@@ -996,6 +999,7 @@ const translations: Record<Language, Record<string, string>> = {
     'Contoh: 0812XXXXXXXX': 'Example: 0812XXXXXXXX',
     'Harga Bid Anda (IDR) *': 'Your Bid Price (IDR) *',
     'Minimal harga bid:': 'Minimum bid price:',
+    'Gunakan': 'Use',
     'Booking Jadwal Survei Fisik': 'Book Physical Survey Schedule',
     'Ingin cek kondisi mesin langsung di Pool?': 'Want to check the engine condition directly at the Pool?',
     'Tentukan Waktu Kunjungan Pool': 'Determine Pool Visit Time',
@@ -1076,7 +1080,7 @@ const translations: Record<Language, Record<string, string>> = {
     'Hapus Penawaran': 'Delete Bid',
     'Apakah Anda yakin ingin menghapus penawaran ini?': 'Are you sure you want to delete this bid?',
     'Apakah Anda yakin ingin membatalkan jadwal survei ini?': 'Are you sure you want to cancel this survey schedule?',
-    'Masuk ke Pancaran Lelang': 'Log in to Pancaran Auctions',
+    'Masuk ke Pancaran Lelang': 'Log in to Pancaran Lelang',
     'Gunakan akun Anda untuk melihat harga dan melakukan penawaran.': 'Use your account to view prices and place bids.',
     'Daftar Akun Baru': 'Register New Account',
     'Lengkapi data Anda untuk mendapatkan akses penawaran unit lelang.': 'Complete your details to get access to auction unit bids.',
@@ -1112,7 +1116,7 @@ const translations: Record<Language, Record<string, string>> = {
     'KODE VERIFIKASI OTP': 'OTP VERIFICATION CODE',
     'Verifikasi Sekarang': 'Verify Now',
     'OTP Telah Dikirim ke Email Asli:': 'OTP Sent to Real Email:',
-    'Sistem keamanan Pancaran Lelang telah mengirimkan 6 digit kode OTP ke email asli Anda. Silakan periksa Kotak Masuk (Inbox) atau folder Spam/Promosi Anda.': 'Pancaran Auction security system has sent a 6-digit OTP code to your real email. Please check your Inbox or Spam/Promotion folder.',
+    'Sistem keamanan Pancaran Lelang telah mengirimkan 6 digit kode OTP ke email asli Anda. Silakan periksa Kotak Masuk (Inbox) atau folder Spam/Promosi Anda.': 'Pancaran Lelang security system has sent a 6-digit OTP code to your real email. Please check your Inbox or Spam/Promotion folder.',
     'Kode verifikasi disembunyikan dari web ini untuk keamanan autentik.': 'The verification code is hidden from this website for authentic security.',
     'Layanan Email Belum Dikonfigurasi:': 'Email Service Not Configured:',
     'Sistem email verifikasi asli belum dikonfigurasi oleh Administrator. Kode OTP tidak dapat ditampilkan di layar web demi keamanan data.': 'The real verification email system has not been configured by the Administrator. The OTP code cannot be displayed on the screen for data security.',

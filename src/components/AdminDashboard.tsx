@@ -48,8 +48,7 @@ export default function AdminDashboard({
 
   // Highest price calculation (from starting prices or bids)
   const maxPrice = assets.reduce((max, asset) => {
-    const scheduledBids = (asset.bids || []).filter(b => b.scheduleSurveyDate && b.scheduleSurveyTime);
-    const highestVal = Math.max(asset.startingPrice, asset.highestBid, ...scheduledBids.map(b => b.price));
+    const highestVal = Math.max(asset.startingPrice, asset.highestBid, ...(asset.bids || []).map(b => b.price));
     return highestVal > max ? highestVal : max;
   }, 0);
 

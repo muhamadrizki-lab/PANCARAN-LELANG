@@ -230,9 +230,8 @@ export default function App() {
       return b;
     });
 
-    const scheduledBids = updatedBids.filter(b => b.scheduleSurveyDate && b.scheduleSurveyTime);
-    const highestBid = scheduledBids.length > 0
-      ? Math.max(...scheduledBids.map(b => b.price), targetAsset.startingPrice)
+    const highestBid = updatedBids.length > 0
+      ? Math.max(...updatedBids.map(b => b.price), targetAsset.startingPrice)
       : targetAsset.startingPrice;
 
     // Optimistic local state update
@@ -754,9 +753,8 @@ export default function App() {
     setAssets(prev => prev.map(a => {
       if (a.id === assetId) {
         const updatedBids = [...(a.bids || []), newBid];
-        const scheduledBids = updatedBids.filter(b => b.scheduleSurveyDate && b.scheduleSurveyTime);
-        const highestBid = scheduledBids.length > 0
-          ? Math.max(...scheduledBids.map(b => b.price), a.startingPrice)
+        const highestBid = updatedBids.length > 0
+          ? Math.max(...updatedBids.map(b => b.price), a.startingPrice)
           : a.startingPrice;
         return {
           ...a,
