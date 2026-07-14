@@ -2585,7 +2585,7 @@ Jadwal Survei: ${bid.scheduleSurveyDate ? `${bid.scheduleSurveyDate} @ ${bid.sch
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                           {/* Length */}
                           <div className="space-y-1.5">
-                            <label className="text-xs font-semibold text-slate-500 uppercase">{t('Panjang Total (Meter)')}</label>
+                            <label className="text-xs font-bold text-slate-600 uppercase">{t('Panjang Total (Meter)')}</label>
                             <input
                               type="text"
                               placeholder={t('Contoh: 40 M atau 12.0')}
@@ -2597,7 +2597,7 @@ Jadwal Survei: ${bid.scheduleSurveyDate ? `${bid.scheduleSurveyDate} @ ${bid.sch
 
                           {/* Width */}
                           <div className="space-y-1.5">
-                            <label className="text-xs font-semibold text-slate-500 uppercase">{t('Lebar Total (TON)')}</label>
+                            <label className="text-xs font-bold text-slate-600 uppercase">{t('Lebar Total (TON)')}</label>
                             <input
                               type="text"
                               placeholder={t('Contoh: 60 Ton')}
@@ -2609,7 +2609,7 @@ Jadwal Survei: ${bid.scheduleSurveyDate ? `${bid.scheduleSurveyDate} @ ${bid.sch
 
                           {/* Height */}
                           <div className="space-y-1.5">
-                            <label className="text-xs font-semibold text-slate-500 uppercase">{t('Tinggi Total (Meter)')}</label>
+                            <label className="text-xs font-bold text-slate-600 uppercase">{t('Tinggi Total (Meter)')}</label>
                             <input
                               type="text"
                               placeholder={t('Contoh: 1.5 M')}

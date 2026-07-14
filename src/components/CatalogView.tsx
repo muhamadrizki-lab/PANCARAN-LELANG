@@ -879,79 +879,79 @@ export default function CatalogView({
                     {/* Part A: Main Specifications */}
                     <div className="space-y-2">
                       <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{t('Spesifikasi Utama')}</h4>
-                      <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-xs font-semibold">
+                      <div className="grid grid-cols-3 gap-3 text-xs font-semibold">
                         <div className="bg-slate-50 p-3 rounded-xl border border-slate-100/85">
-                          <span className="text-slate-400 text-[9px] block uppercase mb-0.5">{t('Merek / Brand')}</span>
-                          <strong className="text-slate-700 text-sm">{selectedAsset.brand}</strong>
+                          <span className="text-slate-400 text-[9px] block uppercase mb-0.5 font-bold tracking-wider">{t('Merek / Brand')}</span>
+                          <strong className="text-slate-900 font-bold text-sm">{selectedAsset.brand}</strong>
                         </div>
                         <div className="bg-slate-50 p-3 rounded-xl border border-slate-100/85">
-                          <span className="text-slate-400 text-[9px] block uppercase mb-0.5">{t('Kategori')}</span>
-                          <strong className="text-slate-700 text-sm">{selectedAsset.category}</strong>
+                          <span className="text-slate-400 text-[9px] block uppercase mb-0.5 font-bold tracking-wider">{t('Kategori')}</span>
+                          <strong className="text-slate-900 font-bold text-sm">{selectedAsset.category}</strong>
                         </div>
                         <div className="bg-slate-50 p-3 rounded-xl border border-slate-100/85">
-                          <span className="text-slate-400 text-[9px] block uppercase mb-0.5">{t('Tahun Registrasi')}</span>
-                          <strong className="text-slate-700 text-sm">{selectedAsset.modelYear}</strong>
+                          <span className="text-slate-400 text-[9px] block uppercase mb-0.5 font-bold tracking-wider">{t('Tahun Registrasi')}</span>
+                          <strong className="text-slate-900 font-bold text-sm">{selectedAsset.modelYear}</strong>
                         </div>
                         <div className="bg-slate-50 p-3 rounded-xl border border-slate-100/85">
-                          <span className="text-slate-400 text-[9px] block uppercase mb-0.5">{t('No Polisi')}</span>
-                          <strong className="text-slate-700 text-sm font-mono uppercase">{selectedAsset.plateNumber || '-'}</strong>
+                          <span className="text-slate-400 text-[9px] block uppercase mb-0.5 font-bold tracking-wider">{t('No Polisi')}</span>
+                          <strong className="text-slate-900 font-bold text-sm font-mono uppercase">{selectedAsset.plateNumber || '-'}</strong>
                         </div>
                         <div className="bg-slate-50 p-3 rounded-xl border border-slate-100/85">
-                          <span className="text-slate-400 text-[9px] block uppercase mb-0.5">{t('Kondisi Fisik')}</span>
-                          <strong className="text-blue-700 text-sm">{t(selectedAsset.condition)}</strong>
+                          <span className="text-slate-400 text-[9px] block uppercase mb-0.5 font-bold tracking-wider">{t('Kondisi Fisik')}</span>
+                          <strong className="text-slate-900 font-bold text-sm">{t(selectedAsset.condition)}</strong>
                         </div>
                         <div className="bg-slate-50 p-3 rounded-xl border border-slate-100/85">
-                          <span className="text-slate-400 text-[9px] block uppercase mb-0.5">{t('Lokasi Detail')}</span>
-                          <strong className="text-slate-700 text-sm line-clamp-1">{selectedAsset.location}</strong>
+                          <span className="text-slate-400 text-[9px] block uppercase mb-0.5 font-bold tracking-wider">{t('Lokasi Detail')}</span>
+                          <strong className="text-slate-900 font-bold text-sm line-clamp-1">{selectedAsset.location}</strong>
                         </div>
                         
                         {/* New specifications fields */}
                         {selectedAsset.model && (
                           <div className="bg-slate-50 p-3 rounded-xl border border-slate-100/85">
-                            <span className="text-slate-400 text-[9px] block uppercase mb-0.5">{t('Model')}</span>
-                            <strong className="text-slate-700 text-sm">{selectedAsset.model}</strong>
+                            <span className="text-slate-400 text-[9px] block uppercase mb-0.5 font-bold tracking-wider">{t('Model')}</span>
+                            <strong className="text-slate-900 font-bold text-sm">{selectedAsset.model}</strong>
                           </div>
                         )}
                         {selectedAsset.series && (
                           <div className="bg-slate-50 p-3 rounded-xl border border-slate-100/85">
-                            <span className="text-slate-400 text-[9px] block uppercase mb-0.5">{t('Series')}</span>
-                            <strong className="text-slate-700 text-sm">{selectedAsset.series}</strong>
+                            <span className="text-slate-400 text-[9px] block uppercase mb-0.5 font-bold tracking-wider">{t('Series')}</span>
+                            <strong className="text-slate-900 font-bold text-sm">{selectedAsset.series}</strong>
                           </div>
                         )}
                         {selectedAsset.axels && (
                           <div className="bg-slate-50 p-3 rounded-xl border border-slate-100/85">
-                            <span className="text-slate-400 text-[9px] block uppercase mb-0.5">{t('Axels')}</span>
-                            <strong className="text-slate-700 text-sm">{selectedAsset.axels}</strong>
+                            <span className="text-slate-400 text-[9px] block uppercase mb-0.5 font-bold tracking-wider">{t('Axels')}</span>
+                            <strong className="text-slate-900 font-bold text-sm">{selectedAsset.axels}</strong>
                           </div>
                         )}
                         {selectedAsset.vehicleColour && (
                           <div className="bg-slate-50 p-3 rounded-xl border border-slate-100/85">
-                            <span className="text-slate-400 text-[9px] block uppercase mb-0.5">{t('Warna')}</span>
-                            <strong className="text-slate-700 text-sm">{t(selectedAsset.vehicleColour)}</strong>
+                            <span className="text-slate-400 text-[9px] block uppercase mb-0.5 font-bold tracking-wider">{t('Warna')}</span>
+                            <strong className="text-slate-900 font-bold text-sm">{t(selectedAsset.vehicleColour)}</strong>
                           </div>
                         )}
                         {selectedAsset.fuelType && (
                           <div className="bg-slate-50 p-3 rounded-xl border border-slate-100/85">
-                            <span className="text-slate-400 text-[9px] block uppercase mb-0.5">{t('Bahan Bakar')}</span>
-                            <strong className="text-slate-700 text-sm">{t(selectedAsset.fuelType)}</strong>
+                            <span className="text-slate-400 text-[9px] block uppercase mb-0.5 font-bold tracking-wider">{t('Bahan Bakar')}</span>
+                            <strong className="text-slate-900 font-bold text-sm">{t(selectedAsset.fuelType)}</strong>
                           </div>
                         )}
                         {selectedAsset.horsepower && (
                           <div className="bg-slate-50 p-3 rounded-xl border border-slate-100/85">
-                            <span className="text-slate-400 text-[9px] block uppercase mb-0.5">{t('Horsepower (HP)')}</span>
-                            <strong className="text-slate-700 text-sm">{selectedAsset.horsepower}</strong>
+                            <span className="text-slate-400 text-[9px] block uppercase mb-0.5 font-bold tracking-wider">{t('Horsepower (HP)')}</span>
+                            <strong className="text-slate-900 font-bold text-sm">{selectedAsset.horsepower}</strong>
                           </div>
                         )}
                         {selectedAsset.odometer && (
                           <div className="bg-slate-50 p-3 rounded-xl border border-slate-100/85">
-                            <span className="text-slate-400 text-[9px] block uppercase mb-0.5">{t('KM Spidometer')}</span>
-                            <strong className="text-slate-700 text-sm">{selectedAsset.odometer}</strong>
+                            <span className="text-slate-400 text-[9px] block uppercase mb-0.5 font-bold tracking-wider">{t('KM Spidometer')}</span>
+                            <strong className="text-slate-900 font-bold text-sm">{selectedAsset.odometer}</strong>
                           </div>
                         )}
                         {selectedAsset.dimensions && (
-                          <div className="bg-slate-50 p-3 rounded-xl border border-slate-100/85 col-span-2 md:col-span-3">
-                            <span className="text-slate-400 text-[9px] block uppercase mb-0.5">{t('Dimensi Unit')}</span>
-                            <strong className="text-slate-700 text-sm font-mono">{selectedAsset.dimensions}</strong>
+                          <div className="bg-slate-50 p-3 rounded-xl border border-slate-100/85">
+                            <span className="text-slate-400 text-[9px] block uppercase mb-0.5 font-bold tracking-wider">{t('Dimensi Unit')}</span>
+                            <strong className="text-slate-900 font-bold text-sm font-mono">{selectedAsset.dimensions}</strong>
                           </div>
                         )}
                       </div>
@@ -964,20 +964,20 @@ export default function CatalogView({
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs font-semibold">
                           {selectedAsset.keurValidUntil && (
                             <div className="bg-teal-50/40 p-3 rounded-xl border border-teal-100/60">
-                              <span className="text-teal-600 text-[9px] block uppercase mb-0.5">{t('KEUR Berlaku Hingga')}</span>
-                              <strong className="text-teal-900 text-sm">{formatDateIndonesian(selectedAsset.keurValidUntil)}</strong>
+                              <span className="text-teal-600 text-[9px] block uppercase mb-0.5 font-bold tracking-wider">{t('KEUR Berlaku Hingga')}</span>
+                              <strong className="text-slate-900 font-bold text-sm">{formatDateIndonesian(selectedAsset.keurValidUntil)}</strong>
                             </div>
                           )}
                           {selectedAsset.stnkPlateValidUntil && (
                             <div className="bg-teal-50/40 p-3 rounded-xl border border-teal-100/60">
-                              <span className="text-teal-600 text-[9px] block uppercase mb-0.5">{t('Plat STNK Berlaku Hingga')}</span>
-                              <strong className="text-teal-900 text-sm">{formatDateIndonesian(selectedAsset.stnkPlateValidUntil)}</strong>
+                              <span className="text-teal-600 text-[9px] block uppercase mb-0.5 font-bold tracking-wider">{t('Plat STNK Berlaku Hingga')}</span>
+                              <strong className="text-slate-900 font-bold text-sm">{formatDateIndonesian(selectedAsset.stnkPlateValidUntil)}</strong>
                             </div>
                           )}
                           {selectedAsset.stnkTaxValidUntil && (
                             <div className="bg-teal-50/40 p-3 rounded-xl border border-teal-100/60">
-                              <span className="text-teal-600 text-[9px] block uppercase mb-0.5">{t('Pajak STNK Berlaku Hingga')}</span>
-                              <strong className="text-teal-900 text-sm">{formatDateIndonesian(selectedAsset.stnkTaxValidUntil)}</strong>
+                              <span className="text-teal-600 text-[9px] block uppercase mb-0.5 font-bold tracking-wider">{t('Pajak STNK Berlaku Hingga')}</span>
+                              <strong className="text-slate-900 font-bold text-sm">{formatDateIndonesian(selectedAsset.stnkTaxValidUntil)}</strong>
                             </div>
                           )}
                         </div>
@@ -1016,53 +1016,53 @@ export default function CatalogView({
                           </div>
                         )}
 
-                        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-xs font-semibold bg-indigo-50/20 p-4 rounded-xl border border-indigo-100/30">
+                        <div className="grid grid-cols-3 gap-3 text-xs font-semibold bg-indigo-50/20 p-4 rounded-xl border border-indigo-100/30">
                           {selectedAsset.attachmentType && (
-                            <div className="bg-white p-2.5 rounded-lg border border-slate-100">
-                              <span className="text-slate-400 text-[9px] block uppercase mb-0.5">{t('Tipe')}</span>
-                              <strong className="text-slate-700 text-xs">{selectedAsset.attachmentType}</strong>
+                            <div className="bg-white p-3 rounded-xl border border-slate-100/85">
+                              <span className="text-slate-400 text-[9px] block uppercase mb-0.5 font-bold tracking-wider">{t('Tipe')}</span>
+                              <strong className="text-slate-900 font-bold text-sm">{selectedAsset.attachmentType}</strong>
                             </div>
                           )}
                           {selectedAsset.attachmentAxels && (
-                            <div className="bg-white p-2.5 rounded-lg border border-slate-100">
-                              <span className="text-slate-400 text-[9px] block uppercase mb-0.5">{t('Axels')}</span>
-                              <strong className="text-slate-700 text-xs">{selectedAsset.attachmentAxels}</strong>
+                            <div className="bg-white p-3 rounded-xl border border-slate-100/85">
+                              <span className="text-slate-400 text-[9px] block uppercase mb-0.5 font-bold tracking-wider">{t('Axels')}</span>
+                              <strong className="text-slate-900 font-bold text-sm">{selectedAsset.attachmentAxels}</strong>
                             </div>
                           )}
                           {selectedAsset.attachmentYearBuilt && (
-                            <div className="bg-white p-2.5 rounded-lg border border-slate-100">
-                              <span className="text-slate-400 text-[9px] block uppercase mb-0.5">{t('Tahun Produksi')}</span>
-                              <strong className="text-slate-700 text-xs">{selectedAsset.attachmentYearBuilt}</strong>
+                            <div className="bg-white p-3 rounded-xl border border-slate-100/85">
+                              <span className="text-slate-400 text-[9px] block uppercase mb-0.5 font-bold tracking-wider">{t('Tahun Produksi')}</span>
+                              <strong className="text-slate-900 font-bold text-sm">{selectedAsset.attachmentYearBuilt}</strong>
                             </div>
                           )}
                           {selectedAsset.attachmentValidUntil && (
-                            <div className="bg-white p-2.5 rounded-lg border border-slate-100 col-span-2">
-                              <span className="text-slate-400 text-[9px] block uppercase mb-0.5">{t('Berlaku Hingga')}</span>
-                              <strong className="text-slate-700 text-xs">{selectedAsset.attachmentValidUntil}</strong>
+                            <div className="bg-white p-3 rounded-xl border border-slate-100/85">
+                              <span className="text-slate-400 text-[9px] block uppercase mb-0.5 font-bold tracking-wider">{t('KEUR BERLAKU HINGGA')}</span>
+                              <strong className="text-slate-900 font-bold text-sm">{formatDateIndonesian(selectedAsset.attachmentValidUntil)}</strong>
                             </div>
                           )}
 
                           {/* Attachment Dimensions */}
                           {(selectedAsset.attachmentLength || selectedAsset.attachmentWidth || selectedAsset.attachmentHeight) && (
-                            <div className="col-span-2 md:col-span-3 mt-1 pt-2 border-t border-indigo-100/40">
+                            <div className="col-span-3 mt-1 pt-2 border-t border-indigo-100/40">
                               <span className="text-slate-400 text-[9px] block uppercase mb-1.5 font-bold tracking-wider">{t('Dimensi Attachment')}</span>
-                              <div className="grid grid-cols-2 gap-2">
+                              <div className="grid grid-cols-3 gap-2">
                                 {selectedAsset.attachmentLength && (
-                                  <div className="bg-white p-2 rounded-lg border border-slate-100">
-                                    <span className="text-slate-400 text-[8px] block uppercase">{t('Panjang Total')}</span>
-                                    <strong className="text-slate-700 text-xs font-mono">{selectedAsset.attachmentLength}</strong>
+                                  <div className="bg-white p-3 rounded-xl border border-slate-100/85">
+                                    <span className="text-slate-400 text-[9px] block uppercase mb-0.5 font-bold tracking-wider">{t('Panjang Total')}</span>
+                                    <strong className="text-slate-900 font-bold text-sm font-mono">{selectedAsset.attachmentLength}</strong>
                                   </div>
                                 )}
                                 {selectedAsset.attachmentWidth && (
-                                  <div className="bg-white p-2 rounded-lg border border-slate-100">
-                                    <span className="text-slate-400 text-[8px] block uppercase">{t('Lebar Total')}</span>
-                                    <strong className="text-slate-700 text-xs font-mono">{selectedAsset.attachmentWidth}</strong>
+                                  <div className="bg-white p-3 rounded-xl border border-slate-100/85">
+                                    <span className="text-slate-400 text-[9px] block uppercase mb-0.5 font-bold tracking-wider">{t('Lebar Total')}</span>
+                                    <strong className="text-slate-900 font-bold text-sm font-mono">{selectedAsset.attachmentWidth}</strong>
                                   </div>
                                 )}
                                 {selectedAsset.attachmentHeight && (
-                                  <div className="bg-white p-2 rounded-lg border border-slate-100">
-                                    <span className="text-slate-400 text-[8px] block uppercase">{t('Tinggi Total')}</span>
-                                    <strong className="text-slate-700 text-xs font-mono">{selectedAsset.attachmentHeight}</strong>
+                                  <div className="bg-white p-3 rounded-xl border border-slate-100/85">
+                                    <span className="text-slate-400 text-[9px] block uppercase mb-0.5 font-bold tracking-wider">{t('Tinggi Total')}</span>
+                                    <strong className="text-slate-900 font-bold text-sm font-mono">{selectedAsset.attachmentHeight}</strong>
                                   </div>
                                 )}
                               </div>
