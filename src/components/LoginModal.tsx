@@ -278,8 +278,23 @@ export default function LoginModal({
     setIsLoading(true);
 
     const cleanEmail = resetEmail.trim().toLowerCase();
+    const cleanPassword = newPassword.trim();
+    const cleanConfirm = confirmNewPassword.trim();
+
     if (!cleanEmail) {
       setError(t('Masukkan Email Anda'));
+      setIsLoading(false);
+      return;
+    }
+
+    if (cleanPassword.length < 6) {
+      setError(t('Password minimal 6 karakter.'));
+      setIsLoading(false);
+      return;
+    }
+
+    if (cleanPassword !== cleanConfirm) {
+      setError(t('Password tidak cocok.'));
       setIsLoading(false);
       return;
     }
@@ -315,38 +330,27 @@ export default function LoginModal({
         return;
       }
 
-      // Generate 6 digit numeric code
-      const otp = Math.floor(100000 + Math.random() * 900000).toString();
-      setResetOtpCode(otp);
-      setResetUserType(isUserAdmin ? 'admin' : 'external');
-
-      // Update the verificationCode in Firestore
+      // Update the password directly in Firestore
       if (isUserAdmin) {
-        // Update admin reset code (set on their doc or we can store it in custom reset field)
         const adminDocRef = doc(db, 'admins', cleanEmail);
         const adminSnap = await getDoc(adminDocRef);
         if (adminSnap.exists()) {
-          await updateDoc(adminDocRef, { passwordResetOtp: otp });
+          await updateDoc(adminDocRef, { password: cleanPassword });
         } else if (isDefaultAdmin) {
-          // If default admin, write/create doc
           await setDoc(doc(db, 'admins', cleanEmail), {
             email: cleanEmail,
             name: userName,
             role: 'internal',
             createdAt: new Date().toISOString(),
-            passwordResetOtp: otp
+            password: cleanPassword
           });
         }
       } else {
         const userDocRef = doc(db, 'registered_users', cleanEmail);
-        await updateDoc(userDocRef, { verificationCode: otp });
+        await updateDoc(userDocRef, { password: cleanPassword });
       }
 
-      // Attempt to send email
-      await sendOtpEmailViaAppsScript(cleanEmail, otp, userName, systemSettings.appsScriptUrl);
-
-      // Transition to code verification and password entry screen
-      setMode('reset_password_verify');
+      setMode('reset_password_success');
     } catch (err: any) {
       console.error(err);
       setError(t('Gagal memproses reset password. Silakan coba lagi.'));
@@ -357,50 +361,6 @@ export default function LoginModal({
 
   const handleVerifyResetPasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
-    setIsLoading(true);
-
-    const cleanEmail = resetEmail.trim().toLowerCase();
-    const cleanOtp = enteredResetOtp.trim();
-    const cleanPassword = newPassword.trim();
-    const cleanConfirm = confirmNewPassword.trim();
-
-    if (cleanOtp !== resetOtpCode) {
-      setError(t('Kode OTP salah atau tidak cocok.'));
-      setIsLoading(false);
-      return;
-    }
-
-    if (cleanPassword.length < 6) {
-      setError(t('Password minimal 6 karakter.'));
-      setIsLoading(false);
-      return;
-    }
-
-    if (cleanPassword !== cleanConfirm) {
-      setError(t('Password tidak cocok.'));
-      setIsLoading(false);
-      return;
-    }
-
-    try {
-      if (resetUserType === 'admin') {
-        // Update Admin password
-        const adminDocRef = doc(db, 'admins', cleanEmail);
-        await updateDoc(adminDocRef, { password: cleanPassword, passwordResetOtp: '' });
-      } else {
-        // Update External User password
-        const userDocRef = doc(db, 'registered_users', cleanEmail);
-        await updateDoc(userDocRef, { password: cleanPassword, verificationCode: '' });
-      }
-
-      setMode('reset_password_success');
-    } catch (err: any) {
-      console.error(err);
-      setError(t('Gagal mengubah password. Silakan coba lagi.'));
-    } finally {
-      setIsLoading(false);
-    }
   };
 
   return (
@@ -472,7 +432,7 @@ export default function LoginModal({
           {mode === 'reset_password' && (
             <>
               <h2 className="text-xl font-bold tracking-tight">{t('Reset Password')}</h2>
-              <p className="text-xs text-blue-100/80 mt-1">{t('Masukkan alamat email terdaftar untuk menerima kode verifikasi OTP.')}</p>
+              <p className="text-xs text-blue-100/80 mt-1">{t('Masukkan alamat email terdaftar dan buat password baru Anda.')}</p>
             </>
           )}
           {mode === 'reset_password_verify' && (
@@ -827,9 +787,10 @@ export default function LoginModal({
             </div>
           )}
 
-          {/* 5. RESET PASSWORD MODE (REQUEST OTP) */}
+          {/* 5. RESET PASSWORD MODE (DIRECT RESET WITHOUT OTP) */}
           {mode === 'reset_password' && (
             <form onSubmit={handleResetPasswordRequest} className="space-y-4">
+              {/* Email input */}
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-slate-500 uppercase block">
                   {t('ALAMAT EMAIL TERDAFTAR')}
@@ -845,55 +806,6 @@ export default function LoginModal({
                     className="w-full pl-10 pr-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 font-mono"
                   />
                 </div>
-              </div>
-
-              <button
-                type="submit"
-                disabled={isLoading}
-                className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white py-3 rounded-xl text-sm font-bold shadow-lg shadow-indigo-600/15 hover:shadow-indigo-600/30 transition-all flex items-center justify-center gap-1.5 cursor-pointer"
-              >
-                {isLoading ? (
-                  <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-                ) : (
-                  <span>{t('Kirim OTP')}</span>
-                )}
-              </button>
-
-              <div className="text-center pt-2">
-                <button
-                  type="button"
-                  onClick={handleReset}
-                  className="text-xs text-slate-500 hover:text-indigo-600 font-semibold flex items-center justify-center gap-1 mx-auto transition cursor-pointer"
-                >
-                  <ArrowLeft className="w-4 h-4" /> {t('Kembali ke Menu Masuk')}
-                </button>
-              </div>
-            </form>
-          )}
-
-          {/* 6. RESET PASSWORD VERIFY MODE */}
-          {mode === 'reset_password_verify' && (
-            <form onSubmit={handleVerifyResetPasswordSubmit} className="space-y-4">
-              <div className="text-center space-y-1">
-                <p className="text-xs text-slate-600">
-                  {t('Kode OTP reset password telah dikirim ke')} <strong className="text-indigo-600 font-mono">{resetEmail}</strong>
-                </p>
-              </div>
-
-              {/* OTP Code input */}
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-500 uppercase block text-center">
-                  {t('KODE OTP')}
-                </label>
-                <input
-                  type="text"
-                  required
-                  maxLength={6}
-                  placeholder="••••••"
-                  value={enteredResetOtp}
-                  onChange={(e) => setEnteredResetOtp(e.target.value.replace(/\D/g, ''))}
-                  className="w-full py-2 border-2 border-slate-200 rounded-xl text-center text-lg font-bold tracking-[0.2em] focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 font-mono"
-                />
               </div>
 
               {/* New Password input */}
@@ -932,38 +844,22 @@ export default function LoginModal({
                 </div>
               </div>
 
-              {/* Helper box if Apps Script is not configured */}
-              {!systemSettings?.appsScriptUrl && (
-                <div className="bg-amber-50 border border-amber-100 rounded-xl p-3 text-xs text-amber-800 space-y-1">
-                  <div className="flex items-center gap-1 font-bold">
-                    <AlertCircle className="w-3.5 h-3.5 text-amber-600 shrink-0" />
-                    <span>{t('Petunjuk Pengujian (Email Layanan Belum Aktif):')}</span>
-                  </div>
-                  <p className="text-[10px] leading-relaxed text-amber-700">
-                    {t('Gunakan kode OTP berikut untuk mereset password:')} <strong className="text-indigo-700 font-mono text-xs">{resetOtpCode}</strong>
-                  </p>
-                </div>
-              )}
-
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-400 text-white py-3 rounded-xl text-sm font-bold shadow-lg shadow-emerald-600/15 hover:shadow-emerald-600/30 transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white py-3 rounded-xl text-sm font-bold shadow-lg shadow-indigo-600/15 hover:shadow-indigo-600/30 transition-all flex items-center justify-center gap-1.5 cursor-pointer"
               >
                 {isLoading ? (
                   <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
                 ) : (
-                  <span>{t('Verifikasi & Reset')}</span>
+                  <span>{t('Reset Password')}</span>
                 )}
               </button>
 
-              <div className="text-center">
+              <div className="text-center pt-2">
                 <button
                   type="button"
-                  onClick={() => {
-                    setMode('reset_password');
-                    setError('');
-                  }}
+                  onClick={handleReset}
                   className="text-xs text-slate-500 hover:text-indigo-600 font-semibold flex items-center justify-center gap-1 mx-auto transition cursor-pointer"
                 >
                   <ArrowLeft className="w-4 h-4" /> {t('Kembali ke Menu Masuk')}
