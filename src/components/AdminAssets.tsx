@@ -126,6 +126,86 @@ const VEHICLE_TEMPLATES = [
   { name: 'Caterpillar Forklift Diesel', brand: 'Caterpillar', category: 'Forklift', url: 'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=800&q=80' },
 ];
 
+function CountdownTimer({ targetDate, size = 'small' }: { targetDate: string; size?: 'small' | 'large' }) {
+  const { t } = useLanguage();
+  const [timeLeft, setTimeLeft] = useState<{
+    days: number;
+    hours: number;
+    minutes: number;
+    seconds: number;
+    isExpired: boolean;
+  }>({ days: 0, hours: 0, minutes: 0, seconds: 0, isExpired: false });
+
+  useEffect(() => {
+    const calculateTimeLeft = () => {
+      const difference = +new Date(targetDate) - +new Date();
+      if (difference <= 0) {
+        return { days: 0, hours: 0, minutes: 0, seconds: 0, isExpired: true };
+      }
+      return {
+        days: Math.floor(difference / (1000 * 60 * 60 * 24)),
+        hours: Math.floor((difference / (1000 * 60 * 60)) % 24),
+        minutes: Math.floor((difference / 1000 / 60) % 60),
+        seconds: Math.floor((difference / 1000) % 60),
+        isExpired: false
+      };
+    };
+
+    setTimeLeft(calculateTimeLeft());
+
+    const timer = setInterval(() => {
+      setTimeLeft(calculateTimeLeft());
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [targetDate]);
+
+  if (timeLeft.isExpired) {
+    return (
+      <span className={`font-bold text-rose-600 ${size === 'large' ? 'text-xs' : 'text-[10px]'}`}>
+        {t('Close Bid')}
+      </span>
+    );
+  }
+
+  const parts = [];
+  if (timeLeft.days > 0) parts.push(`${timeLeft.days}d`);
+  if (timeLeft.hours > 0 || timeLeft.days > 0) parts.push(`${timeLeft.hours}h`);
+  parts.push(`${timeLeft.minutes}m`);
+  parts.push(`${timeLeft.seconds}s`);
+
+  if (size === 'large') {
+    return (
+      <div className="flex items-center gap-1.5 font-mono">
+        {timeLeft.days > 0 && (
+          <div className="bg-amber-100/85 border border-amber-200 text-amber-950 px-2 py-1 rounded-xl text-center min-w-[32px]">
+            <span className="text-sm font-bold block leading-none">{timeLeft.days}</span>
+            <span className="text-[8px] font-extrabold uppercase text-amber-800 tracking-wider">Hari</span>
+          </div>
+        )}
+        <div className="bg-amber-100/85 border border-amber-200 text-amber-950 px-2 py-1 rounded-xl text-center min-w-[32px]">
+          <span className="text-sm font-bold block leading-none">{timeLeft.hours}</span>
+          <span className="text-[8px] font-extrabold uppercase text-amber-800 tracking-wider">Jam</span>
+        </div>
+        <div className="bg-amber-100/85 border border-amber-200 text-amber-950 px-2 py-1 rounded-xl text-center min-w-[32px]">
+          <span className="text-sm font-bold block leading-none">{timeLeft.minutes}</span>
+          <span className="text-[8px] font-extrabold uppercase text-amber-800 tracking-wider">Menit</span>
+        </div>
+        <div className="bg-amber-100/85 border border-amber-200 text-amber-950 px-2 py-1 rounded-xl text-center min-w-[32px] animate-pulse">
+          <span className="text-sm font-bold block leading-none text-rose-600">{timeLeft.seconds}</span>
+          <span className="text-[8px] font-extrabold uppercase text-rose-500 tracking-wider">Detik</span>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <span className="bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded-md font-mono text-[10px] border border-amber-200 shadow-2xs font-extrabold">
+      {parts.join(' ')}
+    </span>
+  );
+}
+
 
 export default function AdminAssets({
   assets,
@@ -1186,9 +1266,12 @@ Jadwal Survei: ${bid.scheduleSurveyDate ? `${bid.scheduleSurveyDate} @ ${bid.sch
                         <span>{t('Plat')}: {asset.plateNumber}</span>
                       </div>
                       {asset.closeBidDate && (
-                        <div className="flex items-center gap-1 text-[10px] text-amber-700 font-bold bg-amber-50 px-2 py-0.5 rounded-lg border border-amber-100 mt-2 w-fit">
-                          <Clock className="w-3.5 h-3.5 text-amber-500" />
-                          <span>{t('Tutup')}: {new Date(asset.closeBidDate).toLocaleString('id-ID', { dateStyle: 'short', timeStyle: 'short' })}</span>
+                        <div className="flex flex-wrap items-center gap-1.5 mt-2">
+                          <div className="flex items-center gap-1 text-[10px] text-amber-700 font-bold bg-amber-50 px-2 py-0.5 rounded-lg border border-amber-100 w-fit">
+                            <Clock className="w-3.5 h-3.5 text-amber-500" />
+                            <span>{t('Tutup')}: {new Date(asset.closeBidDate).toLocaleString('id-ID', { dateStyle: 'short', timeStyle: 'short' })}</span>
+                          </div>
+                          <CountdownTimer targetDate={asset.closeBidDate} size="small" />
                         </div>
                       )}
                     </div>
@@ -1449,13 +1532,19 @@ Jadwal Survei: ${bid.scheduleSurveyDate ? `${bid.scheduleSurveyDate} @ ${bid.sch
                   </span>
                 </div>
                 {selectedAsset.closeBidDate && (
-                  <div className="col-span-2 bg-amber-50/50 border border-amber-100 p-2.5 rounded-xl flex items-center gap-2">
-                    <Clock className="w-4 h-4 text-amber-500 shrink-0" />
-                    <div>
-                      <span className="text-[10px] text-amber-800 font-bold uppercase block leading-none">{t('Tanggal Penutupan Bid')}</span>
-                      <span className="text-xs font-semibold text-amber-950 mt-0.5 block">
-                        {new Date(selectedAsset.closeBidDate).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' })}
-                      </span>
+                  <div className="col-span-2 bg-amber-50/50 border border-amber-100 p-2.5 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                    <div className="flex items-center gap-2">
+                      <Clock className="w-4 h-4 text-amber-500 shrink-0" />
+                      <div>
+                        <span className="text-[10px] text-amber-800 font-bold uppercase block leading-none">{t('Tanggal Penutupan Bid')}</span>
+                        <span className="text-xs font-semibold text-amber-950 mt-1 block">
+                          {new Date(selectedAsset.closeBidDate).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' })}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex flex-col items-start sm:items-end shrink-0 pl-6 sm:pl-0">
+                      <span className="text-[9px] font-bold text-amber-800 uppercase tracking-wider mb-1 block">{t('Sisa Waktu')}</span>
+                      <CountdownTimer targetDate={selectedAsset.closeBidDate} size="small" />
                     </div>
                   </div>
                 )}

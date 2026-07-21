@@ -619,6 +619,12 @@ const translations: Record<Language, Record<string, string>> = {
     'Batas Waktu Bidding': 'Batas Waktu Bidding',
     'Lelang ini akan ditutup secara otomatis pada': 'Lelang ini akan ditutup secara otomatis pada',
     'Penawaran untuk unit ini telah ditutup karena melewati batas waktu penutupan lelang.': 'Penawaran untuk unit ini telah ditutup karena melewati batas waktu penutupan lelang.',
+    'Sisa Waktu': 'Sisa Waktu',
+    'Hari': 'Hari',
+    'Jam': 'Jam',
+    'Menit': 'Menit',
+    'Detik': 'Detik',
+    'Close Bid': 'Close Bid',
   },
   en: {
     'Pancaran Lelang': 'PLATINUM',
@@ -1324,6 +1330,12 @@ const translations: Record<Language, Record<string, string>> = {
     'Batas Waktu Bidding': 'Bidding Deadline',
     'Lelang ini akan ditutup secara otomatis pada': 'This auction will be closed automatically on',
     'Penawaran untuk unit ini telah ditutup karena melewati batas waktu penutupan lelang.': 'Bidding for this unit has been closed because it has passed the auction closing deadline.',
+    'Sisa Waktu': 'Time Remaining',
+    'Hari': 'Days',
+    'Jam': 'Hours',
+    'Menit': 'Mins',
+    'Detik': 'Secs',
+    'Close Bid': 'Close Bid',
   }
 };
 

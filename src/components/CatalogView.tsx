@@ -59,6 +59,86 @@ const stripMarkdown = (text: string) => {
     .trim();
 };
 
+function CountdownTimer({ targetDate, size = 'small' }: { targetDate: string; size?: 'small' | 'large' }) {
+  const { t } = useLanguage();
+  const [timeLeft, setTimeLeft] = useState<{
+    days: number;
+    hours: number;
+    minutes: number;
+    seconds: number;
+    isExpired: boolean;
+  }>({ days: 0, hours: 0, minutes: 0, seconds: 0, isExpired: false });
+
+  useEffect(() => {
+    const calculateTimeLeft = () => {
+      const difference = +new Date(targetDate) - +new Date();
+      if (difference <= 0) {
+        return { days: 0, hours: 0, minutes: 0, seconds: 0, isExpired: true };
+      }
+      return {
+        days: Math.floor(difference / (1000 * 60 * 60 * 24)),
+        hours: Math.floor((difference / (1000 * 60 * 60)) % 24),
+        minutes: Math.floor((difference / 1000 / 60) % 60),
+        seconds: Math.floor((difference / 1000) % 60),
+        isExpired: false
+      };
+    };
+
+    setTimeLeft(calculateTimeLeft());
+
+    const timer = setInterval(() => {
+      setTimeLeft(calculateTimeLeft());
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [targetDate]);
+
+  if (timeLeft.isExpired) {
+    return (
+      <span className={`font-bold text-rose-600 ${size === 'large' ? 'text-xs' : 'text-[10px]'}`}>
+        {t('Close Bid')}
+      </span>
+    );
+  }
+
+  const parts = [];
+  if (timeLeft.days > 0) parts.push(`${timeLeft.days}d`);
+  if (timeLeft.hours > 0 || timeLeft.days > 0) parts.push(`${timeLeft.hours}h`);
+  parts.push(`${timeLeft.minutes}m`);
+  parts.push(`${timeLeft.seconds}s`);
+
+  if (size === 'large') {
+    return (
+      <div className="flex items-center gap-1.5 font-mono">
+        {timeLeft.days > 0 && (
+          <div className="bg-amber-100/85 border border-amber-200 text-amber-950 px-2 py-1 rounded-xl text-center min-w-[32px]">
+            <span className="text-sm font-bold block leading-none">{timeLeft.days}</span>
+            <span className="text-[8px] font-extrabold uppercase text-amber-800 tracking-wider">Hari</span>
+          </div>
+        )}
+        <div className="bg-amber-100/85 border border-amber-200 text-amber-950 px-2 py-1 rounded-xl text-center min-w-[32px]">
+          <span className="text-sm font-bold block leading-none">{timeLeft.hours}</span>
+          <span className="text-[8px] font-extrabold uppercase text-amber-800 tracking-wider">Jam</span>
+        </div>
+        <div className="bg-amber-100/85 border border-amber-200 text-amber-950 px-2 py-1 rounded-xl text-center min-w-[32px]">
+          <span className="text-sm font-bold block leading-none">{timeLeft.minutes}</span>
+          <span className="text-[8px] font-extrabold uppercase text-amber-800 tracking-wider">Menit</span>
+        </div>
+        <div className="bg-amber-100/85 border border-amber-200 text-amber-950 px-2 py-1 rounded-xl text-center min-w-[32px] animate-pulse">
+          <span className="text-sm font-bold block leading-none text-rose-600">{timeLeft.seconds}</span>
+          <span className="text-[8px] font-extrabold uppercase text-rose-500 tracking-wider">Detik</span>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <span className="bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded-md font-mono text-[10px] border border-amber-200 shadow-2xs font-extrabold">
+      {parts.join(' ')}
+    </span>
+  );
+}
+
 function CatalogCard({ asset, onSelectAsset, formatIDR, onZoomImage, isUserLoggedIn, onOpenLoginModal }: CatalogCardProps) {
   const { t } = useLanguage();
   const [activeImgIdx, setActiveImgIdx] = useState(0);
@@ -77,6 +157,7 @@ function CatalogCard({ asset, onSelectAsset, formatIDR, onZoomImage, isUserLogge
   };
 
   const highestOffer = asset.bids && asset.bids.length > 0 ? Math.max(...asset.bids.map(b => b.price)) : asset.startingPrice;
+  const isExpired = asset.closeBidDate ? new Date() > new Date(asset.closeBidDate) : false;
 
   return (
     <div className="bg-white rounded-3xl overflow-hidden border border-slate-200 border-l-[6px] border-l-slate-300 hover:border-blue-200 hover:shadow-xl transition-all duration-300 flex flex-col justify-between group">
@@ -125,12 +206,12 @@ function CatalogCard({ asset, onSelectAsset, formatIDR, onZoomImage, isUserLogge
             <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1 z-10 bg-black/40 backdrop-blur-xs px-2 py-1 rounded-full">
               {images.map((_, idx) => (
                 <button
-                  key={idx}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setActiveImgIdx(idx);
-                  }}
-                  className={`w-1.5 h-1.5 rounded-full transition-all ${idx === activeImgIdx ? 'bg-white scale-125' : 'bg-white/40'}`}
+                   key={idx}
+                   onClick={(e) => {
+                     e.stopPropagation();
+                     setActiveImgIdx(idx);
+                   }}
+                   className={`w-1.5 h-1.5 rounded-full transition-all ${idx === activeImgIdx ? 'bg-white scale-125' : 'bg-white/40'}`}
                 />
               ))}
             </div>
@@ -145,10 +226,17 @@ function CatalogCard({ asset, onSelectAsset, formatIDR, onZoomImage, isUserLogge
         </div>
 
         <div className="absolute top-3 right-3 z-10">
-          <span className="text-[9px] font-bold uppercase tracking-wider bg-blue-600 text-white px-2.5 py-1 rounded-full shadow-sm flex items-center gap-1">
-            <span className="w-1.5 h-1.5 bg-green-400 rounded-full animate-ping"></span>
-            {t('Terbuka')}
-          </span>
+          {isExpired ? (
+            <span className="text-[9px] font-bold uppercase tracking-wider bg-rose-600 text-white px-2.5 py-1 rounded-full shadow-sm flex items-center gap-1">
+              <span className="w-1.5 h-1.5 bg-rose-300 rounded-full"></span>
+              {t('Close Bid')}
+            </span>
+          ) : (
+            <span className="text-[9px] font-bold uppercase tracking-wider bg-blue-600 text-white px-2.5 py-1 rounded-full shadow-sm flex items-center gap-1">
+              <span className="w-1.5 h-1.5 bg-green-400 rounded-full animate-ping"></span>
+              {t('Terbuka')}
+            </span>
+          )}
         </div>
 
         <div className="absolute bottom-3 left-3 bg-black/60 backdrop-blur-sm text-white text-[10px] font-semibold px-2.5 py-1 rounded-lg z-10">
@@ -174,9 +262,12 @@ function CatalogCard({ asset, onSelectAsset, formatIDR, onZoomImage, isUserLogge
           </div>
 
           {asset.closeBidDate && (
-            <div className="flex items-center gap-1 text-[10px] text-amber-700 font-bold bg-amber-50 px-2 py-0.5 rounded-lg border border-amber-100 mt-2 w-fit">
-              <Clock className="w-3.5 h-3.5 text-amber-500 animate-pulse-hover" />
-              <span>{t('Tutup')}: {new Date(asset.closeBidDate).toLocaleString('id-ID', { dateStyle: 'short', timeStyle: 'short' })}</span>
+            <div className="flex flex-wrap items-center gap-1.5 mt-2">
+              <div className="flex items-center gap-1 text-[10px] text-amber-700 font-bold bg-amber-50 px-2 py-0.5 rounded-lg border border-amber-100 w-fit">
+                <Clock className="w-3.5 h-3.5 text-amber-500 animate-pulse-hover" />
+                <span>{t('Tutup')}: {new Date(asset.closeBidDate).toLocaleString('id-ID', { dateStyle: 'short', timeStyle: 'short' })}</span>
+              </div>
+              <CountdownTimer targetDate={asset.closeBidDate} size="small" />
             </div>
           )}
 
@@ -223,7 +314,9 @@ function CatalogCard({ asset, onSelectAsset, formatIDR, onZoomImage, isUserLogge
             {isUserLoggedIn ? `${asset.bids.length} ${t('Penawaran Masuk')}` : `🔒 ${t('Gabung untuk menawar')}`}
           </span>
           <button
+            disabled={isExpired}
             onClick={(e) => {
+              if (isExpired) return;
               e.stopPropagation();
               if (isUserLoggedIn) {
                 onSelectAsset(asset.id);
@@ -231,7 +324,11 @@ function CatalogCard({ asset, onSelectAsset, formatIDR, onZoomImage, isUserLogge
                 if (onOpenLoginModal) onOpenLoginModal();
               }
             }}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1 group-hover:shadow-md shadow-blue-500/10"
+            className={`${
+              isExpired
+                ? 'bg-slate-300 text-slate-500 cursor-not-allowed border border-slate-200'
+                : 'bg-blue-600 hover:bg-blue-700 text-white group-hover:shadow-md shadow-blue-500/10'
+            } px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1`}
           >
             {t('Tawar Aset')} <ArrowUpRight className="w-4 h-4" />
           </button>
@@ -883,11 +980,17 @@ export default function CatalogView({
                           </div>
                         </div>
                       ) : (
-                        <div className="flex items-center gap-2.5 bg-amber-50/70 border border-amber-200/80 p-3.5 rounded-2xl text-amber-900">
-                          <Clock className="w-5 h-5 text-amber-500 shrink-0" />
-                          <div className="text-xs font-semibold">
-                            <p className="font-bold uppercase tracking-wide text-amber-800 text-[10px]">{t('Batas Waktu Bidding')}</p>
-                            <p>{t('Lelang ini akan ditutup secara otomatis pada')} {new Date(selectedAsset.closeBidDate).toLocaleString('id-ID', { dateStyle: 'long', timeStyle: 'short' })}</p>
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 bg-amber-50/70 border border-amber-200/80 p-3.5 rounded-2xl text-amber-900">
+                          <div className="flex items-start gap-2.5">
+                            <Clock className="w-5 h-5 text-amber-500 shrink-0 mt-0.5 animate-pulse-hover" />
+                            <div className="text-xs font-semibold">
+                              <p className="font-bold uppercase tracking-wide text-amber-800 text-[10px]">{t('Batas Waktu Bidding')}</p>
+                              <p className="leading-relaxed">{t('Lelang ini akan ditutup secara otomatis pada')} {new Date(selectedAsset.closeBidDate).toLocaleString('id-ID', { dateStyle: 'long', timeStyle: 'short' })}</p>
+                            </div>
+                          </div>
+                          <div className="flex flex-col items-start sm:items-end shrink-0 pl-7 sm:pl-0">
+                            <span className="text-[9px] font-bold text-amber-800 uppercase tracking-wider mb-1 block">{t('Sisa Waktu')}</span>
+                            <CountdownTimer targetDate={selectedAsset.closeBidDate} size="large" />
                           </div>
                         </div>
                       )
