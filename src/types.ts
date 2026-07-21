@@ -51,6 +51,7 @@ export interface Asset {
   attachmentWidth?: string;
   attachmentHeight?: string;
   attachmentExtension?: string;
+  tnc?: string;
 }
 
 export interface AdminUser {
@@ -114,6 +115,8 @@ export interface RegisteredUser {
   name: string;
   phone: string;
   password?: string;
+  company?: string;
+  address?: string;
   status: 'Menunggu Verifikasi' | 'Menunggu Persetujuan' | 'Disetujui' | 'Ditolak';
   emailVerified: boolean;
   verificationCode: string;

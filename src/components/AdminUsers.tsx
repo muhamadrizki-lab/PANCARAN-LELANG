@@ -116,7 +116,9 @@ export default function AdminUsers({
       user.name.toLowerCase().includes(searchLower) ||
       user.email.toLowerCase().includes(searchLower) ||
       user.phone.toLowerCase().includes(searchLower) ||
-      user.status.toLowerCase().includes(searchLower)
+      user.status.toLowerCase().includes(searchLower) ||
+      (user.company && user.company.toLowerCase().includes(searchLower)) ||
+      (user.address && user.address.toLowerCase().includes(searchLower))
     );
   });
 
@@ -432,17 +434,27 @@ export default function AdminUsers({
                     return (
                       <tr key={user.email} className="hover:bg-slate-50/50 transition-colors">
                         
-                        {/* Name & Phone */}
+                        {/* Name & Phone & Company & Address */}
                         <td className="py-4 px-4 font-medium text-slate-800">
-                          <div className="flex items-center gap-2.5">
-                            <div className="w-8 h-8 rounded-full bg-indigo-100 text-indigo-700 font-bold flex items-center justify-center text-xs">
+                          <div className="flex items-start gap-2.5">
+                            <div className="w-8 h-8 rounded-full bg-indigo-100 text-indigo-700 font-bold flex items-center justify-center text-xs shrink-0 mt-0.5">
                               {user.name.charAt(0)}
                             </div>
-                            <div className="flex flex-col">
-                              <span className="font-semibold">{user.name}</span>
-                              <span className="text-[10px] text-slate-400 flex items-center gap-0.5 mt-0.5">
-                                <Phone className="w-3 h-3" /> {user.phone}
+                            <div className="flex flex-col max-w-[200px]">
+                              <span className="font-semibold text-slate-800 leading-tight">{user.name}</span>
+                              <span className="text-[10px] text-slate-500 font-medium flex items-center gap-1 mt-0.5">
+                                <Phone className="w-3 h-3 text-slate-400" /> {user.phone}
                               </span>
+                              {user.company && (
+                                <span className="text-[9px] text-indigo-700 font-bold bg-indigo-50 border border-indigo-100/60 px-1.5 py-0.5 rounded w-max mt-1 uppercase tracking-wide">
+                                  🏢 {user.company}
+                                </span>
+                              )}
+                              {user.address && (
+                                <span className="text-[10px] text-slate-400 font-normal mt-1 leading-normal italic" title={user.address}>
+                                  📍 {user.address}
+                                </span>
+                              )}
                             </div>
                           </div>
                         </td>

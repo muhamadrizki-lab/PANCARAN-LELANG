@@ -30,6 +30,7 @@ export const INITIAL_ASSETS: Asset[] = [
     highestBid: 435000000,
     status: 'Open',
     imageUrl: 'https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?auto=format&fit=crop&w=800&q=80',
+    tnc: '1. Penawaran mengikat selama 7 hari kerja.\n2. Wajib melakukan survei fisik sebelum melakukan pembayaran akhir.\n3. Unit dijual dengan kondisi apa adanya ("as-is").',
     bids: [
       {
         id: 'B-101',

@@ -298,7 +298,7 @@ export default function CatalogView({
   loggedInUserName = '',
   loggedInUserPhone = ''
 }: CatalogViewProps) {
-  const { t } = useLanguage();
+  const { language, t } = useLanguage();
   const [internalSelectedAssetId, setInternalSelectedAssetId] = useState<string | null>(null);
 
   const selectedAssetId = propSelectedAssetId !== undefined ? propSelectedAssetId : internalSelectedAssetId;
@@ -320,21 +320,11 @@ export default function CatalogView({
   useEffect(() => {
     if (selectedAssetId) {
       setTimeout(() => {
-        // Scroll the form card itself into view for a perfect mobile typing focus
-        const formElement = document.getElementById('bid-form-card');
-        if (formElement) {
-          formElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        } else {
-          const element = document.getElementById('bidding-survey-panel');
-          if (element) {
-            element.scrollIntoView({ behavior: 'smooth', block: 'start' });
-          }
+        const scrollContainer = document.getElementById('bidding-modal-scroll-container');
+        if (scrollContainer) {
+          scrollContainer.scrollTop = 0;
         }
-        // Focus the input field
-        if (nameInputRef.current) {
-          nameInputRef.current.focus();
-        }
-      }, 350); // Generous delay to let modal transition complete
+      }, 50);
     }
   }, [selectedAssetId]);
 
@@ -391,6 +381,7 @@ export default function CatalogView({
   const [formError, setFormError] = useState('');
   const [formSuccess, setFormSuccess] = useState(false);
   const [isFormFocused, setIsFormFocused] = useState(false);
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
 
   // States for modal image carousel and fullscreen lightbox
   const [modalImageIdx, setModalImageIdx] = useState(0);
@@ -407,6 +398,7 @@ export default function CatalogView({
   useEffect(() => {
     setModalImageIdx(0);
     setShowFullDesc(false);
+    setAgreedToTerms(false);
   }, [selectedAssetId]);
 
   useEffect(() => {
@@ -467,7 +459,8 @@ export default function CatalogView({
     try {
       const d = new Date(dateStr);
       if (isNaN(d.getTime())) return dateStr;
-      return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+      const locale = language === 'en' ? 'en-US' : 'id-ID';
+      return d.toLocaleDateString(locale, { day: 'numeric', month: 'long', year: 'numeric' });
     } catch {
       return dateStr;
     }
@@ -500,6 +493,7 @@ export default function CatalogView({
         surveyDate: '',
         surveyTime: '09:00'
       });
+      setAgreedToTerms(false);
     }
   };
 
@@ -515,6 +509,11 @@ export default function CatalogView({
     // 1. Validation
     if (!bidForm.name || !bidForm.email || !bidForm.contact || !bidForm.price) {
       setFormError(t('Mohon lengkapi semua data penawaran Anda.'));
+      return;
+    }
+
+    if (!agreedToTerms) {
+      setFormError(t('Anda wajib membaca dan menyetujui Syarat & Ketentuan Lelang.'));
       return;
     }
 
@@ -584,8 +583,13 @@ export default function CatalogView({
           <span className="text-[10px] uppercase tracking-wider bg-blue-500/20 text-blue-300 font-bold px-3 py-1.5 rounded-full border border-blue-500/30">
             {t('Portal Penawaran Umum (External)')}
           </span>
-          <h1 className="text-3xl md:text-4xl font-bold tracking-tight leading-tight">
-            {t('Pancaran Lelang')} <br/>
+          <h1 className="text-3xl md:text-4xl font-bold tracking-tight leading-tight text-white flex flex-col gap-1">
+            <span className="flex items-center gap-2">
+              <span className="bg-gradient-to-r from-slate-100 via-slate-300 to-slate-100 bg-clip-text text-transparent drop-shadow-[0_0_12px_rgba(255,255,255,0.55)] font-black">Platinum</span>
+            </span>
+            <span className="text-xs md:text-sm font-semibold text-slate-300 tracking-wide mt-0.5 opacity-90 leading-normal max-w-lg block">
+              ( Pancaran Lelang Angkutan Truk, Industri, & Niaga Utama Modern )
+            </span>
             <span className="bg-gradient-to-r from-blue-400 to-blue-200 bg-clip-text text-transparent">
               {t('Truck & Heavy Equipment')}
             </span>
@@ -711,21 +715,21 @@ export default function CatalogView({
             onClick={(e) => e.stopPropagation()}
           >
             
-            {/* Scrollable Container */}
-            <div className="overflow-y-auto flex-1 custom-scrollbar relative">
-              
-              {/* Focus mode background dim overlay */}
-              {isFormFocused && (
-                <div 
-                  className="absolute inset-0 bg-slate-950/70 backdrop-blur-[2px] z-30 transition-all duration-300 cursor-pointer"
-                  onClick={() => {
-                    if (document.activeElement instanceof HTMLElement) {
-                      document.activeElement.blur();
-                    }
-                    setIsFormFocused(false);
-                  }}
-                />
-              )}
+             {/* Scrollable Container */}
+             <div id="bidding-modal-scroll-container" className="overflow-y-auto flex-1 custom-scrollbar relative">
+               
+               {/* Focus mode background dim overlay */}
+               {isFormFocused && (
+                 <div 
+                   className="absolute inset-0 bg-slate-950/30 backdrop-blur-[0.5px] z-30 transition-all duration-300 cursor-pointer"
+                   onClick={() => {
+                     if (document.activeElement instanceof HTMLElement) {
+                       document.activeElement.blur();
+                     }
+                     setIsFormFocused(false);
+                   }}
+                 />
+               )}
               
               {/* Top Section: Immersive Dark Image Carousel */}
               {(() => {
@@ -771,6 +775,23 @@ export default function CatalogView({
                       <div className="text-slate-500 text-xs font-mono">{t('Tidak ada foto')}</div>
                     )}
                     
+                    {/* Zoom overlay button to see the image full */}
+                    {detailImages.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setLightboxImages(detailImages);
+                          setLightboxIndex(modalImageIdx);
+                        }}
+                        className="absolute bottom-4 left-4 z-20 flex items-center gap-1.5 bg-black/60 hover:bg-black/85 text-white px-3.5 py-2 rounded-xl text-xs font-bold border border-white/10 transition-all cursor-pointer shadow-lg hover:scale-105"
+                        title={t('Lihat Gambar Full')}
+                      >
+                        <ZoomIn className="w-4 h-4" />
+                        <span>{t('Lihat Gambar Full')}</span>
+                      </button>
+                    )}
+
                     {/* Prev/Next Overlay buttons */}
                     {detailImages.length > 1 && (
                       <>
@@ -1105,36 +1126,28 @@ export default function CatalogView({
                   {/* Price & CTA Trigger Card */}
                   {isUserLoggedIn ? (
                     <div className="bg-white p-6 rounded-2xl border border-slate-200/80 border-l-[6px] border-l-slate-300 shadow-xs space-y-4">
-                      <div>
-                        <div className="flex items-center justify-between">
-                          <p className="text-slate-400 text-[10px] font-bold uppercase tracking-wider">{t('Penawaran Tertinggi')}</p>
-                          <span className="bg-blue-50 text-blue-700 text-[9px] font-extrabold px-2 py-0.5 rounded-md border border-blue-100 uppercase">
-                            {(selectedAsset.bids || []).length} {t('Penawaran Masuk')}
-                          </span>
-                        </div>
-                        <h2 className="text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight mt-1">
-                          {formatIDR(currentHighestBid)}
-                        </h2>
-                        <p className="text-[10px] text-slate-400 mt-1">
-                          {t('Harga Awal:')} <strong className="font-semibold text-slate-600">{formatIDR(selectedAsset.startingPrice)}</strong>
-                        </p>
+                      <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                        <span className="text-slate-400 text-[10px] font-bold uppercase tracking-wider">{t('Detail Harga')}</span>
+                        <span className="bg-blue-50 text-blue-700 text-[9px] font-extrabold px-2 py-0.5 rounded-md border border-blue-100 uppercase">
+                          {(selectedAsset.bids || []).length} {t('Penawaran Masuk')}
+                        </span>
                       </div>
-
-                      <button 
-                        type="button" 
-                        onClick={() => {
-                          const formElement = document.getElementById('bid-form-card');
-                          if (formElement) {
-                            formElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                          }
-                          if (nameInputRef.current) {
-                            nameInputRef.current.focus();
-                          }
-                        }}
-                        className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all shadow-md shadow-blue-500/10 hover:shadow-blue-500/25 flex items-center justify-center gap-1.5 cursor-pointer"
-                      >
-                        <span>{t('Booking / Kirim Penawaran')}</span>
-                      </button>
+                      
+                      <div className="space-y-4">
+                        <div className="space-y-1">
+                          <p className="text-slate-400 text-[10px] font-bold uppercase tracking-wider">{t('Penawaran Tertinggi')}</p>
+                          <h2 className="text-lg md:text-xl font-bold text-slate-900 tracking-tight">
+                            {formatIDR(currentHighestBid)}
+                          </h2>
+                        </div>
+                        
+                        <div className="border-t border-slate-100 pt-3 space-y-1">
+                          <p className="text-slate-400 text-[10px] font-bold uppercase tracking-wider">{t('Harga Awal')}</p>
+                          <h2 className="text-lg md:text-xl font-bold text-slate-900 tracking-tight">
+                            {formatIDR(selectedAsset.startingPrice)}
+                          </h2>
+                        </div>
+                      </div>
                     </div>
                   ) : (
                     <div className="bg-white p-6 rounded-2xl border border-slate-200/80 border-l-[6px] border-l-slate-300 shadow-xs space-y-4">
@@ -1158,11 +1171,19 @@ export default function CatalogView({
                   {/* Interactive Bidding & Survey Scheduler Form */}
                   <div 
                     id="bid-form-card"
-                    className={`bg-white p-6 rounded-2xl border border-l-[6px] border-l-slate-300 transition-all duration-300 space-y-4 ${
+                    className={`bg-white p-6 rounded-2xl border border-l-[6px] border-l-slate-300 transition-all duration-300 space-y-4 cursor-pointer ${
                       isFormFocused 
-                        ? 'relative z-40 border-blue-500 shadow-2xl ring-2 ring-blue-500/20 scale-[1.02] bg-white' 
-                        : 'relative z-10 border-slate-200/80 shadow-xs'
+                        ? 'relative z-40 border-blue-500 shadow-2xl ring-2 ring-blue-500/20 scale-[1.02] bg-white cursor-default' 
+                        : 'relative z-10 border-slate-200/80 shadow-xs hover:border-blue-300'
                     }`}
+                    onClick={(e) => {
+                      if (!isFormFocused) {
+                        setIsFormFocused(true);
+                        if (nameInputRef.current) {
+                          nameInputRef.current.focus();
+                        }
+                      }
+                    }}
                   >
                     {!isUserLoggedIn ? (
                       <div className="py-6 text-center space-y-3.5">
@@ -1428,6 +1449,33 @@ export default function CatalogView({
                             </div>
                           </div>
                         )}
+
+                        {/* Terms and Conditions (Syarat dan Ketentuan) */}
+                        <div className="pt-3 border-t border-slate-100 space-y-2">
+                          <label className="text-[10px] font-bold text-slate-600 uppercase tracking-wider block">
+                            {t('Syarat & Ketentuan Lelang *')}
+                          </label>
+                          <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-3 max-h-[120px] overflow-y-auto text-[10px] text-slate-500 leading-relaxed custom-scrollbar whitespace-pre-wrap">
+                            {selectedAsset.tnc ? (
+                              selectedAsset.tnc
+                            ) : (
+                              <span className="italic text-slate-400">{t('Tidak ada Syarat & Ketentuan khusus (Kosong)')}</span>
+                            )}
+                          </div>
+                          
+                          <label className="flex items-start gap-2.5 cursor-pointer select-none py-1">
+                            <input
+                              type="checkbox"
+                              required
+                              checked={agreedToTerms}
+                              onChange={(e) => setAgreedToTerms(e.target.checked)}
+                              className="w-4 h-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500 mt-0.5 cursor-pointer"
+                            />
+                            <span className="text-[11px] text-slate-600 leading-normal">
+                              {t('Saya telah membaca, memahami, dan menyetujui seluruh Syarat dan Ketentuan Lelang yang berlaku.')}
+                            </span>
+                          </label>
+                        </div>
 
                         {/* Submit Bid Button */}
                         <button

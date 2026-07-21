@@ -9,7 +9,9 @@ import {
   Phone, 
   ArrowLeft,
   Check,
-  CheckCircle
+  CheckCircle,
+  Building,
+  MapPin
 } from 'lucide-react';
 import { useLanguage } from './LanguageContext';
 import { AdminUser, RegisteredUser } from '../types';
@@ -53,6 +55,8 @@ export default function LoginModal({
   const [regEmail, setRegEmail] = useState('');
   const [regPhone, setRegPhone] = useState('');
   const [regPassword, setRegPassword] = useState('');
+  const [regCompany, setRegCompany] = useState('');
+  const [regAddress, setRegAddress] = useState('');
 
   // Verification fields
   const [verificationEmail, setVerificationEmail] = useState('');
@@ -75,6 +79,8 @@ export default function LoginModal({
     setRegEmail('');
     setRegPhone('');
     setRegPassword('');
+    setRegCompany('');
+    setRegAddress('');
     setEnteredCode('');
     setMode('login');
   };
@@ -171,6 +177,8 @@ export default function LoginModal({
     const cleanName = regName.trim();
     const cleanPhone = regPhone.trim();
     const cleanPassword = regPassword.trim();
+    const cleanCompany = regCompany.trim();
+    const cleanAddress = regAddress.trim();
 
     if (cleanPassword.length < 6) {
       setError(t('Kata sandi minimal harus 6 karakter.'));
@@ -200,6 +208,8 @@ export default function LoginModal({
         name: cleanName,
         phone: cleanPhone,
         password: cleanPassword,
+        company: cleanCompany,
+        address: cleanAddress,
         status: 'Menunggu Persetujuan',
         emailVerified: true,
         verificationCode: '',
@@ -395,7 +405,7 @@ export default function LoginModal({
 
           {/* 2. REGISTER MODE */}
           {mode === 'register' && (
-            <form onSubmit={handleRegisterSubmit} className="space-y-4">
+            <form onSubmit={handleRegisterSubmit} className="space-y-4 max-h-[60vh] overflow-y-auto pr-1">
               {/* Full Name */}
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-slate-500 uppercase">{t('NAMA LENGKAP')}</label>
@@ -424,6 +434,38 @@ export default function LoginModal({
                     value={regPhone}
                     onChange={(e) => setRegPhone(e.target.value)}
                     className="w-full pl-10 pr-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 font-mono"
+                  />
+                </div>
+              </div>
+
+              {/* Company */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-500 uppercase">{t('NAMA PERUSAHAAN / INSTANSI')}</label>
+                <div className="relative">
+                  <Building className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
+                  <input
+                    type="text"
+                    required
+                    placeholder="Contoh: PT Pancaran Logistics atau Pribadi"
+                    value={regCompany}
+                    onChange={(e) => setRegCompany(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                  />
+                </div>
+              </div>
+
+              {/* Address */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-500 uppercase">{t('ALAMAT LENGKAP')}</label>
+                <div className="relative">
+                  <MapPin className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
+                  <input
+                    type="text"
+                    required
+                    placeholder="Contoh: Jl. Raya Cilincing No. 12, Jakarta Utara"
+                    value={regAddress}
+                    onChange={(e) => setRegAddress(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
                   />
                 </div>
               </div>
@@ -461,19 +503,21 @@ export default function LoginModal({
                 </div>
               </div>
 
-              <button
-                type="submit"
-                disabled={isLoading}
-                className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white py-3 rounded-xl text-sm font-bold shadow-lg shadow-blue-600/15 hover:shadow-blue-600/30 transition-all flex items-center justify-center gap-1.5"
-              >
-                {isLoading ? (
-                  <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-                ) : (
-                  <span>{t('Daftarkan Akun')}</span>
-                )}
-              </button>
+              <div className="pt-2">
+                <button
+                  type="submit"
+                  disabled={isLoading}
+                  className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white py-3 rounded-xl text-sm font-bold shadow-lg shadow-blue-600/15 hover:shadow-blue-600/30 transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                >
+                  {isLoading ? (
+                    <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                  ) : (
+                    <span>{t('Daftarkan Akun')}</span>
+                  )}
+                </button>
+              </div>
 
-              <div className="text-center pt-2">
+              <div className="text-center pt-1">
                 <button
                   type="button"
                   onClick={() => {

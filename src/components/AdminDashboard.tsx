@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Asset, Bid, AdminUser, RegisteredUser } from '../types';
+import AssetTypeGuide from './AssetTypeGuide';
 import { 
   Truck, 
   CheckCircle, 
@@ -32,7 +33,11 @@ export default function AdminDashboard({
   const { t, language } = useLanguage();
   const [surveyFilter, setSurveyFilter] = useState<'all' | 'upcoming' | 'past'>('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [filterDate, setFilterDate] = useState('');
+  const [selectedSurvey, setSelectedSurvey] = useState<SurveyItem | null>(null);
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [activeMetricModal, setActiveMetricModal] = useState<'assets' | 'sold' | 'open' | 'bidders' | 'admins' | 'users' | null>(null);
+  const [metricSearchQuery, setMetricSearchQuery] = useState('');
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -116,9 +121,13 @@ export default function AdminDashboard({
     // Apply search query
     const matchesSearch = 
       survey.bidderName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      survey.assetName.toLowerCase().includes(searchQuery.toLowerCase());
+      survey.assetName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      survey.assetId.toLowerCase().includes(searchQuery.toLowerCase());
 
     if (!matchesSearch && searchQuery) return false;
+
+    // Apply date filter (filter tanggal pengisian)
+    if (filterDate && survey.date !== filterDate) return false;
 
     if (surveyFilter === 'upcoming') {
       return survey.date >= todayStr;
@@ -161,7 +170,10 @@ export default function AdminDashboard({
       {/* Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4" id="stats-metric-grid">
         {/* Total Asset */}
-        <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 border-l-[6px] border-l-slate-300 flex flex-col justify-between h-full min-h-[140px] hover:shadow-md transition-all duration-300">
+        <div 
+          onClick={() => { setActiveMetricModal('assets'); setMetricSearchQuery(''); }}
+          className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 border-l-[6px] border-l-slate-300 flex flex-col justify-between h-full min-h-[140px] hover:shadow-md cursor-pointer hover:border-slate-300 hover:border-l-blue-500 hover:scale-[1.02] active:scale-[0.99] transition-all duration-300"
+        >
           <div className="flex justify-between items-start gap-2">
             <span className="text-xs font-bold text-slate-400 uppercase tracking-wider line-clamp-2 min-h-[32px]">{t('Total Asset')}</span>
             <div className="p-2 bg-blue-50 text-blue-600 rounded-xl shrink-0">
@@ -170,12 +182,18 @@ export default function AdminDashboard({
           </div>
           <div className="mt-4">
             <p className="text-2xl font-bold text-slate-800 leading-none">{totalAssets}</p>
-            <span className="text-xs text-blue-600 font-medium block mt-1.5 truncate">{t('Unit di Database')}</span>
+            <span className="text-xs text-blue-600 font-medium block mt-1.5 truncate flex items-center gap-1">
+              <span>{t('Unit di Database')}</span>
+              <span className="text-[9px] bg-blue-50 text-blue-700 px-1 py-0.2 rounded font-mono font-bold">VIEW</span>
+            </span>
           </div>
         </div>
 
         {/* Total Sold */}
-        <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 border-l-[6px] border-l-slate-300 flex flex-col justify-between h-full min-h-[140px] hover:shadow-md transition-all duration-300">
+        <div 
+          onClick={() => { setActiveMetricModal('sold'); setMetricSearchQuery(''); }}
+          className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 border-l-[6px] border-l-slate-300 flex flex-col justify-between h-full min-h-[140px] hover:shadow-md cursor-pointer hover:border-slate-300 hover:border-l-emerald-500 hover:scale-[1.02] active:scale-[0.99] transition-all duration-300"
+        >
           <div className="flex justify-between items-start gap-2">
             <span className="text-xs font-bold text-slate-400 uppercase tracking-wider line-clamp-2 min-h-[32px]">{t('Aset Terjual')}</span>
             <div className="p-2 bg-emerald-50 text-emerald-600 rounded-xl shrink-0">
@@ -184,14 +202,18 @@ export default function AdminDashboard({
           </div>
           <div className="mt-4">
             <p className="text-2xl font-bold text-emerald-600 leading-none">{totalSold}</p>
-            <span className="text-xs text-emerald-600 font-medium block mt-1.5 truncate">
-              {totalAssets > 0 ? Math.round((totalSold / totalAssets) * 100) : 0}% {t('Sukses Lelang')}
+            <span className="text-xs text-emerald-600 font-medium block mt-1.5 truncate flex items-center justify-between gap-1">
+              <span>{totalAssets > 0 ? Math.round((totalSold / totalAssets) * 100) : 0}% {t('Sukses Lelang')}</span>
+              <span className="text-[9px] bg-emerald-50 text-emerald-700 px-1 py-0.2 rounded font-mono font-bold">VIEW</span>
             </span>
           </div>
         </div>
 
         {/* Total Open */}
-        <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 border-l-[6px] border-l-slate-300 flex flex-col justify-between h-full min-h-[140px] hover:shadow-md transition-all duration-300">
+        <div 
+          onClick={() => { setActiveMetricModal('open'); setMetricSearchQuery(''); }}
+          className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 border-l-[6px] border-l-slate-300 flex flex-col justify-between h-full min-h-[140px] hover:shadow-md cursor-pointer hover:border-slate-300 hover:border-l-blue-400 hover:scale-[1.02] active:scale-[0.99] transition-all duration-300"
+        >
           <div className="flex justify-between items-start gap-2">
             <span className="text-xs font-bold text-slate-400 uppercase tracking-wider line-clamp-2 min-h-[32px]">{t('Aset Aktif')}</span>
             <div className="p-2 bg-blue-50 text-blue-600 rounded-xl shrink-0">
@@ -200,12 +222,18 @@ export default function AdminDashboard({
           </div>
           <div className="mt-4">
             <p className="text-2xl font-bold text-blue-600 leading-none">{totalOpen}</p>
-            <span className="text-xs text-blue-600 font-medium block mt-1.5 truncate">{t('Menerima Penawaran')}</span>
+            <span className="text-xs text-blue-600 font-medium block mt-1.5 truncate flex items-center justify-between gap-1">
+              <span>{t('Menerima Penawaran')}</span>
+              <span className="text-[9px] bg-blue-50 text-blue-700 px-1 py-0.2 rounded font-mono font-bold">VIEW</span>
+            </span>
           </div>
         </div>
 
         {/* Total Bidder */}
-        <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 border-l-[6px] border-l-slate-300 flex flex-col justify-between h-full min-h-[140px] hover:shadow-md transition-all duration-300">
+        <div 
+          onClick={() => { setActiveMetricModal('bidders'); setMetricSearchQuery(''); }}
+          className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 border-l-[6px] border-l-slate-300 flex flex-col justify-between h-full min-h-[140px] hover:shadow-md cursor-pointer hover:border-slate-300 hover:border-l-purple-500 hover:scale-[1.02] active:scale-[0.99] transition-all duration-300"
+        >
           <div className="flex justify-between items-start gap-2">
             <span className="text-xs font-bold text-slate-400 uppercase tracking-wider line-clamp-2 min-h-[32px]">{t('Total Bidder')}</span>
             <div className="p-2 bg-purple-50 text-purple-600 rounded-xl shrink-0">
@@ -214,12 +242,18 @@ export default function AdminDashboard({
           </div>
           <div className="mt-4">
             <p className="text-2xl font-bold text-slate-800 leading-none">{totalBidders}</p>
-            <span className="text-xs text-purple-600 font-medium block mt-1.5 truncate">{t('Partisipan Unik')}</span>
+            <span className="text-xs text-purple-600 font-medium block mt-1.5 truncate flex items-center justify-between gap-1">
+              <span>{t('Partisipan Unik')}</span>
+              <span className="text-[9px] bg-purple-50 text-purple-700 px-1 py-0.2 rounded font-mono font-bold">VIEW</span>
+            </span>
           </div>
         </div>
 
         {/* Total Akses Internal */}
-        <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 border-l-[6px] border-l-slate-300 flex flex-col justify-between h-full min-h-[140px] hover:shadow-md transition-all duration-300">
+        <div 
+          onClick={() => { setActiveMetricModal('admins'); setMetricSearchQuery(''); }}
+          className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 border-l-[6px] border-l-slate-300 flex flex-col justify-between h-full min-h-[140px] hover:shadow-md cursor-pointer hover:border-slate-300 hover:border-l-slate-600 hover:scale-[1.02] active:scale-[0.99] transition-all duration-300"
+        >
           <div className="flex justify-between items-start gap-2">
             <span className="text-xs font-bold text-slate-400 uppercase tracking-wider line-clamp-2 min-h-[32px]">{t('Akses Internal')}</span>
             <div className="p-2 bg-slate-50 text-slate-500 rounded-xl shrink-0">
@@ -228,12 +262,18 @@ export default function AdminDashboard({
           </div>
           <div className="mt-4">
             <p className="text-2xl font-bold text-slate-700 leading-none">{admins.length}</p>
-            <span className="text-xs text-slate-500 font-medium block mt-1.5 truncate">{t('Administrator Aktif')}</span>
+            <span className="text-xs text-slate-500 font-medium block mt-1.5 truncate flex items-center justify-between gap-1">
+              <span>{t('Administrator Aktif')}</span>
+              <span className="text-[9px] bg-slate-100 text-slate-700 px-1 py-0.2 rounded font-mono font-bold">VIEW</span>
+            </span>
           </div>
         </div>
 
         {/* Total Akses Eksternal */}
-        <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 border-l-[6px] border-l-slate-300 flex flex-col justify-between h-full min-h-[140px] hover:shadow-md transition-all duration-300">
+        <div 
+          onClick={() => { setActiveMetricModal('users'); setMetricSearchQuery(''); }}
+          className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 border-l-[6px] border-l-slate-300 flex flex-col justify-between h-full min-h-[140px] hover:shadow-md cursor-pointer hover:border-slate-300 hover:border-l-blue-900 hover:scale-[1.02] active:scale-[0.99] transition-all duration-300"
+        >
           <div className="flex justify-between items-start gap-2">
             <span className="text-xs font-bold text-slate-400 uppercase tracking-wider line-clamp-2 min-h-[32px]">{t('Akses Eksternal')}</span>
             <div className="p-2 bg-slate-50 text-slate-500 rounded-xl shrink-0">
@@ -242,7 +282,10 @@ export default function AdminDashboard({
           </div>
           <div className="mt-4">
             <p className="text-2xl font-bold text-slate-700 leading-none">{registeredUsers.length}</p>
-            <span className="text-xs text-slate-500 font-medium block mt-1.5 truncate">{t('Pengguna Terdaftar')}</span>
+            <span className="text-xs text-slate-500 font-medium block mt-1.5 truncate flex items-center justify-between gap-1">
+              <span>{t('Pengguna Terdaftar')}</span>
+              <span className="text-[9px] bg-slate-100 text-slate-700 px-1 py-0.2 rounded font-mono font-bold">VIEW</span>
+            </span>
           </div>
         </div>
       </div>
@@ -337,16 +380,37 @@ export default function AdminDashboard({
             </div>
           </div>
 
-          {/* Search bar inside surveys */}
-          <div className="relative">
-            <Search className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
-            <input
-              type="text"
-              placeholder={t('Cari nama bidder, brand, atau armada...')}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-            />
+          {/* Search bar & Date filter inside surveys */}
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
+            <div className="relative md:col-span-7">
+              <Search className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
+              <input
+                type="text"
+                placeholder={t('Cari nama bidder, brand, atau armada...')}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-9 pr-4 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+              />
+            </div>
+            <div className="relative md:col-span-5 flex items-center gap-2">
+              <div className="relative flex-1">
+                <input
+                  type="date"
+                  value={filterDate}
+                  onChange={(e) => setFilterDate(e.target.value)}
+                  className="w-full px-3 py-2 text-xs font-semibold border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-slate-700 bg-white"
+                />
+              </div>
+              {filterDate && (
+                <button
+                  onClick={() => setFilterDate('')}
+                  className="px-3 py-2 text-xs font-bold text-rose-600 bg-rose-50 hover:bg-rose-100 rounded-xl border border-rose-100 transition-colors"
+                  title="Reset Filter Tanggal"
+                >
+                  Reset
+                </button>
+              )}
+            </div>
           </div>
 
           {/* Survey List */}
@@ -356,7 +420,8 @@ export default function AdminDashboard({
               return (
                 <div 
                   key={`${survey.assetId}-${survey.bidderEmail}-${index}`}
-                  className="p-4 rounded-xl border border-slate-100 hover:border-blue-100 bg-slate-50/50 hover:bg-white transition-all flex flex-col md:flex-row justify-between items-start md:items-center gap-4 group"
+                  className="p-4 rounded-xl border border-slate-100 hover:border-blue-200 bg-slate-50/50 hover:bg-white transition-all flex flex-col md:flex-row justify-between items-start md:items-center gap-4 group cursor-pointer shadow-sm hover:shadow-md"
+                  onClick={() => setSelectedSurvey(survey)}
                 >
                   <div className="space-y-1.5 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
@@ -369,22 +434,25 @@ export default function AdminDashboard({
                         {isUpcoming ? t('Mendatang') : t('Selesai')}
                       </span>
                     </div>
-                    <h3 className="font-semibold text-slate-800 text-sm">{survey.assetName}</h3>
+                    <h3 className="font-bold text-slate-900 text-sm">{survey.assetName}</h3>
                     <div className="text-xs text-slate-500 flex flex-wrap gap-x-4 gap-y-1 pt-1">
-                      <span>{t('Bidder')}: <strong className="text-slate-700">{survey.bidderName}</strong> ({survey.bidderContact})</span>
-                      <span>Email: <strong className="text-slate-700">{survey.bidderEmail}</strong></span>
+                      <span>{t('Bidder')}: <strong className="text-slate-800 font-bold">{survey.bidderName}</strong> ({survey.bidderContact})</span>
+                      <span>Email: <strong className="text-slate-800 font-bold">{survey.bidderEmail}</strong></span>
                     </div>
                   </div>
 
                   <div className="flex flex-col md:items-end gap-2 shrink-0 w-full md:w-auto border-t md:border-t-0 pt-2 md:pt-0">
-                    <div className="flex items-center gap-1.5 text-xs font-semibold text-blue-700">
+                    <div className="flex items-center gap-1.5 text-xs font-bold text-blue-700">
                       <Calendar className="w-3.5 h-3.5" />
                       <span>{survey.date} @ {survey.time} WIB</span>
                     </div>
                     <div className="flex items-center justify-between md:justify-end gap-3 w-full">
-                      <span className="text-xs text-slate-500 font-medium">Bidding: {formatIDR(survey.bidPrice)}</span>
+                      <span className="text-xs text-slate-900 font-bold">Bidding: {formatIDR(survey.bidPrice)}</span>
                       <button 
-                        onClick={() => onSelectAsset(survey.assetId)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onSelectAsset(survey.assetId);
+                        }}
                         className="text-blue-600 hover:text-blue-800 text-xs font-bold flex items-center gap-0.5 group-hover:translate-x-1 transition-all"
                       >
                         {t('Lihat Aset')} <ChevronRight className="w-3.5 h-3.5" />
@@ -403,6 +471,455 @@ export default function AdminDashboard({
           </div>
         </div>
       </div>
+
+      <AssetTypeGuide assets={assets} />
+
+      {/* Detail Survey Modal - Large & Focused */}
+      {selectedSurvey && (
+        <div 
+          className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fade-in"
+          onClick={() => setSelectedSurvey(null)}
+        >
+          <div 
+            className="bg-white rounded-3xl border border-slate-200/80 shadow-2xl max-w-lg w-full overflow-hidden animate-scale-in"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="bg-slate-900 text-white p-6 relative">
+              <span className="text-[10px] font-bold uppercase tracking-widest bg-blue-600/30 text-blue-300 px-2.5 py-1 rounded-full border border-blue-500/20">
+                {t('Detail Jadwal Survei')}
+              </span>
+              <h3 className="text-xl font-bold mt-3 leading-snug">{selectedSurvey.assetName}</h3>
+              <p className="text-xs font-mono text-slate-300 mt-1">{t('ID Asset')}: <span className="font-bold text-white">{selectedSurvey.assetId}</span></p>
+              
+              <button 
+                onClick={() => setSelectedSurvey(null)}
+                className="absolute top-6 right-6 text-slate-300 hover:text-white transition-colors p-1 bg-slate-800/80 hover:bg-slate-800 rounded-full"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 space-y-6">
+              {/* Date & Time display - TAMPIL BESAR DAN FOKUS */}
+              <div className="bg-blue-50/50 rounded-2xl p-5 border border-blue-100 flex items-center gap-4">
+                <div className="p-3 bg-blue-600 text-white rounded-xl">
+                  <Calendar className="w-6 h-6" />
+                </div>
+                <div>
+                  <span className="text-[10px] font-bold text-blue-600 uppercase tracking-wider block">{t('WAKTU SURVEI FISIK')}</span>
+                  <strong className="text-slate-900 font-bold text-lg block mt-0.5">
+                    {selectedSurvey.date} @ {selectedSurvey.time} WIB
+                  </strong>
+                </div>
+              </div>
+
+              {/* Bidder Info */}
+              <div className="space-y-3.5">
+                <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest">{t('Informasi Calon Pembeli / Bidder')}</h4>
+                
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                  <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-100">
+                    <span className="text-slate-400 text-[10px] block uppercase font-bold tracking-wider mb-0.5">{t('Nama Lengkap')}</span>
+                    <strong className="text-slate-900 text-base font-bold">{selectedSurvey.bidderName}</strong>
+                  </div>
+                  
+                  <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-100">
+                    <span className="text-slate-400 text-[10px] block uppercase font-bold tracking-wider mb-0.5">{t('Kontak / No HP')}</span>
+                    <strong className="text-slate-900 text-base font-bold">{selectedSurvey.bidderContact}</strong>
+                  </div>
+
+                  <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-100 sm:col-span-2">
+                    <span className="text-slate-400 text-[10px] block uppercase font-bold tracking-wider mb-0.5">{t('Alamat Email')}</span>
+                    <strong className="text-slate-900 text-base font-bold break-all">{selectedSurvey.bidderEmail}</strong>
+                  </div>
+                </div>
+              </div>
+
+              {/* Bidding Amount */}
+              <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
+                <div>
+                  <span className="text-slate-400 text-[10px] block uppercase font-bold tracking-wider">{t('Nilai Penawaran / Bidding')}</span>
+                  <strong className="text-emerald-600 text-xl font-bold mt-1 block">
+                    {formatIDR(selectedSurvey.bidPrice)}
+                  </strong>
+                </div>
+
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => {
+                      onSelectAsset(selectedSurvey.assetId);
+                      setSelectedSurvey(null);
+                    }}
+                    className="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-md transition-colors flex items-center gap-1.5"
+                  >
+                    {t('Lihat Detail Unit')} <ChevronRight className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => setSelectedSurvey(null)}
+                    className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition-colors border border-slate-200/60"
+                  >
+                    {t('Tutup')}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Interactive Metric Detail Popups */}
+      {activeMetricModal && (() => {
+        // Prepare bidders data
+        const uniqueBiddersMap: { 
+          [email: string]: { 
+            name: string; 
+            contact: string; 
+            email: string; 
+            bidCount: number; 
+            maxBidPrice: number; 
+            assetsBid: { assetId: string; assetName: string; price: number }[] 
+          } 
+        } = {};
+
+        assets.forEach(asset => {
+          (asset.bids || []).forEach(bid => {
+            const emailLower = bid.email.toLowerCase();
+            if (!uniqueBiddersMap[emailLower]) {
+              uniqueBiddersMap[emailLower] = {
+                name: bid.name,
+                contact: bid.contact,
+                email: bid.email,
+                bidCount: 0,
+                maxBidPrice: 0,
+                assetsBid: []
+              };
+            }
+            uniqueBiddersMap[emailLower].bidCount += 1;
+            if (bid.price > uniqueBiddersMap[emailLower].maxBidPrice) {
+              uniqueBiddersMap[emailLower].maxBidPrice = bid.price;
+            }
+            if (!uniqueBiddersMap[emailLower].assetsBid.some(a => a.assetId === asset.id)) {
+              uniqueBiddersMap[emailLower].assetsBid.push({
+                assetId: asset.id,
+                assetName: asset.name,
+                price: bid.price
+              });
+            }
+          });
+        });
+        const biddersList = Object.values(uniqueBiddersMap);
+
+        // Filter details based on active modal
+        let modalTitle = '';
+        let modalColorClass = '';
+        let modalIcon = null;
+        let contentList = [];
+
+        if (activeMetricModal === 'assets') {
+          modalTitle = t('Daftar Seluruh Aset');
+          modalColorClass = 'bg-blue-600';
+          modalIcon = <Truck className="w-5 h-5 text-blue-100" />;
+          contentList = assets.filter(asset => 
+            asset.name.toLowerCase().includes(metricSearchQuery.toLowerCase()) ||
+            asset.brand.toLowerCase().includes(metricSearchQuery.toLowerCase()) ||
+            asset.category.toLowerCase().includes(metricSearchQuery.toLowerCase()) ||
+            (asset.plateNumber || '').toLowerCase().includes(metricSearchQuery.toLowerCase())
+          );
+        } else if (activeMetricModal === 'sold') {
+          modalTitle = t('Daftar Aset Terjual');
+          modalColorClass = 'bg-emerald-600';
+          modalIcon = <CheckCircle className="w-5 h-5 text-emerald-100" />;
+          contentList = assets.filter(asset => asset.status === 'Sold').filter(asset => 
+            asset.name.toLowerCase().includes(metricSearchQuery.toLowerCase()) ||
+            asset.brand.toLowerCase().includes(metricSearchQuery.toLowerCase()) ||
+            asset.category.toLowerCase().includes(metricSearchQuery.toLowerCase()) ||
+            (asset.plateNumber || '').toLowerCase().includes(metricSearchQuery.toLowerCase())
+          );
+        } else if (activeMetricModal === 'open') {
+          modalTitle = t('Daftar Aset Aktif');
+          modalColorClass = 'bg-blue-500';
+          modalIcon = <Clock className="w-5 h-5 text-blue-100" />;
+          contentList = assets.filter(asset => asset.status === 'Open').filter(asset => 
+            asset.name.toLowerCase().includes(metricSearchQuery.toLowerCase()) ||
+            asset.brand.toLowerCase().includes(metricSearchQuery.toLowerCase()) ||
+            asset.category.toLowerCase().includes(metricSearchQuery.toLowerCase()) ||
+            (asset.plateNumber || '').toLowerCase().includes(metricSearchQuery.toLowerCase())
+          );
+        } else if (activeMetricModal === 'bidders') {
+          modalTitle = t('Daftar Bidder / Peserta Lelang');
+          modalColorClass = 'bg-purple-600';
+          modalIcon = <Users className="w-5 h-5 text-purple-100" />;
+          contentList = biddersList.filter(bidder => 
+            bidder.name.toLowerCase().includes(metricSearchQuery.toLowerCase()) ||
+            bidder.email.toLowerCase().includes(metricSearchQuery.toLowerCase()) ||
+            bidder.contact.toLowerCase().includes(metricSearchQuery.toLowerCase())
+          );
+        } else if (activeMetricModal === 'admins') {
+          modalTitle = t('Daftar Akses Internal (Admin)');
+          modalColorClass = 'bg-slate-700';
+          modalIcon = <Shield className="w-5 h-5 text-slate-100" />;
+          contentList = admins.filter(admin => 
+            admin.name.toLowerCase().includes(metricSearchQuery.toLowerCase()) ||
+            admin.email.toLowerCase().includes(metricSearchQuery.toLowerCase()) ||
+            admin.role.toLowerCase().includes(metricSearchQuery.toLowerCase())
+          );
+        } else if (activeMetricModal === 'users') {
+          modalTitle = t('Daftar Akses Eksternal (Pengguna)');
+          modalColorClass = 'bg-blue-900';
+          modalIcon = <Globe className="w-5 h-5 text-blue-100" />;
+          contentList = registeredUsers.filter(user => 
+            user.name.toLowerCase().includes(metricSearchQuery.toLowerCase()) ||
+            user.email.toLowerCase().includes(metricSearchQuery.toLowerCase()) ||
+            user.phone.toLowerCase().includes(metricSearchQuery.toLowerCase()) ||
+            (user.company || '').toLowerCase().includes(metricSearchQuery.toLowerCase())
+          );
+        }
+
+        return (
+          <div 
+            className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fade-in"
+            onClick={() => setActiveMetricModal(null)}
+          >
+            <div 
+              className="bg-white rounded-3xl border border-slate-200 shadow-2xl max-w-2xl w-full overflow-hidden animate-scale-in flex flex-col max-h-[90vh]"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Header */}
+              <div className={`${modalColorClass} text-white p-6 relative shrink-0`}>
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-white/10 rounded-xl">
+                    {modalIcon}
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold leading-tight">{modalTitle}</h3>
+                    <p className="text-xs text-white/80 mt-1">
+                      {t('Menampilkan')} {contentList.length} {t('data hasil filter')}
+                    </p>
+                  </div>
+                </div>
+                
+                <button 
+                  onClick={() => setActiveMetricModal(null)}
+                  className="absolute top-6 right-6 text-white/85 hover:text-white transition-colors p-1 bg-white/10 hover:bg-white/20 rounded-full"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              {/* Search Bar - Sticky */}
+              <div className="p-4 border-b border-slate-100 bg-slate-50 flex items-center gap-2 shrink-0">
+                <div className="relative flex-1">
+                  <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    placeholder={t('Cari data...')}
+                    value={metricSearchQuery}
+                    onChange={(e) => setMetricSearchQuery(e.target.value)}
+                    className="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white"
+                  />
+                </div>
+                {metricSearchQuery && (
+                  <button 
+                    onClick={() => setMetricSearchQuery('')}
+                    className="text-xs text-slate-500 hover:text-slate-800 font-bold px-2 py-1 bg-slate-200/50 rounded-lg"
+                  >
+                    {t('Reset')}
+                  </button>
+                )}
+              </div>
+
+              {/* List Content */}
+              <div className="flex-1 overflow-y-auto p-6 space-y-3 min-h-[250px] custom-scrollbar">
+                {contentList.map((item: any, idx) => {
+                  if (activeMetricModal === 'assets' || activeMetricModal === 'sold' || activeMetricModal === 'open') {
+                    const isSold = item.status === 'Sold';
+                    const activeBidsCount = item.bids ? item.bids.length : 0;
+                    
+                    return (
+                      <div 
+                        key={item.id}
+                        onClick={() => {
+                          onSelectAsset(item.id);
+                          setActiveMetricModal(null);
+                        }}
+                        className="p-4 rounded-2xl border border-slate-100 hover:border-blue-200 bg-slate-50/50 hover:bg-blue-50/10 transition-all flex items-center justify-between gap-4 group cursor-pointer shadow-sm"
+                      >
+                        <div className="flex items-center gap-4 min-w-0 flex-1">
+                          {item.imageUrl ? (
+                            <img 
+                              src={item.imageUrl} 
+                              alt={item.name} 
+                              className="w-14 h-14 object-cover rounded-xl border border-slate-200/60 shrink-0 shadow-sm"
+                              referrerPolicy="no-referrer"
+                            />
+                          ) : (
+                            <div className="w-14 h-14 bg-slate-100 rounded-xl border border-slate-200 flex items-center justify-center text-slate-400 shrink-0 font-bold text-xs">
+                              Unit
+                            </div>
+                          )}
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2 flex-wrap mb-1">
+                              <span className="text-[10px] font-mono font-bold bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded border border-blue-100">
+                                {item.id}
+                              </span>
+                              <span className="text-xs text-slate-400 font-medium">{item.brand}</span>
+                              <span className={`text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${
+                                isSold ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-blue-50 text-blue-600 border border-blue-100'
+                              }`}>
+                                {isSold ? t('Terjual') : t('Aktif')}
+                              </span>
+                            </div>
+                            <h4 className="font-bold text-slate-800 text-sm truncate group-hover:text-blue-600 transition-colors">
+                              {item.name}
+                            </h4>
+                            <p className="text-xs text-slate-500 mt-0.5 flex flex-wrap gap-x-3 gap-y-0.5">
+                              <span>Plat: <strong className="text-slate-700 font-bold">{item.plateNumber}</strong></span>
+                              <span>Kategori: <strong className="text-slate-700 font-bold">{item.category}</strong></span>
+                              <span>{t('Tahun')}: <strong className="text-slate-700 font-bold">{item.modelYear}</strong></span>
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="text-right shrink-0 flex flex-col items-end gap-1">
+                          <span className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">
+                            {isSold ? t('Harga Akhir') : t('Penawaran Tertinggi')}
+                          </span>
+                          <span className={`text-sm font-bold ${isSold ? 'text-emerald-600' : 'text-blue-600'}`}>
+                            {formatIDR(item.highestBid || item.startingPrice)}
+                          </span>
+                          <span className="text-[10px] text-slate-500 font-medium">
+                            {activeBidsCount} Bidder
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  } else if (activeMetricModal === 'bidders') {
+                    return (
+                      <div 
+                        key={item.email}
+                        className="p-4 rounded-2xl border border-slate-100 bg-slate-50/50 flex flex-col gap-3 shadow-sm"
+                      >
+                        <div className="flex justify-between items-start gap-4">
+                          <div className="min-w-0">
+                            <h4 className="font-bold text-slate-800 text-sm">{item.name}</h4>
+                            <p className="text-xs text-slate-500 mt-0.5 font-mono break-all">{item.email}</p>
+                            <p className="text-xs text-slate-600 font-medium mt-1">HP: {item.contact}</p>
+                          </div>
+                          <div className="text-right shrink-0">
+                            <span className="text-[10px] text-slate-400 uppercase font-bold block tracking-wider mb-0.5">Penawaran Tertinggi</span>
+                            <span className="text-sm font-bold text-purple-600">{formatIDR(item.maxBidPrice)}</span>
+                            <span className="text-[10px] text-slate-500 block font-bold mt-0.5">{item.bidCount} Bids</span>
+                          </div>
+                        </div>
+
+                        {/* Assets bid list */}
+                        {item.assetsBid && item.assetsBid.length > 0 && (
+                          <div className="border-t border-slate-100 pt-2.5 mt-1">
+                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">{t('Menawar Unit')}:</p>
+                            <div className="flex flex-wrap gap-2">
+                              {item.assetsBid.map((assetBid: any) => (
+                                <button
+                                  key={assetBid.assetId}
+                                  onClick={() => {
+                                    onSelectAsset(assetBid.assetId);
+                                    setActiveMetricModal(null);
+                                  }}
+                                  className="text-[11px] bg-purple-50 hover:bg-purple-100 border border-purple-100 text-purple-700 font-bold px-2 py-1 rounded-lg transition-colors flex items-center gap-1 group/btn"
+                                >
+                                  <span>{assetBid.assetName}</span>
+                                  <span className="text-[9px] text-purple-400 font-mono">({formatIDR(assetBid.price)})</span>
+                                  <ChevronRight className="w-3 h-3 group-hover/btn:translate-x-0.5 transition-transform" />
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  } else if (activeMetricModal === 'admins') {
+                    return (
+                      <div 
+                        key={item.email}
+                        className="p-4 rounded-2xl border border-slate-100 bg-slate-50/50 flex justify-between items-center gap-4 shadow-sm"
+                      >
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <h4 className="font-bold text-slate-800 text-sm">{item.name}</h4>
+                            <span className="text-[10px] font-bold bg-slate-200 text-slate-700 px-2 py-0.5 rounded-full uppercase tracking-wider">
+                              {item.role}
+                            </span>
+                          </div>
+                          <p className="text-xs text-slate-500 mt-1 font-mono">{item.email}</p>
+                        </div>
+                        <div className="text-right shrink-0">
+                          <span className="text-[10px] text-slate-400 font-bold block uppercase tracking-wider">{t('Terdaftar')}</span>
+                          <span className="text-xs text-slate-600 font-mono mt-0.5 block">{item.createdAt ? item.createdAt.split('T')[0] : '-'}</span>
+                        </div>
+                      </div>
+                    );
+                  } else if (activeMetricModal === 'users') {
+                    const statusColors = 
+                      item.status === 'Disetujui' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' :
+                      item.status === 'Ditolak' ? 'bg-rose-50 text-rose-700 border border-rose-100' :
+                      'bg-amber-50 text-amber-700 border border-amber-100';
+
+                    return (
+                      <div 
+                        key={item.email}
+                        className="p-4 rounded-2xl border border-slate-100 bg-slate-50/50 flex flex-col sm:flex-row justify-between sm:items-center gap-3 shadow-sm"
+                      >
+                        <div>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <h4 className="font-bold text-slate-800 text-sm">{item.name}</h4>
+                            {item.company && (
+                              <span className="text-[10px] font-medium bg-blue-50 text-blue-700 px-1.5 py-0.5 rounded">
+                                {item.company}
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-xs text-slate-500 mt-1 font-mono break-all">{item.email}</p>
+                          <p className="text-xs text-slate-600 mt-1">HP: <span className="font-bold">{item.phone}</span></p>
+                        </div>
+                        <div className="flex sm:flex-col justify-between items-end gap-1.5 shrink-0 pt-2 sm:pt-0 border-t sm:border-0 border-slate-100">
+                          <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${statusColors}`}>
+                            {item.status}
+                          </span>
+                          <span className="text-[10px] text-slate-400 font-medium">
+                            Joined: {item.createdAt ? item.createdAt.split('T')[0] : '-'}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  }
+                  return null;
+                })}
+
+                {contentList.length === 0 && (
+                  <div className="text-center py-12 text-slate-400 text-sm">
+                    {t('Tidak ada data yang cocok dengan pencarian.')}
+                  </div>
+                )}
+              </div>
+
+              {/* Footer */}
+              <div className="p-4 border-t border-slate-100 bg-slate-50 flex justify-end shrink-0">
+                <button
+                  onClick={() => setActiveMetricModal(null)}
+                  className="px-5 py-2 bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold text-xs rounded-xl transition-colors border border-slate-300/40"
+                >
+                  {t('Tutup')}
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }

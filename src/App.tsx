@@ -8,6 +8,7 @@ import AdminSettings from './components/AdminSettings';
 import CatalogView from './components/CatalogView';
 import LoginModal from './components/LoginModal';
 import { useLanguage } from './components/LanguageContext';
+import { ExternalNotificationsView, ExternalInboxView } from './components/ExternalViews';
 import { AnimatePresence, motion } from 'motion/react';
 import { 
   seedDatabaseIfEmpty, 
@@ -89,6 +90,9 @@ export default function App() {
   
   // Navigation inside Admin area
   const [adminTab, setAdminTab] = useState<'dashboard' | 'assets' | 'users' | 'settings'>('dashboard');
+  
+  // Navigation inside External area
+  const [externalTab, setExternalTab] = useState<'catalog' | 'notifications' | 'inbox'>('catalog');
   
   // Mobile menu toggle
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -810,6 +814,7 @@ export default function App() {
     localStorage.removeItem('pancaran_session_name');
     localStorage.removeItem('pancaran_session_phone');
     setRole('external'); // Redirect back to external catalog on logout
+    setExternalTab('catalog'); // Reset external tab
   };
 
   const handleSelectAssetAndSwitchTab = (assetId: string) => {
@@ -820,6 +825,38 @@ export default function App() {
   const matchedAdmin = admins.find(a => a.email.toLowerCase() === loggedInAdminEmail.toLowerCase());
   const adminName = matchedAdmin ? matchedAdmin.name : 'Admin Digital Solution';
   const adminRole = matchedAdmin ? matchedAdmin.role : 'Super Admin';
+
+  const getLoggedInUserEmail = () => {
+    return isUserLoggedIn ? loggedInUserEmail : (isAdminLoggedIn ? loggedInAdminEmail : '');
+  };
+  const activeUserEmail = getLoggedInUserEmail().toLowerCase();
+
+  // Helper to get won assets
+  const winningAssets = activeUserEmail ? assets.filter(asset => {
+    if (asset.status !== 'Sold') return false;
+    if (!asset.bids || asset.bids.length === 0) return false;
+    const highestBid = asset.bids.reduce((prev, current) => (prev.price > current.price) ? prev : current);
+    return highestBid.email.toLowerCase() === activeUserEmail;
+  }) : [];
+
+  const externalInboxCount = winningAssets.length;
+
+  // Let's also compute the outbid notifications for the badge count
+  const outbidCount = activeUserEmail ? assets.filter(asset => {
+    if (asset.status !== 'Open') return false;
+    if (!asset.bids || asset.bids.length === 0) return false;
+    
+    // Check if user has bid on this asset
+    const userBids = asset.bids.filter(b => b.email.toLowerCase() === activeUserEmail);
+    if (userBids.length === 0) return false;
+
+    const highestBid = [...asset.bids].sort((a, b) => b.price - a.price)[0];
+    const userHighestBid = [...userBids].sort((a, b) => b.price - a.price)[0];
+
+    return highestBid.email.toLowerCase() !== activeUserEmail && userHighestBid.price < highestBid.price;
+  }).length : 0;
+
+  const externalNotificationsCount = outbidCount + winningAssets.length;
 
   return (
     <div className="min-h-screen bg-slate-50/50 flex flex-col font-sans" id="app-root-wrapper">
@@ -857,7 +894,7 @@ export default function App() {
               </div>
               <div className="flex flex-col">
                 <span className="text-white font-bold text-lg tracking-tight">
-                  Pancaran <span className="text-blue-400 font-extrabold drop-shadow-[0_0_8px_rgba(96,165,250,0.35)]">Lelang</span>
+                  <span className="bg-gradient-to-r from-slate-100 via-slate-300 to-slate-100 bg-clip-text text-transparent font-extrabold drop-shadow-[0_0_8px_rgba(255,255,255,0.4)]">Platinum</span>
                 </span>
               </div>
             </div>
@@ -1591,6 +1628,46 @@ export default function App() {
               </div>
             )}
 
+            {role === 'external' && (isUserLoggedIn || isAdminLoggedIn) && (
+              <div className="flex flex-col gap-2 border-t border-slate-100 pt-3">
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-2">{t('Menu Eksternal')}</p>
+                <button
+                  onClick={() => { setExternalTab('catalog'); setIsMobileMenuOpen(false); }}
+                  className={`w-full text-left px-3 py-2 rounded-xl text-sm font-semibold flex items-center justify-between ${
+                    externalTab === 'catalog' ? 'bg-blue-50 text-blue-700 font-bold' : 'text-slate-600'
+                  }`}
+                >
+                  <span>{t('Katalog')}</span>
+                </button>
+                <button
+                  onClick={() => { setExternalTab('notifications'); setIsMobileMenuOpen(false); }}
+                  className={`w-full text-left px-3 py-2 rounded-xl text-sm font-semibold flex items-center justify-between ${
+                    externalTab === 'notifications' ? 'bg-blue-50 text-blue-700 font-bold' : 'text-slate-600'
+                  }`}
+                >
+                  <span>{t('Notifikasi Saya')}</span>
+                  {externalNotificationsCount > 0 && (
+                    <span className="bg-rose-500 text-white text-[10px] px-2 py-0.5 rounded-full font-bold">
+                      {externalNotificationsCount}
+                    </span>
+                  )}
+                </button>
+                <button
+                  onClick={() => { setExternalTab('inbox'); setIsMobileMenuOpen(false); }}
+                  className={`w-full text-left px-3 py-2 rounded-xl text-sm font-semibold flex items-center justify-between ${
+                    externalTab === 'inbox' ? 'bg-blue-50 text-blue-700 font-bold' : 'text-slate-600'
+                  }`}
+                >
+                  <span>Inbox / Surat Masuk</span>
+                  {externalInboxCount > 0 && (
+                    <span className="bg-rose-500 text-white text-[10px] px-2 py-0.5 rounded-full font-bold animate-pulse">
+                      {externalInboxCount}
+                    </span>
+                  )}
+                </button>
+              </div>
+            )}
+
             <div className="border-t border-slate-100 pt-3 flex flex-col gap-2">
               {isAdminLoggedIn ? (
                 <div className="p-3 bg-slate-50 rounded-xl space-y-2">
@@ -1771,17 +1848,90 @@ export default function App() {
       ) : (
         <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {role === 'external' ? (
-            <CatalogView 
-              assets={assets} 
-              onPlaceBid={handlePlaceBid} 
-              selectedAssetId={selectedAssetId}
-              onSelectAsset={setSelectedAssetId}
-              isUserLoggedIn={isUserLoggedIn || isAdminLoggedIn}
-              onOpenLoginModal={() => setIsLoginModalOpen(true)}
-              loggedInUserEmail={isUserLoggedIn ? loggedInUserEmail : loggedInAdminEmail}
-              loggedInUserName={isUserLoggedIn ? loggedInUserName : adminName}
-              loggedInUserPhone={isUserLoggedIn ? loggedInUserPhone : ''}
-            />
+            <div className="space-y-6">
+              {/* Desktop Sub-navigation for Logged In External Users */}
+              {(isUserLoggedIn || isAdminLoggedIn) && (
+                <div className="flex border border-slate-200 bg-white p-1 rounded-2xl shadow-sm max-w-md mx-auto" id="external-navigation-tabs">
+                  <button
+                    onClick={() => setExternalTab('catalog')}
+                    className={`flex-1 py-2.5 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                      externalTab === 'catalog'
+                        ? 'bg-blue-600 text-white shadow-md shadow-blue-500/15'
+                        : 'text-slate-500 hover:text-slate-800'
+                    }`}
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                    </svg>
+                    <span>{t('Katalog')}</span>
+                  </button>
+                  <button
+                    onClick={() => setExternalTab('notifications')}
+                    className={`flex-1 py-2.5 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer relative ${
+                      externalTab === 'notifications'
+                        ? 'bg-blue-600 text-white shadow-md shadow-blue-500/15'
+                        : 'text-slate-500 hover:text-slate-800'
+                    }`}
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                    </svg>
+                    <span>{t('Notifikasi')}</span>
+                    {externalNotificationsCount > 0 && (
+                      <span className="absolute top-1.5 right-2 bg-rose-500 text-white text-[9px] font-extrabold px-1.5 py-0.5 rounded-full leading-none">
+                        {externalNotificationsCount}
+                      </span>
+                    )}
+                  </button>
+                  <button
+                    onClick={() => setExternalTab('inbox')}
+                    className={`flex-1 py-2.5 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer relative ${
+                      externalTab === 'inbox'
+                        ? 'bg-blue-600 text-white shadow-md shadow-blue-500/15'
+                        : 'text-slate-500 hover:text-slate-800'
+                    }`}
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                    </svg>
+                    <span>{t('Inbox')}</span>
+                    {externalInboxCount > 0 && (
+                      <span className="absolute top-1.5 right-2 bg-rose-500 text-white text-[9px] font-extrabold px-1.5 py-0.5 rounded-full leading-none animate-pulse">
+                        {externalInboxCount}
+                      </span>
+                    )}
+                  </button>
+                </div>
+              )}
+
+              {externalTab === 'catalog' ? (
+                <CatalogView 
+                  assets={assets} 
+                  onPlaceBid={handlePlaceBid} 
+                  selectedAssetId={selectedAssetId}
+                  onSelectAsset={setSelectedAssetId}
+                  isUserLoggedIn={isUserLoggedIn || isAdminLoggedIn}
+                  onOpenLoginModal={() => setIsLoginModalOpen(true)}
+                  loggedInUserEmail={isUserLoggedIn ? loggedInUserEmail : loggedInAdminEmail}
+                  loggedInUserName={isUserLoggedIn ? loggedInUserName : adminName}
+                  loggedInUserPhone={isUserLoggedIn ? loggedInUserPhone : ''}
+                />
+              ) : externalTab === 'notifications' ? (
+                <ExternalNotificationsView
+                  assets={assets}
+                  userEmail={isUserLoggedIn ? loggedInUserEmail : loggedInAdminEmail}
+                  userName={isUserLoggedIn ? loggedInUserName : adminName}
+                  userPhone={isUserLoggedIn ? loggedInUserPhone : ''}
+                />
+              ) : (
+                <ExternalInboxView
+                  assets={assets}
+                  userEmail={isUserLoggedIn ? loggedInUserEmail : loggedInAdminEmail}
+                  userName={isUserLoggedIn ? loggedInUserName : adminName}
+                  userPhone={isUserLoggedIn ? loggedInUserPhone : ''}
+                />
+              )}
+            </div>
           ) : (
             <div className="py-24 text-center max-w-md mx-auto space-y-4">
               <Shield className="w-16 h-16 text-blue-500 mx-auto" />
@@ -1835,7 +1985,7 @@ export default function App() {
                     />
                   </div>
                   <span className="text-white font-bold text-lg tracking-tight">
-                    Pancaran <span className="text-blue-400 font-extrabold drop-shadow-[0_0_10px_rgba(96,165,250,0.25)]">Lelang</span>
+                    <span className="bg-gradient-to-r from-slate-100 via-slate-300 to-slate-100 bg-clip-text text-transparent font-extrabold drop-shadow-[0_0_10px_rgba(255,255,255,0.4)]">Platinum</span>
                   </span>
                 </div>
                 <p className="text-slate-400 text-xs leading-relaxed max-w-sm">
@@ -1940,7 +2090,7 @@ export default function App() {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-[11px] font-medium">
               <p className="text-slate-500">
-                © 2026 Pancaran Lelang Group - PT Pancaran Darma Logistics. {t('Hak Cipta Dilindungi')}.
+                © 2026 Platinum - Pancaran Logistics. {t('Hak Cipta Dilindungi')}.
               </p>
               <div className="flex gap-4">
                 <span className="text-slate-600 hover:text-blue-600 transition-colors cursor-pointer font-bold">{t('Syarat & Ketentuan')}</span>

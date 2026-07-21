@@ -144,7 +144,7 @@ export default function AdminAssets({
   onUpdateAssetStatus,
   onDeleteAsset
 }: AdminAssetsProps) {
-  const { t } = useLanguage();
+  const { language, t } = useLanguage();
   const [activeTab, setActiveTab] = useState<'all' | 'Open' | 'Sold'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [brandFilter, setBrandFilter] = useState<string>('all');
@@ -526,7 +526,7 @@ export default function AdminAssets({
   const [formData, setFormData] = useState({
     name: '',
     brand: 'Hino',
-    category: 'Wingbox',
+    category: '',
     modelYear: 2022,
     plateNumber: '',
     condition: 'Baik' as Asset['condition'],
@@ -558,7 +558,8 @@ export default function AdminAssets({
     attachmentLength: '',
     attachmentWidth: '',
     attachmentHeight: '',
-    attachmentExtension: ''
+    attachmentExtension: '',
+    tnc: ''
   });
 
   const descriptionRef = React.useRef<HTMLTextAreaElement>(null);
@@ -575,7 +576,7 @@ export default function AdminAssets({
     setFormData({
       name: '',
       brand: 'Hino',
-      category: 'Wingbox',
+      category: '',
       modelYear: 2022,
       plateNumber: '',
       condition: 'Baik',
@@ -607,7 +608,8 @@ export default function AdminAssets({
       attachmentLength: '',
       attachmentWidth: '',
       attachmentHeight: '',
-      attachmentExtension: ''
+      attachmentExtension: '',
+      tnc: ''
     });
     setIsFormOpen(true);
   };
@@ -652,7 +654,8 @@ export default function AdminAssets({
       attachmentLength: asset.attachmentLength || '',
       attachmentWidth: asset.attachmentWidth || '',
       attachmentHeight: asset.attachmentHeight || '',
-      attachmentExtension: asset.attachmentExtension || ''
+      attachmentExtension: asset.attachmentExtension || '',
+      tnc: asset.tnc || ''
     });
     setIsFormOpen(true);
   };
@@ -812,8 +815,12 @@ export default function AdminAssets({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.name || !formData.startingPrice || !formData.location) {
-      alert('Mohon lengkapi data nama, harga awal, dan lokasi.');
+    
+    // Auto-generate name from brand and model since the manual input field is removed
+    const finalName = `${formData.brand} ${formData.model}`.trim() || 'Unit';
+
+    if (!finalName || !formData.startingPrice || !formData.location || !formData.category) {
+      alert(t('Mohon lengkapi data harga awal, lokasi, dan kategori.'));
       return;
     }
 
@@ -822,7 +829,7 @@ export default function AdminAssets({
       : (formData.imageUrl ? [formData.imageUrl] : []);
 
     const assetData = {
-      name: formData.name,
+      name: finalName,
       brand: formData.brand,
       category: formData.category,
       modelYear: Number(formData.modelYear),
@@ -856,7 +863,8 @@ export default function AdminAssets({
       attachmentLength: formData.attachmentLength || '',
       attachmentWidth: formData.attachmentWidth || '',
       attachmentHeight: formData.attachmentHeight || '',
-      attachmentExtension: formData.attachmentExtension || ''
+      attachmentExtension: formData.attachmentExtension || '',
+      tnc: formData.tnc || ''
     };
 
     if (editAssetId) {
@@ -873,7 +881,7 @@ export default function AdminAssets({
     setFormData({
       name: '',
       brand: 'Hino',
-      category: 'Wingbox',
+      category: '',
       modelYear: 2022,
       plateNumber: '',
       condition: 'Baik',
@@ -905,7 +913,8 @@ export default function AdminAssets({
       attachmentLength: '',
       attachmentWidth: '',
       attachmentHeight: '',
-      attachmentExtension: ''
+      attachmentExtension: '',
+      tnc: ''
     });
     setIsFormOpen(false);
   };
@@ -2017,19 +2026,6 @@ Jadwal Survei: ${bid.scheduleSurveyDate ? `${bid.scheduleSurveyDate} @ ${bid.sch
                 </div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* Name */}
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-600 uppercase">{t('Nama Kendaraan / Aset')} *</label>
-                    <input
-                      type="text"
-                      required
-                      placeholder={t('Contoh: Fuso Ranger FL Wingbox 2022')}
-                      value={formData.name}
-                      onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                      className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-                    />
-                  </div>
-
                   {/* Brand */}
                   <div className="space-y-1.5">
                     <div className="flex items-center justify-between">
@@ -2057,6 +2053,19 @@ Jadwal Survei: ${bid.scheduleSurveyDate ? `${bid.scheduleSurveyDate} @ ${bid.sch
                     </select>
                   </div>
 
+                  {/* Model */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-600 uppercase">{t('Model')} *</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder={t('Contoh: FMX, Ranger, Giga, 440')}
+                      value={formData.model}
+                      onChange={(e) => setFormData(prev => ({ ...prev, model: e.target.value }))}
+                      className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                    />
+                  </div>
+
                   {/* Category */}
                   <div className="space-y-1.5">
                     <div className="flex items-center justify-between">
@@ -2072,9 +2081,11 @@ Jadwal Survei: ${bid.scheduleSurveyDate ? `${bid.scheduleSurveyDate} @ ${bid.sch
                     </div>
                     <select
                       value={formData.category}
+                      required
                       onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
                       className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
                     >
+                      <option value="">-- {t('Pilih Kategori')} --</option>
                       {displayCategoriesList.map(catName => (
                         <option key={catName} value={catName}>{catName}</option>
                       ))}
@@ -2191,18 +2202,6 @@ Jadwal Survei: ${bid.scheduleSurveyDate ? `${bid.scheduleSurveyDate} @ ${bid.sch
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* Model */}
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-600 uppercase">{t('Model')}</label>
-                    <input
-                      type="text"
-                      placeholder={t('Contoh: FMX, Ranger, Giga')}
-                      value={formData.model}
-                      onChange={(e) => setFormData(prev => ({ ...prev, model: e.target.value }))}
-                      className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-                    />
-                  </div>
-
                   {/* Series */}
                   <div className="space-y-1.5">
                     <div className="flex items-center justify-between">
@@ -2640,6 +2639,18 @@ Jadwal Survei: ${bid.scheduleSurveyDate ? `${bid.scheduleSurveyDate} @ ${bid.sch
                 />
               </div>
 
+              {/* Syarat & Ketentuan (TNC) */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-600 uppercase">{t('Syarat & Ketentuan Lelang (TNC)')}</label>
+                <textarea
+                  rows={4}
+                  placeholder={t('Opsional. Masukkan syarat & ketentuan lelang khusus untuk unit ini. Jika dikosongkan, area Syarat & Ketentuan tidak akan menampilkan ketentuan apapun.')}
+                  value={formData.tnc}
+                  onChange={(e) => setFormData(prev => ({ ...prev, tnc: e.target.value }))}
+                  className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 min-h-[100px]"
+                />
+              </div>
+
               {/* Modal Footer actions */}
               <div className="border-t border-slate-100 pt-5 flex gap-3 justify-end">
                 <button
@@ -2897,7 +2908,7 @@ Jadwal Survei: ${bid.scheduleSurveyDate ? `${bid.scheduleSurveyDate} @ ${bid.sch
               {/* Timestamp Info */}
               {focusedBid.timestamp && (
                 <div className="text-right text-[10px] text-slate-400 font-semibold">
-                  {t('Penawaran masuk pada')}: {new Date(focusedBid.timestamp).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' })}
+                  {t('Penawaran masuk pada')}: {new Date(focusedBid.timestamp).toLocaleString(language === 'en' ? 'en-US' : 'id-ID', { dateStyle: 'medium', timeStyle: 'short' })}
                 </div>
               )}
             </div>
