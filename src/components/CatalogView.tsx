@@ -261,7 +261,7 @@ function CatalogCard({ asset, onSelectAsset, formatIDR, onZoomImage, isUserLogge
             <span>{t('Th')}: <strong>{asset.modelYear}</strong></span>
           </div>
 
-          {asset.closeBidDate && (
+          {isUserLoggedIn && asset.closeBidDate && (
             <div className="flex flex-wrap items-center gap-1.5 mt-2">
               <div className="flex items-center gap-1 text-[10px] text-amber-700 font-bold bg-amber-50 px-2 py-0.5 rounded-lg border border-amber-100 w-fit">
                 <Clock className="w-3.5 h-3.5 text-amber-500 animate-pulse-hover" />
@@ -970,7 +970,7 @@ export default function CatalogView({
                       </p>
                     </div>
 
-                    {selectedAsset.closeBidDate && (
+                    {isUserLoggedIn && selectedAsset.closeBidDate && (
                       isAuctionClosed ? (
                         <div className="flex items-center gap-2.5 bg-rose-50 border border-rose-200 p-3.5 rounded-2xl text-rose-800">
                           <AlertCircle className="w-5 h-5 text-rose-500 shrink-0" />
