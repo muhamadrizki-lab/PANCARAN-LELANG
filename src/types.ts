@@ -52,6 +52,7 @@ export interface Asset {
   attachmentHeight?: string;
   attachmentExtension?: string;
   tnc?: string;
+  closeBidDate?: string;
 }
 
 export interface AdminUser {

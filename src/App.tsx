@@ -894,7 +894,7 @@ export default function App() {
               </div>
               <div className="flex flex-col">
                 <span className="text-white font-bold text-lg tracking-tight">
-                  <span className="bg-gradient-to-r from-slate-100 via-slate-300 to-slate-100 bg-clip-text text-transparent font-extrabold drop-shadow-[0_0_8px_rgba(255,255,255,0.4)]">Platinum</span>
+                  <span className="bg-gradient-to-r from-slate-100 via-slate-300 to-slate-100 bg-clip-text text-transparent font-extrabold drop-shadow-[0_0_8px_rgba(255,255,255,0.4)]">PLATINUM</span>
                 </span>
               </div>
             </div>
@@ -1985,7 +1985,7 @@ export default function App() {
                     />
                   </div>
                   <span className="text-white font-bold text-lg tracking-tight">
-                    <span className="bg-gradient-to-r from-slate-100 via-slate-300 to-slate-100 bg-clip-text text-transparent font-extrabold drop-shadow-[0_0_10px_rgba(255,255,255,0.4)]">Platinum</span>
+                    <span className="bg-gradient-to-r from-slate-100 via-slate-300 to-slate-100 bg-clip-text text-transparent font-extrabold drop-shadow-[0_0_10px_rgba(255,255,255,0.4)]">PLATINUM</span>
                   </span>
                 </div>
                 <p className="text-slate-400 text-xs leading-relaxed max-w-sm">
@@ -2090,7 +2090,7 @@ export default function App() {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-[11px] font-medium">
               <p className="text-slate-500">
-                © 2026 Platinum - Pancaran Logistics. {t('Hak Cipta Dilindungi')}.
+                © 2026 PLATINUM - Pancaran Logistics. {t('Hak Cipta Dilindungi')}.
               </p>
               <div className="flex gap-4">
                 <span className="text-slate-600 hover:text-blue-600 transition-colors cursor-pointer font-bold">{t('Syarat & Ketentuan')}</span>

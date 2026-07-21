@@ -10,7 +10,7 @@ interface LanguageContextType {
 
 const translations: Record<Language, Record<string, string>> = {
   id: {
-    'Pancaran Lelang': 'Platinum',
+    'Pancaran Lelang': 'PLATINUM',
     'Katalog Eksternal': 'Katalog Eksternal',
     'Katalog Eksternal (Public)': 'Katalog Eksternal (Publik)',
     'Area Admin Internal': 'Area Admin Internal',
@@ -380,7 +380,7 @@ const translations: Record<Language, Record<string, string>> = {
     'Hapus Akun User Secara Permanen': 'Hapus Akun User Secara Permanen',
     'Tidak ada hasil pencarian yang cocok.': 'Tidak ada hasil pencarian yang cocok.',
     'Belum ada user eksternal yang mendaftar.': 'Belum ada user eksternal yang mendaftar.',
-    'Dashboard Pancaran Lelang': 'Dashboard Platinum',
+    'Dashboard Pancaran Lelang': 'Dashboard PLATINUM',
     'Halo Admin, kelola aset lelang komersial, pantau penawaran harga, dan atur survei fisik dalam satu portal terpadu.': 'Halo Admin, kelola aset lelang komersial, pantau penawaran harga, dan atur survei fisik dalam satu portal terpadu.',
     'Waktu Sistem (WIB)': 'Waktu Sistem (WIB)',
     'Sukses Lelang': 'Sukses Lelang',
@@ -610,9 +610,18 @@ const translations: Record<Language, Record<string, string>> = {
     'Silakan lakukan penawaran pada katalog unit untuk memulai.': 'Silakan lakukan penawaran pada katalog unit untuk memulai.',
     'Surat resmi penunjukan pemenang lelang dikirim secara eksklusif ke email pemenang di sini.': 'Surat resmi penunjukan pemenang lelang dikirim secara eksklusif ke email pemenang di sini.',
     'Hanya pemenang lelang tertinggi yang akan menerima surat pengumuman pemenang di kotak masuk.': 'Hanya pemenang lelang tertinggi yang akan menerima surat pengumuman pemenang di kotak masuk.',
+    'Tanggal & Waktu Penutupan Bid (Close Bid Date & Time)': 'Tanggal & Waktu Penutupan Bid (Close Bid Date & Time)',
+    'Kosongkan jika lelang tidak memiliki batas waktu penutupan otomatis.': 'Kosongkan jika lelang tidak memiliki batas waktu penutupan otomatis.',
+    'Tanggal Penutupan Bid': 'Tanggal Penutupan Bid',
+    'Maaf, lelang untuk unit ini sudah ditutup karena telah melewati batas waktu penutupan.': 'Maaf, lelang untuk unit ini sudah ditutup karena telah melewati batas waktu penutupan.',
+    'Lelang Ditutup': 'Lelang Ditutup',
+    'Lelang untuk unit ini telah resmi ditutup pada': 'Lelang untuk unit ini telah resmi ditutup pada',
+    'Batas Waktu Bidding': 'Batas Waktu Bidding',
+    'Lelang ini akan ditutup secara otomatis pada': 'Lelang ini akan ditutup secara otomatis pada',
+    'Penawaran untuk unit ini telah ditutup karena melewati batas waktu penutupan lelang.': 'Penawaran untuk unit ini telah ditutup karena melewati batas waktu penutupan lelang.',
   },
   en: {
-    'Pancaran Lelang': 'Platinum',
+    'Pancaran Lelang': 'PLATINUM',
     'Katalog Eksternal': 'External Catalog',
     'Katalog Eksternal (Public)': 'External Catalog (Public)',
     'Area Admin Internal': 'Internal Admin Area',
@@ -982,7 +991,7 @@ const translations: Record<Language, Record<string, string>> = {
     'Hapus Akun User Secara Permanen': 'Permanently Delete User Account',
     'Tidak ada hasil pencarian yang cocok.': 'No matching search results found.',
     'Belum ada user eksternal yang mendaftar.': 'No external users registered yet.',
-    'Dashboard Pancaran Lelang': 'Platinum Dashboard',
+    'Dashboard Pancaran Lelang': 'PLATINUM Dashboard',
     'Halo Admin, kelola aset lelang komersial, pantau penawaran harga, dan atur survei fisik dalam satu portal terpadu.': 'Hello Admin, manage commercial auction assets, monitor price bids, and organize physical surveys in one integrated portal.',
     'Waktu Sistem (WIB)': 'System Time (WIB)',
     'Sukses Lelang': 'Auction Success',
@@ -1306,6 +1315,15 @@ const translations: Record<Language, Record<string, string>> = {
     'Silakan lakukan penawaran pada katalog unit untuk memulai.': 'Please place a bid on the unit catalog to start.',
     'Surat resmi penunjukan pemenang lelang dikirim secara eksklusif ke email pemenang di sini.': 'The official auction winner letter is sent exclusively to the winner\'s email here.',
     'Hanya pemenang lelang tertinggi yang akan menerima surat pengumuman pemenang di kotak masuk.': 'Only the highest bidder will receive the winner announcement letter in the inbox.',
+    'Tanggal & Waktu Penutupan Bid (Close Bid Date & Time)': 'Close Bid Date & Time',
+    'Kosongkan jika lelang tidak memiliki batas waktu penutupan otomatis.': 'Leave blank if the auction does not have an automatic closing time limit.',
+    'Tanggal Penutupan Bid': 'Bid Closing Date',
+    'Maaf, lelang untuk unit ini sudah ditutup karena telah melewati batas waktu penutupan.': 'Sorry, the auction for this unit has been closed because it has passed the closing time limit.',
+    'Lelang Ditutup': 'Auction Closed',
+    'Lelang untuk unit ini telah resmi ditutup pada': 'The auction for this unit has been officially closed on',
+    'Batas Waktu Bidding': 'Bidding Deadline',
+    'Lelang ini akan ditutup secara otomatis pada': 'This auction will be closed automatically on',
+    'Penawaran untuk unit ini telah ditutup karena melewati batas waktu penutupan lelang.': 'Bidding for this unit has been closed because it has passed the auction closing deadline.',
   }
 };
 

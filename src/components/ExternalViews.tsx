@@ -345,7 +345,7 @@ export function ExternalInboxView({ assets, userEmail, userName, userPhone }: Ex
                   </div>
                   <div>
                     <h3 className="text-sm font-bold text-slate-800 truncate max-w-md">{activeMail.subject}</h3>
-                    <p className="text-[10px] text-slate-500 font-medium">{language === 'en' ? 'From' : 'Dari'}: <strong>Platinum</strong> &lt;noreply@pancaran-logistic.id&gt;</p>
+                    <p className="text-[10px] text-slate-500 font-medium">{language === 'en' ? 'From' : 'Dari'}: <strong>PLATINUM</strong> &lt;noreply@pancaran-logistic.id&gt;</p>
                   </div>
                 </div>
 
@@ -401,12 +401,12 @@ export function ExternalInboxView({ assets, userEmail, userName, userPhone }: Ex
                     {language === 'en' ? (
                       <>
                         Dear Sir/Madam, <br/>
-                        Based on the decision of the Platinum Liquidation Committee, we hereby officially state that you have been selected as the <strong>GRAND WINNER OF THE AUCTION</strong> for the unit below:
+                        Based on the decision of the PLATINUM Liquidation Committee, we hereby officially state that you have been selected as the <strong>GRAND WINNER OF THE AUCTION</strong> for the unit below:
                       </>
                     ) : (
                       <>
                         Dengan hormat, <br/>
-                        Berdasarkan hasil keputusan Panitia Likuidasi Platinum, dengan ini kami menyatakan secara resmi bahwa Anda telah terpilih sebagai <strong>PEMENANG UTAMA LELANG</strong> atas unit di bawah ini:
+                        Berdasarkan hasil keputusan Panitia Likuidasi PLATINUM, dengan ini kami menyatakan secara resmi bahwa Anda telah terpilih sebagai <strong>PEMENANG UTAMA LELANG</strong> atas unit di bawah ini:
                       </>
                     )}
                   </p>

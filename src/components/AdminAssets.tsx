@@ -559,7 +559,8 @@ export default function AdminAssets({
     attachmentWidth: '',
     attachmentHeight: '',
     attachmentExtension: '',
-    tnc: ''
+    tnc: '',
+    closeBidDate: ''
   });
 
   const descriptionRef = React.useRef<HTMLTextAreaElement>(null);
@@ -609,7 +610,8 @@ export default function AdminAssets({
       attachmentWidth: '',
       attachmentHeight: '',
       attachmentExtension: '',
-      tnc: ''
+      tnc: '',
+      closeBidDate: ''
     });
     setIsFormOpen(true);
   };
@@ -655,7 +657,8 @@ export default function AdminAssets({
       attachmentWidth: asset.attachmentWidth || '',
       attachmentHeight: asset.attachmentHeight || '',
       attachmentExtension: asset.attachmentExtension || '',
-      tnc: asset.tnc || ''
+      tnc: asset.tnc || '',
+      closeBidDate: asset.closeBidDate || ''
     });
     setIsFormOpen(true);
   };
@@ -864,7 +867,8 @@ export default function AdminAssets({
       attachmentWidth: formData.attachmentWidth || '',
       attachmentHeight: formData.attachmentHeight || '',
       attachmentExtension: formData.attachmentExtension || '',
-      tnc: formData.tnc || ''
+      tnc: formData.tnc || '',
+      closeBidDate: formData.closeBidDate || ''
     };
 
     if (editAssetId) {
@@ -914,7 +918,8 @@ export default function AdminAssets({
       attachmentWidth: '',
       attachmentHeight: '',
       attachmentExtension: '',
-      tnc: ''
+      tnc: '',
+      closeBidDate: ''
     });
     setIsFormOpen(false);
   };
@@ -1180,6 +1185,12 @@ Jadwal Survei: ${bid.scheduleSurveyDate ? `${bid.scheduleSurveyDate} @ ${bid.sch
                         <span>•</span>
                         <span>{t('Plat')}: {asset.plateNumber}</span>
                       </div>
+                      {asset.closeBidDate && (
+                        <div className="flex items-center gap-1 text-[10px] text-amber-700 font-bold bg-amber-50 px-2 py-0.5 rounded-lg border border-amber-100 mt-2 w-fit">
+                          <Clock className="w-3.5 h-3.5 text-amber-500" />
+                          <span>{t('Tutup')}: {new Date(asset.closeBidDate).toLocaleString('id-ID', { dateStyle: 'short', timeStyle: 'short' })}</span>
+                        </div>
+                      )}
                     </div>
 
                     <div className="pt-3 border-t border-slate-50 flex items-center justify-between">
@@ -1437,6 +1448,17 @@ Jadwal Survei: ${bid.scheduleSurveyDate ? `${bid.scheduleSurveyDate} @ ${bid.sch
                     <span className="truncate" title={selectedAsset.location}>{selectedAsset.location}</span>
                   </span>
                 </div>
+                {selectedAsset.closeBidDate && (
+                  <div className="col-span-2 bg-amber-50/50 border border-amber-100 p-2.5 rounded-xl flex items-center gap-2">
+                    <Clock className="w-4 h-4 text-amber-500 shrink-0" />
+                    <div>
+                      <span className="text-[10px] text-amber-800 font-bold uppercase block leading-none">{t('Tanggal Penutupan Bid')}</span>
+                      <span className="text-xs font-semibold text-amber-950 mt-0.5 block">
+                        {new Date(selectedAsset.closeBidDate).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' })}
+                      </span>
+                    </div>
+                  </div>
+                )}
                 {selectedAsset.dimensions && (
                   <div className="col-span-2 border-t border-slate-50/50 pt-2">
                     <span className="text-[11px] text-slate-400 font-bold block">{t('Dimensi Unit')}</span>
@@ -2188,6 +2210,22 @@ Jadwal Survei: ${bid.scheduleSurveyDate ? `${bid.scheduleSurveyDate} @ ${bid.sch
                       onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
                       className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
                     />
+                  </div>
+
+                  {/* Close Bid Date & Time */}
+                  <div className="space-y-1.5 md:col-span-2">
+                    <label className="text-xs font-bold text-slate-600 uppercase">
+                      {t('Tanggal & Waktu Penutupan Bid (Close Bid Date & Time)')}
+                    </label>
+                    <input
+                      type="datetime-local"
+                      value={formData.closeBidDate}
+                      onChange={(e) => setFormData(prev => ({ ...prev, closeBidDate: e.target.value }))}
+                      className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 font-medium text-slate-700"
+                    />
+                    <p className="text-[10px] text-slate-400">
+                      {t('Kosongkan jika lelang tidak memiliki batas waktu penutupan otomatis.')}
+                    </p>
                   </div>
                 </div>
               </div>

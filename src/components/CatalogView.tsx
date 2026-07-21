@@ -173,6 +173,13 @@ function CatalogCard({ asset, onSelectAsset, formatIDR, onZoomImage, isUserLogge
             <span>{t('Th')}: <strong>{asset.modelYear}</strong></span>
           </div>
 
+          {asset.closeBidDate && (
+            <div className="flex items-center gap-1 text-[10px] text-amber-700 font-bold bg-amber-50 px-2 py-0.5 rounded-lg border border-amber-100 mt-2 w-fit">
+              <Clock className="w-3.5 h-3.5 text-amber-500 animate-pulse-hover" />
+              <span>{t('Tutup')}: {new Date(asset.closeBidDate).toLocaleString('id-ID', { dateStyle: 'short', timeStyle: 'short' })}</span>
+            </div>
+          )}
+
           <p className="text-xs text-slate-500 line-clamp-2 mt-2 leading-relaxed">
             {stripMarkdown(asset.description)}
           </p>
@@ -497,12 +504,21 @@ export default function CatalogView({
     }
   };
 
+  const isAuctionClosed = selectedAsset?.closeBidDate 
+    ? new Date() > new Date(selectedAsset.closeBidDate) 
+    : false;
+
   const handleBidSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setFormError('');
     setFormSuccess(false);
 
     if (!selectedAssetId || !selectedAsset) return;
+
+    if (isAuctionClosed) {
+      setFormError(t('Maaf, lelang untuk unit ini sudah ditutup karena telah melewati batas waktu penutupan.'));
+      return;
+    }
 
     const bidPriceNum = Number(bidForm.price);
 
@@ -585,7 +601,7 @@ export default function CatalogView({
           </span>
           <h1 className="text-3xl md:text-4xl font-bold tracking-tight leading-tight text-white flex flex-col gap-1">
             <span className="flex items-center gap-2">
-              <span className="bg-gradient-to-r from-slate-100 via-slate-300 to-slate-100 bg-clip-text text-transparent drop-shadow-[0_0_12px_rgba(255,255,255,0.55)] font-black">Platinum</span>
+              <span className="bg-gradient-to-r from-slate-100 via-slate-300 to-slate-100 bg-clip-text text-transparent drop-shadow-[0_0_12px_rgba(255,255,255,0.55)] font-black">PLATINUM</span>
             </span>
             <span className="text-xs md:text-sm font-semibold text-slate-300 tracking-wide mt-0.5 opacity-90 leading-normal max-w-lg block">
               ( Pancaran Lelang Angkutan Truk, Industri, & Niaga Utama Modern )
@@ -856,6 +872,26 @@ export default function CatalogView({
                         {selectedAsset.brand} • {selectedAsset.category} • {t('Tahun')} {selectedAsset.modelYear}
                       </p>
                     </div>
+
+                    {selectedAsset.closeBidDate && (
+                      isAuctionClosed ? (
+                        <div className="flex items-center gap-2.5 bg-rose-50 border border-rose-200 p-3.5 rounded-2xl text-rose-800">
+                          <AlertCircle className="w-5 h-5 text-rose-500 shrink-0" />
+                          <div className="text-xs font-semibold">
+                            <p className="font-bold uppercase tracking-wide text-rose-600 text-[10px]">{t('Lelang Ditutup')}</p>
+                            <p>{t('Lelang untuk unit ini telah resmi ditutup pada')} {new Date(selectedAsset.closeBidDate).toLocaleString('id-ID', { dateStyle: 'long', timeStyle: 'short' })}</p>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2.5 bg-amber-50/70 border border-amber-200/80 p-3.5 rounded-2xl text-amber-900">
+                          <Clock className="w-5 h-5 text-amber-500 shrink-0" />
+                          <div className="text-xs font-semibold">
+                            <p className="font-bold uppercase tracking-wide text-amber-800 text-[10px]">{t('Batas Waktu Bidding')}</p>
+                            <p>{t('Lelang ini akan ditutup secara otomatis pada')} {new Date(selectedAsset.closeBidDate).toLocaleString('id-ID', { dateStyle: 'long', timeStyle: 'short' })}</p>
+                          </div>
+                        </div>
+                      )
+                    )}
 
                     <div className="border-t border-slate-100 pt-4 grid grid-cols-1 md:grid-cols-3 gap-3.5">
                       <div className="flex items-center gap-2.5 text-slate-600">
@@ -1211,7 +1247,17 @@ export default function CatalogView({
                           </h3>
                         </div>
 
-                    {!formSuccess ? (
+                    {isAuctionClosed ? (
+                      <div className="py-6 text-center space-y-3.5">
+                        <div className="w-12 h-12 bg-rose-50 border border-rose-100 rounded-2xl flex items-center justify-center mx-auto text-rose-500">
+                          <AlertCircle className="w-6 h-6" />
+                        </div>
+                        <h4 className="font-bold text-slate-800 text-sm">{t('Lelang Ditutup')}</h4>
+                        <p className="text-xs text-slate-500 max-w-[240px] mx-auto leading-relaxed">
+                          {t('Penawaran untuk unit ini telah ditutup karena melewati batas waktu penutupan lelang.')}
+                        </p>
+                      </div>
+                    ) : !formSuccess ? (
                       <form 
                         onSubmit={handleBidSubmit}
                         onFocusCapture={() => setIsFormFocused(true)}
