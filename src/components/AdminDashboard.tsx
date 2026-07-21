@@ -581,7 +581,7 @@ export default function AdminDashboard({
             email: string; 
             bidCount: number; 
             maxBidPrice: number; 
-            assetsBid: { assetId: string; assetName: string; price: number }[] 
+            assetsBid: { assetId: string; assetName: string; price: number; timestamp?: string }[] 
           } 
         } = {};
 
@@ -602,12 +602,18 @@ export default function AdminDashboard({
             if (bid.price > uniqueBiddersMap[emailLower].maxBidPrice) {
               uniqueBiddersMap[emailLower].maxBidPrice = bid.price;
             }
-            if (!uniqueBiddersMap[emailLower].assetsBid.some(a => a.assetId === asset.id)) {
+            
+            const existingAssetBid = uniqueBiddersMap[emailLower].assetsBid.find(a => a.assetId === asset.id);
+            if (!existingAssetBid) {
               uniqueBiddersMap[emailLower].assetsBid.push({
                 assetId: asset.id,
                 assetName: asset.name,
-                price: bid.price
+                price: bid.price,
+                timestamp: bid.timestamp
               });
+            } else if (bid.price > existingAssetBid.price) {
+              existingAssetBid.price = bid.price;
+              existingAssetBid.timestamp = bid.timestamp;
             }
           });
         });
@@ -821,8 +827,8 @@ export default function AdminDashboard({
                         {/* Assets bid list */}
                         {item.assetsBid && item.assetsBid.length > 0 && (
                           <div className="border-t border-slate-100 pt-2.5 mt-1">
-                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">{t('Menawar Unit')}:</p>
-                            <div className="flex flex-wrap gap-2">
+                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">{t('Menawar Unit / Tanggal Bid')}:</p>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                               {item.assetsBid.map((assetBid: any) => (
                                 <button
                                   key={assetBid.assetId}
@@ -830,11 +836,29 @@ export default function AdminDashboard({
                                     onSelectAsset(assetBid.assetId);
                                     setActiveMetricModal(null);
                                   }}
-                                  className="text-[11px] bg-purple-50 hover:bg-purple-100 border border-purple-100 text-purple-700 font-bold px-2 py-1 rounded-lg transition-colors flex items-center gap-1 group/btn"
+                                  className="text-[11px] bg-purple-50/70 hover:bg-purple-100/90 border border-purple-100/80 text-purple-700 p-2.5 rounded-xl transition-all flex flex-col items-start gap-1 group/btn text-left shadow-2xs hover:shadow-xs w-full"
                                 >
-                                  <span>{assetBid.assetName}</span>
-                                  <span className="text-[9px] text-purple-400 font-mono">({formatIDR(assetBid.price)})</span>
-                                  <ChevronRight className="w-3 h-3 group-hover/btn:translate-x-0.5 transition-transform" />
+                                  <div className="flex items-center gap-1.5 w-full">
+                                    <span className="font-bold text-slate-800 line-clamp-1">{assetBid.assetName}</span>
+                                    <ChevronRight className="w-3.5 h-3.5 text-purple-400 group-hover/btn:translate-x-0.5 transition-transform shrink-0 ml-auto" />
+                                  </div>
+                                  <div className="flex items-center gap-2 text-[10px] text-purple-600 font-semibold mt-0.5 flex-wrap">
+                                    <span className="bg-purple-100/80 px-1.5 py-0.5 rounded text-[9px] font-extrabold">{formatIDR(assetBid.price)}</span>
+                                    {assetBid.timestamp && (
+                                      <span className="text-[10px] text-slate-400 font-mono flex items-center gap-1 font-normal">
+                                        <Clock className="w-3 h-3 text-slate-300" />
+                                        {(() => {
+                                          try {
+                                            const d = new Date(assetBid.timestamp);
+                                            const locale = language === 'id' ? 'id-ID' : 'en-US';
+                                            return d.toLocaleDateString(locale, { day: 'numeric', month: 'short', year: 'numeric' }) + ' ' + d.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' });
+                                          } catch {
+                                            return assetBid.timestamp;
+                                          }
+                                        })()}
+                                      </span>
+                                    )}
+                                  </div>
                                 </button>
                               ))}
                             </div>

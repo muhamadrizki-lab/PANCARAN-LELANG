@@ -75,18 +75,41 @@ export function ExternalNotificationsView({ assets, userEmail }: ExternalViewsPr
 
       // 1. Notification for bid placement success
       userBids.forEach(bid => {
+        let msg = t('Penawaran Anda sebesar {price} berhasil diajukan untuk {unit}.', {
+          price: formatIDR(bid.price),
+          unit: `${asset.brand} ${asset.name}`
+        });
+
+        if (bid.scheduleSurveyDate) {
+          msg += `\n\n📅 ${t('Jadwal Booking Survei')}: ${bid.scheduleSurveyDate} @ ${bid.scheduleSurveyTime || '09:00'} WIB`;
+        }
+
         notificationsList.push({
           id: `notif-bid-${bid.id}`,
           type: 'bid_success',
           title: t('Penawaran Berhasil Diajukan'),
-          message: t('Penawaran Anda sebesar {price} berhasil diajukan untuk {unit}.', {
-            price: formatIDR(bid.price),
-            unit: `${asset.brand} ${asset.name}`
-          }),
+          message: msg,
           timestamp: bid.timestamp,
           assetId: asset.id,
           assetName: `${asset.brand} ${asset.name}`
         });
+
+        // Also add a dedicated survey booking notification if scheduled!
+        if (bid.scheduleSurveyDate) {
+          notificationsList.push({
+            id: `notif-booking-${bid.id}`,
+            type: 'general',
+            title: `📅 ${t('Booking Jadwal Survei Fisik')}`,
+            message: t('Konfirmasi: Jadwal survei fisik Anda untuk unit {unit} telah terdaftar pada tanggal {date} pukul {time} WIB.', {
+              unit: `${asset.brand} ${asset.name}`,
+              date: bid.scheduleSurveyDate,
+              time: bid.scheduleSurveyTime || '09:00'
+            }),
+            timestamp: bid.timestamp,
+            assetId: asset.id,
+            assetName: `${asset.brand} ${asset.name}`
+          });
+        }
       });
 
       // 2. Outbid Notification
@@ -163,6 +186,7 @@ export function ExternalNotificationsView({ assets, userEmail }: ExternalViewsPr
               className={`bg-white p-5 rounded-2xl border border-slate-200/70 shadow-xs flex items-start gap-4 transition-all hover:border-blue-200 hover:shadow-md ${
                 notif.type === 'won' ? 'border-l-4 border-l-emerald-500 bg-emerald-50/10' :
                 notif.type === 'outbid' ? 'border-l-4 border-l-amber-500 bg-amber-50/10' :
+                notif.id.includes('booking') ? 'border-l-4 border-l-indigo-500 bg-indigo-50/10' :
                 'border-l-4 border-l-blue-500'
               }`}
             >
@@ -171,6 +195,7 @@ export function ExternalNotificationsView({ assets, userEmail }: ExternalViewsPr
                 {notif.type === 'outbid' && <AlertTriangle className="w-5 h-5 text-amber-500" />}
                 {notif.type === 'bid_success' && <CheckCircle className="w-5 h-5 text-blue-600" />}
                 {notif.type === 'lost' && <Lock className="w-5 h-5 text-slate-400" />}
+                {notif.id.includes('booking') && <Calendar className="w-5 h-5 text-indigo-600" />}
               </div>
 
               <div className="flex-1 space-y-1">
@@ -218,39 +243,58 @@ export function ExternalInboxView({ assets, userEmail, userName, userPhone }: Ex
     }).format(value);
   };
 
-  // Find all sold assets where the logged-in user is the winner (highest bidder)
-  const getWinnerMails = () => {
+  // Find all mails (Winner Letters & Survey Booking Confirmations) for the logged-in user
+  const getMails = () => {
     const mailsList: Array<{
       id: string;
+      type: 'winner' | 'booking';
       asset: Asset;
-      highestBidPrice: number;
+      highestBidPrice?: number;
+      bookingDate?: string;
+      bookingTime?: string;
       subject: string;
       date: string;
     }> = [];
 
     assets.forEach(asset => {
-      if (asset.status !== 'Sold') return;
-      if (!asset.bids || asset.bids.length === 0) return;
+      // 1. Winner Letters (when asset is Sold and user is the highest bidder)
+      if (asset.status === 'Sold' && asset.bids && asset.bids.length > 0) {
+        const sortedBids = [...asset.bids].sort((a, b) => b.price - a.price);
+        const winnerBid = sortedBids[0];
 
-      // Find highest bid on this sold asset
-      const sortedBids = [...asset.bids].sort((a, b) => b.price - a.price);
-      const winnerBid = sortedBids[0];
-
-      if (winnerBid.email.toLowerCase() === userEmail.toLowerCase()) {
-        mailsList.push({
-          id: `mail-winner-${asset.id}`,
-          asset: asset,
-          highestBidPrice: winnerBid.price,
-          subject: `[PANCARAN LELANG] Pengumuman Resmi Pemenang Lelang - Unit ${asset.id}`,
-          date: winnerBid.timestamp
-        });
+        if (winnerBid.email.toLowerCase() === userEmail.toLowerCase()) {
+          mailsList.push({
+            id: `mail-winner-${asset.id}`,
+            type: 'winner',
+            asset: asset,
+            highestBidPrice: winnerBid.price,
+            subject: `[PANCARAN LELANG] Pengumuman Resmi Pemenang Lelang - Unit ${asset.id}`,
+            date: winnerBid.timestamp
+          });
+        }
       }
+
+      // 2. Survey Booking Letters (when user submitted a bid on this asset with a survey booking)
+      const userBids = (asset.bids || []).filter(b => b.email.toLowerCase() === userEmail.toLowerCase());
+      userBids.forEach(bid => {
+        if (bid.scheduleSurveyDate) {
+          mailsList.push({
+            id: `mail-booking-${bid.id}`,
+            type: 'booking',
+            asset: asset,
+            bookingDate: bid.scheduleSurveyDate,
+            bookingTime: bid.scheduleSurveyTime || '09:00',
+            subject: `[PANCARAN LELANG] Konfirmasi Jadwal Survei Fisik - Unit ${asset.id}`,
+            date: bid.timestamp
+          });
+        }
+      });
     });
 
     return mailsList.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   };
 
-  const mails = getWinnerMails();
+  const mails = getMails();
   const activeMail = mails.find(m => m.id === selectedMailId);
 
   const handlePrint = () => {
@@ -295,9 +339,15 @@ export function ExternalInboxView({ assets, userEmail, userName, userPhone }: Ex
                   }`}
                 >
                   <div className="flex items-center justify-between w-full">
-                    <span className="inline-flex items-center gap-1 text-[9px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-100">
-                      🏆 {language === 'en' ? 'WINNER' : 'PEMENANG'}
-                    </span>
+                    {mail.type === 'winner' ? (
+                      <span className="inline-flex items-center gap-1 text-[9px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-100">
+                        🏆 {language === 'en' ? 'WINNER' : 'PEMENANG'}
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 text-[9px] font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-md border border-indigo-100">
+                        📅 {language === 'en' ? 'SURVEY BOOKED' : 'JADWAL SURVEI'}
+                      </span>
+                    )}
                     <span className="text-[10px] text-slate-400 font-mono">
                       {new Date(mail.date).toLocaleDateString(language === 'en' ? 'en-US' : 'id-ID', { day: '2-digit', month: 'short' })}
                     </span>
@@ -308,9 +358,15 @@ export function ExternalInboxView({ assets, userEmail, userName, userPhone }: Ex
                       {mail.subject}
                     </h4>
                     <p className="text-[11px] text-slate-500 line-clamp-2">
-                      {language === 'en'
-                        ? `Dear Mr/Mrs ${userName}, Congratulations! You have been selected as the official auction winner of Pancaran Logistics for unit ${mail.asset.brand} ${mail.asset.name}...`
-                        : `Yth. Bapak/Ibu ${userName}, Selamat! Anda telah terpilih sebagai pemenang lelang resmi Pancaran Logistics untuk unit ${mail.asset.brand} ${mail.asset.name}...`}
+                      {mail.type === 'winner' ? (
+                        language === 'en'
+                          ? `Dear Mr/Mrs ${userName}, Congratulations! You have been selected as the official auction winner of Pancaran Logistics for unit ${mail.asset.brand} ${mail.asset.name}...`
+                          : `Yth. Bapak/Ibu ${userName}, Selamat! Anda telah terpilih sebagai pemenang lelang resmi Pancaran Logistics untuk unit ${mail.asset.brand} ${mail.asset.name}...`
+                      ) : (
+                        language === 'en'
+                          ? `Dear Mr/Mrs ${userName}, Your physical survey schedule for unit ${mail.asset.brand} ${mail.asset.name} has been successfully registered on ${mail.bookingDate} at ${mail.bookingTime} WIB.`
+                          : `Yth. Bapak/Ibu ${userName}, Jadwal survei fisik Anda untuk unit ${mail.asset.brand} ${mail.asset.name} telah berhasil terdaftar pada tanggal ${mail.bookingDate} pukul ${mail.bookingTime} WIB.`
+                      )}
                     </p>
                   </div>
                 </button>
@@ -340,8 +396,12 @@ export function ExternalInboxView({ assets, userEmail, userName, userPhone }: Ex
                   >
                     <ArrowLeft className="w-4 h-4" />
                   </button>
-                  <div className="p-2.5 bg-blue-600 text-white rounded-2xl shadow-sm">
-                    <Trophy className="w-5 h-5" />
+                  <div className={`p-2.5 text-white rounded-2xl shadow-sm ${activeMail.type === 'winner' ? 'bg-blue-600' : 'bg-indigo-600'}`}>
+                    {activeMail.type === 'winner' ? (
+                      <Trophy className="w-5 h-5" />
+                    ) : (
+                      <Calendar className="w-5 h-5" />
+                    )}
                   </div>
                   <div>
                     <h3 className="text-sm font-bold text-slate-800 truncate max-w-md">{activeMail.subject}</h3>
@@ -381,8 +441,8 @@ export function ExternalInboxView({ assets, userEmail, userName, userPhone }: Ex
                     </div>
                   </div>
                   <div className="text-right text-[10px] text-slate-400 font-mono font-bold uppercase">
-                    <p>{language === 'en' ? 'AUCTION DECISION LETTER' : 'SURAT KEPUTUSAN LELANG'}</p>
-                    <p className="text-slate-700 mt-1">NO: PL/WIN/{activeMail.asset.id}/{new Date(activeMail.date).getFullYear()}</p>
+                    <p>{activeMail.type === 'winner' ? (language === 'en' ? 'AUCTION DECISION LETTER' : 'SURAT KEPUTUSAN LELANG') : (language === 'en' ? 'PHYSICAL SURVEY CONFIRMATION' : 'SURAT KONFIRMASI SURVEI FISIK')}</p>
+                    <p className="text-slate-700 mt-1">NO: {activeMail.type === 'winner' ? 'PL/WIN' : 'PL/SRV'}/{activeMail.asset.id}/{new Date(activeMail.date).getFullYear()}</p>
                   </div>
                 </div>
 
@@ -398,23 +458,37 @@ export function ExternalInboxView({ assets, userEmail, userName, userPhone }: Ex
                   </div>
 
                   <p className="text-justify leading-relaxed">
-                    {language === 'en' ? (
-                      <>
-                        Dear Sir/Madam, <br/>
-                        Based on the decision of the PLATINUM Liquidation Committee, we hereby officially state that you have been selected as the <strong>GRAND WINNER OF THE AUCTION</strong> for the unit below:
-                      </>
+                    {activeMail.type === 'winner' ? (
+                      language === 'en' ? (
+                        <>
+                          Dear Sir/Madam, <br/>
+                          Based on the decision of the PLATINUM Liquidation Committee, we hereby officially state that you have been selected as the <strong>GRAND WINNER OF THE AUCTION</strong> for the unit below:
+                        </>
+                      ) : (
+                        <>
+                          Dengan hormat, <br/>
+                          Berdasarkan hasil keputusan Panitia Likuidasi PLATINUM, dengan ini kami menyatakan secara resmi bahwa Anda telah terpilih sebagai <strong>PEMENANG UTAMA LELANG</strong> atas unit di bawah ini:
+                        </>
+                      )
                     ) : (
-                      <>
-                        Dengan hormat, <br/>
-                        Berdasarkan hasil keputusan Panitia Likuidasi PLATINUM, dengan ini kami menyatakan secara resmi bahwa Anda telah terpilih sebagai <strong>PEMENANG UTAMA LELANG</strong> atas unit di bawah ini:
-                      </>
+                      language === 'en' ? (
+                        <>
+                          Dear Sir/Madam, <br/>
+                          Thank you for participating in the PLATINUM auction. Your physical survey schedule booking to inspect the unit condition directly at our pool has been successfully registered and confirmed:
+                        </>
+                      ) : (
+                        <>
+                          Dengan hormat, <br/>
+                          Terima kasih atas partisipasi Anda dalam lelang PLATINUM. Pengajuan jadwal booking survei fisik untuk memeriksa kondisi mesin dan unit secara langsung di Pool kami telah berhasil terdaftar dan dikonfirmasi dengan detail sebagai berikut:
+                        </>
+                      )
                     )}
                   </p>
 
                   {/* Unit Specs Card */}
                   <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-5 space-y-4 shadow-inner">
-                    <h4 className="font-bold text-blue-900 text-[11px] uppercase tracking-wider flex items-center gap-1.5 border-b border-slate-200 pb-2">
-                      <CheckCircle className="w-4 h-4 text-emerald-500" /> {language === 'en' ? 'Selected Unit Specifications' : 'Spesifikasi Unit Terpilih'}
+                    <h4 className={`font-bold text-[11px] uppercase tracking-wider flex items-center gap-1.5 border-b border-slate-200 pb-2 ${activeMail.type === 'winner' ? 'text-blue-900' : 'text-indigo-900'}`}>
+                      <CheckCircle className={`w-4 h-4 ${activeMail.type === 'winner' ? 'text-emerald-500' : 'text-indigo-500'}`} /> {language === 'en' ? 'Selected Unit Specifications' : 'Spesifikasi Unit Terpilih'}
                     </h4>
                     
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-y-3.5 gap-x-6 text-[11px] font-semibold">
@@ -445,53 +519,112 @@ export function ExternalInboxView({ assets, userEmail, userName, userPhone }: Ex
                     </div>
                   </div>
 
-                  {/* Winner Pricing Offer Card */}
-                  <div className="bg-blue-50/50 border border-blue-100 rounded-2xl p-5 space-y-4">
-                    <h4 className="font-bold text-blue-950 text-[11px] uppercase tracking-wider flex items-center gap-1.5 border-b border-blue-100 pb-2">
-                      <TrendingUp className="w-4 h-4 text-blue-600" /> {language === 'en' ? 'Approved Bid Value' : 'Nilai Penawaran Disetujui'}
-                    </h4>
-                    
-                    <div className="flex justify-between items-center">
-                      <div>
-                        <span className="text-[9px] text-slate-400 block uppercase font-bold">{language === 'en' ? 'Highest Bid Price (Approved)' : 'Harga Penawaran Tertinggi (Disetujui)'}</span>
-                        <span className="text-blue-900 font-black text-xl tracking-tight">{formatIDR(activeMail.highestBidPrice)}</span>
-                      </div>
-                      <div className="bg-emerald-100 text-emerald-800 text-[10px] font-extrabold px-3 py-1 rounded-lg shadow-sm uppercase border border-emerald-200">
-                        {language === 'en' ? 'Valid Winner' : 'Pemenang Sah'}
+                  {/* Pricing / Booking Details Card */}
+                  {activeMail.type === 'winner' ? (
+                    <div className="bg-blue-50/50 border border-blue-100 rounded-2xl p-5 space-y-4">
+                      <h4 className="font-bold text-blue-950 text-[11px] uppercase tracking-wider flex items-center gap-1.5 border-b border-blue-100 pb-2">
+                        <TrendingUp className="w-4 h-4 text-blue-600" /> {language === 'en' ? 'Approved Bid Value' : 'Nilai Penawaran Disetujui'}
+                      </h4>
+                      
+                      <div className="flex justify-between items-center">
+                        <div>
+                          <span className="text-[9px] text-slate-400 block uppercase font-bold">{language === 'en' ? 'Highest Bid Price (Approved)' : 'Harga Penawaran Tertinggi (Disetujui)'}</span>
+                          <span className="text-blue-900 font-black text-xl tracking-tight">{formatIDR(activeMail.highestBidPrice || 0)}</span>
+                        </div>
+                        <div className="bg-emerald-100 text-emerald-800 text-[10px] font-extrabold px-3 py-1 rounded-lg shadow-sm uppercase border border-emerald-200">
+                          {language === 'en' ? 'Valid Winner' : 'Pemenang Sah'}
+                        </div>
                       </div>
                     </div>
-                  </div>
+                  ) : (
+                    <div className="bg-indigo-50/50 border border-indigo-100 rounded-2xl p-5 space-y-4">
+                      <h4 className="font-bold text-indigo-950 text-[11px] uppercase tracking-wider flex items-center gap-1.5 border-b border-indigo-100 pb-2">
+                        <Calendar className="w-4 h-4 text-indigo-600" /> {language === 'en' ? 'Confirmed Survey Schedule' : 'Konfirmasi Jadwal Survei'}
+                      </h4>
+                      
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div>
+                          <span className="text-[9px] text-slate-400 block uppercase font-bold">{language === 'en' ? 'SURVEY DATE' : 'TANGGAL SURVEI'}</span>
+                          <span className="text-indigo-900 font-black text-sm block mt-1">{activeMail.bookingDate}</span>
+                        </div>
+                        <div>
+                          <span className="text-[9px] text-slate-400 block uppercase font-bold">{language === 'en' ? 'SURVEY TIME' : 'JAM SURVEI'}</span>
+                          <span className="text-indigo-900 font-black text-sm block mt-1">{activeMail.bookingTime} WIB</span>
+                        </div>
+                        <div>
+                          <span className="text-[9px] text-slate-400 block uppercase font-bold">{language === 'en' ? 'SURVEY PLACE' : 'TEMPAT / POOL'}</span>
+                          <span className="text-indigo-900 font-black text-sm block mt-1">{activeMail.asset.location || 'Pool Cilincing'}</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
                   {/* Next Step Procedure instructions */}
                   <div className="space-y-3.5 pt-2">
-                    <h4 className="font-black text-slate-800 text-[11px] uppercase tracking-wider flex items-center gap-1.5">
-                      <Calendar className="w-4 h-4 text-blue-600" /> {language === 'en' ? 'Payment & Handover Procedure:' : 'Prosedur Pelunasan & Serah Terima:'}
-                    </h4>
-                    
-                    {language === 'en' ? (
-                      <ul className="space-y-2 list-decimal list-inside text-slate-600 font-medium">
-                        <li>
-                          <strong>Administrative Payment:</strong> Please transfer the full unit payment to the official Pancaran Logistics bank account at the latest <strong>3x24 working hours</strong> after this decision letter is issued.
-                        </li>
-                        <li>
-                          <strong>Document Verification:</strong> Our legal team will contact you via your registered telephone number <span className="text-slate-900 font-bold font-mono">{userPhone || 'registered'}</span> to coordinate the scheduling of signing the Deed of Sale and Purchase (AJB) and official receipt.
-                        </li>
-                        <li>
-                          <strong>Physical Handover:</strong> Unit collection can be done at Cilincing Pool after payment has been verified by bringing your original ID card (KTP) and this proof of winning.
-                        </li>
-                      </ul>
+                    {activeMail.type === 'winner' ? (
+                      <>
+                        <h4 className="font-black text-slate-800 text-[11px] uppercase tracking-wider flex items-center gap-1.5">
+                          <Calendar className="w-4 h-4 text-blue-600" /> {language === 'en' ? 'Payment & Handover Procedure:' : 'Prosedur Pelunasan & Serah Terima:'}
+                        </h4>
+                        
+                        {language === 'en' ? (
+                          <ul className="space-y-2 list-decimal list-inside text-slate-600 font-medium">
+                            <li>
+                              <strong>Administrative Payment:</strong> Please transfer the full unit payment to the official Pancaran Logistics bank account at the latest <strong>3x24 working hours</strong> after this decision letter is issued.
+                            </li>
+                            <li>
+                              <strong>Document Verification:</strong> Our legal team will contact you via your registered telephone number <span className="text-slate-900 font-bold font-mono">{userPhone || 'registered'}</span> to coordinate the scheduling of signing the Deed of Sale and Purchase (AJB) and official receipt.
+                            </li>
+                            <li>
+                              <strong>Physical Handover:</strong> Unit collection can be done at Cilincing Pool after payment has been verified by bringing your original ID card (KTP) and this proof of winning.
+                            </li>
+                          </ul>
+                        ) : (
+                          <ul className="space-y-2 list-decimal list-inside text-slate-600 font-medium">
+                            <li>
+                              <strong>Pembayaran Administrasi:</strong> Mohon lakukan transfer pelunasan unit ke rekening resmi Pancaran Logistics selambat-lambatnya <strong>3x24 jam kerja</strong> setelah surat keputusan ini terbit.
+                            </li>
+                            <li>
+                              <strong>Verifikasi Dokumen:</strong> Tim legal kami akan menghubungi Anda melalui nomor telepon <span className="text-slate-900 font-bold font-mono">{userPhone || 'terdaftar'}</span> untuk mengoordinasikan jadwal penandatanganan Akta Jual Beli (AJB) dan kwitansi resmi.
+                            </li>
+                            <li>
+                              <strong>Serah Terima Fisik:</strong> Pengambilan unit dapat dilakukan di Pool Cilincing setelah pelunasan diverifikasi dengan membawa KTP asli dan bukti tanda pemenang ini.
+                            </li>
+                          </ul>
+                        )}
+                      </>
                     ) : (
-                      <ul className="space-y-2 list-decimal list-inside text-slate-600 font-medium">
-                        <li>
-                          <strong>Pembayaran Administrasi:</strong> Mohon lakukan transfer pelunasan unit ke rekening resmi Pancaran Logistics selambat-lambatnya <strong>3x24 jam kerja</strong> setelah surat keputusan ini terbit.
-                        </li>
-                        <li>
-                          <strong>Verifikasi Dokumen:</strong> Tim legal kami akan menghubungi Anda melalui nomor telepon <span className="text-slate-900 font-bold font-mono">{userPhone || 'terdaftar'}</span> untuk mengoordinasikan jadwal penandatanganan Akta Jual Beli (AJB) dan kwitansi resmi.
-                        </li>
-                        <li>
-                          <strong>Serah Terima Fisik:</strong> Pengambilan unit dapat dilakukan di Pool Cilincing setelah pelunasan diverifikasi dengan membawa KTP asli dan bukti tanda pemenang ini.
-                        </li>
-                      </ul>
+                      <>
+                        <h4 className="font-black text-slate-800 text-[11px] uppercase tracking-wider flex items-center gap-1.5">
+                          <CheckCircle className="w-4 h-4 text-indigo-600" /> {language === 'en' ? 'Survey Visit Guidelines:' : 'Panduan Kunjungan Survei Fisik:'}
+                        </h4>
+                        
+                        {language === 'en' ? (
+                          <ul className="space-y-2 list-decimal list-inside text-slate-600 font-medium">
+                            <li>
+                              <strong>Safety Requirements:</strong> Visitors are required to wear closed shoes (safety shoes preferred) and a safety vest while inside the pool area for safety.
+                            </li>
+                            <li>
+                              <strong>Gate Registration:</strong> Upon arrival, please show this survey confirmation letter (printout or on-screen) to the security officer on duty at the front gate.
+                            </li>
+                            <li>
+                              <strong>Inspection Process:</strong> You will be guided by our fleet mechanic to perform engine checkups, structural inspection, and document verification of the selected unit.
+                            </li>
+                          </ul>
+                        ) : (
+                          <ul className="space-y-2 list-decimal list-inside text-slate-600 font-medium">
+                            <li>
+                              <strong>Persyaratan Keamanan:</strong> Pengunjung wajib mengenakan sepatu tertutup (disarankan sepatu safety) dan menjaga keselamatan selama berada di area Pool armada.
+                            </li>
+                            <li>
+                              <strong>Registrasi Gerbang Utama:</strong> Setibanya di lokasi, silakan tunjukkan surat konfirmasi booking survei ini (cetak atau lewat HP) kepada petugas keamanan (security) yang berjaga.
+                            </li>
+                            <li>
+                              <strong>Proses Inspeksi Unit:</strong> Anda akan didampingi oleh mekanik internal kami untuk melakukan pemeriksaan mesin, kondisi fisik sasis, serta kelengkapan dokumen asli unit terpilih.
+                            </li>
+                          </ul>
+                        )}
+                      </>
                     )}
                   </div>
 
